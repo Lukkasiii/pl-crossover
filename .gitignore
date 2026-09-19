@@ -8,3 +8,7 @@ node_modules/
 dist/
 .env
 .DS_Store
+
+# scratch output from fetch/TLS debugging (scripts/diagnose_fetch.py, diagnose_tls.py)
+*.log
+page.html
