@@ -328,6 +328,38 @@ Put Chrome Performance before/after screenshots and frame rates in the README.
 Interview pitch: *"decouple the data arrival rate from the render rate"* — the
 core problem of any telemetry dashboard.
 
+### 1b. Standings table: make position mean something
+
+A bare rank column is a list of numbers. Band the table by what each place
+actually wins or costs, so a glance reads as football rather than as data:
+
+- 1st — champion: a distinct marker, not just a colour
+- 1st-4th — Champions League
+- 5th — Europa League
+- 6th — Conference League
+- 18th-20th — relegation
+
+Draw the bands as a coloured rail down the left edge of the row (a 3px bar,
+not a full-row tint, which fights the numbers), plus a legend under the table.
+Colour alone must not carry the meaning: the legend names each band, and each
+banded row gets an `aria-label` saying which one it is.
+
+These boundaries are a per-season fact, not a constant -- England's UEFA
+coefficient added a fifth Champions League place from 2024/25, and the Europa
+and Conference places move when a domestic cup winner has already qualified.
+Put the bands for each season pair in one small config object keyed by season,
+with the conventional 1-4 / 5 / 6 / 18-20 as the fallback, and say in the
+README that the app shows the conventional layout rather than resolving each
+season's actual cup-winner permutations.
+
+### 1c. Replay pacing
+
+1x is too fast as first built. Set 1x to roughly 200ms per frame, so a full
+season runs about 80-90 seconds -- slow enough to watch positions change and
+to see the crossover arrive. The speed multipliers stay 1x to 50x: 50x is
+about 4ms per frame, which is exactly the load the rAF buffering above exists
+to absorb, and the README's before/after frame-rate numbers are measured there.
+
 ### 2. Turn the replay into a real player
 
 - play, pause, speed, draggable timeline; space and arrow keys work
