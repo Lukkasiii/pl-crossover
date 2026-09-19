@@ -26,24 +26,55 @@ rebuilt on match-level data, at every one of the 38 games, as a web application.
 
 ## Getting the data
 
-Understat has no public API, so `scripts/fetch_understat.py` pulls the
-`datesData` JSON blob that the league pages embed in a `<script>` tag, unescapes
-it and writes one JSON + one CSV per season. Standard library only — nothing to
-install.
-
 ```bash
 python3 scripts/fetch_understat.py            # seasons 2016..2024
-```
-
-Nine seasons, one request each, ~1.5s apart. Each season is checked for the
-380 matches / 20 teams / 38 games each that a complete Premier League season
-must have, and anything short is reported rather than silently accepted.
-
-Then build the database:
-
-```bash
 python3 scripts/build_db.py                   # -> data/pl.db
 ```
+
+Nine seasons, one request each, ~1.5s apart. Standard library only — nothing to
+install. Each season is checked for the 380 matches / 20 teams / 38 games each
+that a complete Premier League season must have, and anything short is reported
+rather than silently accepted.
+
+Understat has no documented API. It used to render the fixture list into the
+league page as a hex-escaped JSON blob assigned to `var datesData`; that is what
+most scrapers in the wild still look for, and it is gone. The page now ships
+nearly empty and the frontend calls an endpoint:
+
+```
+GET https://understat.com/getLeagueData/EPL/<year>
+X-Requested-With: XMLHttpRequest
+```
+
+That header is the whole guard — without it the endpoint returns a 404 HTML
+page, which is why the site works in a browser and a plain `curl` does not.
+The response carries `dates` (380 fixtures, the same shape the embedded blob
+had), `teams` (per-team 38-match history with npxG, xpts, ppda, deep) and
+`players`. The full payload is saved per season; re-fetching later to recover a
+field that was thrown away is worse than the disk space.
+
+The old HTML scrape is kept as a fallback, so if the endpoint moves the fetcher
+degrades instead of failing.
+
+## Troubleshooting
+
+**`CERTIFICATE_VERIFY_FAILED: unable to get local issuer certificate`** — the
+python.org build of Python on macOS ships without a certificate bundle and does
+not use the system keychain. Run the installer's own script once, and let it
+finish before running anything else:
+
+```bash
+/Applications/Python\ 3.12/Install\ Certificates.command
+```
+
+Match the version to whatever `ls -d /Applications/Python*/` prints.
+
+**`no datesData blob found` / a 404 from the endpoint** — Understat changed
+something. `scripts/diagnose_fetch.py` fetches one season, saves the raw
+response to `data/raw/_debug_page.html`, and reports which extraction patterns
+still match. `scripts/diagnose_tls.py` separates a TLS problem from a network
+one by dumping the certificate each host presents and retrying through several
+trust stores.
 
 ## Indexing by games played, not matchweek
 

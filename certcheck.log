@@ -1,0 +1,10 @@
+--- python versions installed ---
+/Applications/Python 3.12/
+--- which python3 ---
+/Library/Frameworks/Python.framework/Versions/3.12/bin/python3
+/usr/local/bin/python3
+/usr/bin/python3
+--- ssl cert paths ---
+cafile = /Library/Frameworks/Python.framework/Versions/3.12/etc/openssl/cert.pem
+exists = True
+capath = None

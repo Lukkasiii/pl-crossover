@@ -2,24 +2,30 @@
 """
 Fetch match-level xG data for the English Premier League from Understat.
 
-Understat renders its league pages server-side and embeds the fixture list as a
-hex-escaped JSON blob inside a <script> tag:
+Understat used to render the fixture list into the league page as a hex-escaped
+JSON blob assigned to `var datesData`. It no longer does: the page ships almost
+empty and the browser calls an endpoint for the data.
 
-    var datesData = JSON.parse('\\x5B\\x7B\\x22id\\x22\\x3A\\x2211643\\x22 ...');
+    GET https://understat.com/getLeagueData/EPL/<year>
+    X-Requested-With: XMLHttpRequest        <- without this header it 404s
 
-There is no public API, so we pull the page, extract that blob, unescape it and
-parse it as JSON. Standard library only -- no pip install required.
+The response is JSON with three keys:
+
+    dates   380 fixtures: id, datetime, home/away team, goals, xG
+    teams   per team, a 38-match history with xG, xGA, npxG, xpts, ppda, deep
+    players season totals per player
+
+`dates` has exactly the shape the old embedded blob had, so everything
+downstream is unchanged. The whole payload is saved anyway -- the extra
+per-team fields cost nothing to keep and are awkward to re-fetch later.
+
+The old HTML scrape is kept as a fallback in case the endpoint moves again.
+Standard library only, no pip install required.
 
 Usage:
     python3 scripts/fetch_understat.py                 # seasons 2016..2024
     python3 scripts/fetch_understat.py 2020 2021       # a subset
     python3 scripts/fetch_understat.py --out data/raw  # custom output dir
-
-Output (per season):
-    data/raw/understat_EPL_<year>.json   raw match objects, exactly as served
-    data/raw/understat_EPL_<year>.csv    flat table, one row per match
-
-A season is named by the calendar year it starts in: 2017 == the 2017/18 season.
 """
 
 from __future__ import annotations
@@ -31,29 +37,44 @@ import io
 import json
 import os
 import re
+import ssl
 import sys
 import time
 import urllib.error
 import urllib.request
 
 LEAGUE = "EPL"
-BASE_URL = "https://understat.com/league/{league}/{year}"
+API_URL = "https://understat.com/getLeagueData/{league}/{year}"
+PAGE_URL = "https://understat.com/league/{league}/{year}"
 
 # 2016 is needed as the "prior season" for the 2016/17 -> 2017/18 pair,
 # 2024 is the last season in the study (2024/25).
 DEFAULT_SEASONS = list(range(2016, 2025))
 
-BLOB_RE = re.compile(r"var\s+datesData\s*=\s*JSON\.parse\('(?P<blob>.*?)'\)\s*;", re.DOTALL)
+MATCHES_PER_SEASON = 380
+TEAMS_PER_SEASON = 20
+GAMES_PER_TEAM = 38
 
-HEADERS = {
+BLOB_RE = re.compile(r"datesData\s*=\s*JSON\.parse\('(?P<blob>.*?)'\)", re.DOTALL)
+
+BASE_HEADERS = {
     "User-Agent": (
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
         "(KHTML, like Gecko) Chrome/125.0 Safari/537.36"
     ),
-    "Accept": "text/html,application/xhtml+xml",
     "Accept-Encoding": "gzip",
     "Accept-Language": "en-US,en;q=0.9",
 }
+
+# The endpoint is guarded by this header alone. jQuery sets it on every $.ajax
+# call, which is why the site works in a browser and a plain GET does not.
+API_HEADERS = {
+    **BASE_HEADERS,
+    "X-Requested-With": "XMLHttpRequest",
+    "Accept": "application/json, text/javascript, */*; q=0.01",
+}
+
+PAGE_HEADERS = {**BASE_HEADERS, "Accept": "text/html,application/xhtml+xml"}
 
 CSV_COLUMNS = [
     "match_id",
@@ -67,49 +88,80 @@ CSV_COLUMNS = [
     "away_xg",
 ]
 
+CERT_HELP = """
+TLS verification failed. On macOS this almost always means the python.org build
+of Python has no certificate bundle yet. Run this once, let it finish, then try
+again:
+
+    /Applications/Python\\ 3.12/Install\\ Certificates.command
+
+(adjust the version to match `ls -d /Applications/Python*/`)
+"""
+
 
 class FetchError(RuntimeError):
     pass
 
 
-def http_get(url: str, retries: int = 3, backoff: float = 2.0) -> str:
-    """GET a URL and return decoded text, retrying on transient failures."""
+def http_get(url: str, headers: dict, retries: int = 3, backoff: float = 2.0) -> bytes:
+    """GET a URL and return the decompressed body, retrying on transient failures."""
     last_err: Exception | None = None
     for attempt in range(1, retries + 1):
         try:
-            req = urllib.request.Request(url, headers=HEADERS)
+            req = urllib.request.Request(url, headers=headers)
             with urllib.request.urlopen(req, timeout=30) as resp:
                 payload = resp.read()
                 if resp.headers.get("Content-Encoding") == "gzip":
                     payload = gzip.GzipFile(fileobj=io.BytesIO(payload)).read()
-                return payload.decode("utf-8", errors="replace")
-        except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError) as err:
+                return payload
+        except urllib.error.HTTPError as err:
+            # A 404 here is a contract change, not a blip; do not sit through retries.
+            raise FetchError(f"HTTP {err.code} {err.reason} for {url}") from err
+        except ssl.SSLCertVerificationError as err:
+            raise FetchError(f"{err}\n{CERT_HELP}") from err
+        except (urllib.error.URLError, TimeoutError) as err:
             last_err = err
             if attempt < retries:
-                wait = backoff ** attempt
+                wait = backoff**attempt
                 print(f"    ! {err} -- retrying in {wait:.0f}s ({attempt}/{retries})", file=sys.stderr)
                 time.sleep(wait)
     raise FetchError(f"could not fetch {url}: {last_err}")
 
 
-def extract_dates_data(html: str, url: str) -> list[dict]:
-    """Pull the datesData JSON blob out of the page source."""
+def fetch_via_api(season: int) -> tuple[list[dict], dict]:
+    """Preferred path: the JSON endpoint the site's own frontend calls."""
+    url = API_URL.format(league=LEAGUE, year=season)
+    body = http_get(url, API_HEADERS)
+    try:
+        payload = json.loads(body)
+    except json.JSONDecodeError as err:
+        raise FetchError(
+            f"{url} did not return JSON ({len(body)} bytes). "
+            f"The X-Requested-With guard may have changed."
+        ) from err
+
+    fixtures = payload.get("dates")
+    if not isinstance(fixtures, list):
+        raise FetchError(f"{url} returned JSON without a 'dates' list (keys: {list(payload)})")
+    return fixtures, payload
+
+
+def fetch_via_page(season: int) -> tuple[list[dict], dict]:
+    """Fallback: the old embedded `datesData` blob, in case the endpoint moves."""
+    url = PAGE_URL.format(league=LEAGUE, year=season)
+    html = http_get(url, PAGE_HEADERS).decode("utf-8", errors="replace")
     match = BLOB_RE.search(html)
     if not match:
-        raise FetchError(
-            f"no datesData blob found at {url}. Understat may have changed its page "
-            f"structure, or the response was a block page ({len(html)} bytes received)."
-        )
-    # The blob is ASCII with \xNN escapes; unicode_escape turns those back into text.
+        raise FetchError(f"no datesData blob in {url} ({len(html)} bytes)")
     blob = match.group("blob").encode("utf-8").decode("unicode_escape")
-    return json.loads(blob)
+    fixtures = json.loads(blob)
+    return fixtures, {"dates": fixtures}
 
 
-def normalise(raw: list[dict], season: int) -> list[dict]:
+def normalise(fixtures: list[dict], season: int) -> list[dict]:
     """Keep played matches only and flatten to the columns we care about."""
     rows = []
-    for m in raw:
-        # Fixtures that have not been played yet carry isResult=False and null goals.
+    for m in fixtures:
         if not m.get("isResult"):
             continue
         rows.append(
@@ -129,41 +181,62 @@ def normalise(raw: list[dict], season: int) -> list[dict]:
     return rows
 
 
-def check_season(rows: list[dict], season: int) -> None:
+def check_season(rows: list[dict]) -> list[str]:
     """A complete Premier League season is 20 teams x 38 games = 380 matches."""
     teams = {r["home_team"] for r in rows} | {r["away_team"] for r in rows}
-    played = {t: 0 for t in teams}
+    played: dict[str, int] = {t: 0 for t in teams}
     for r in rows:
         played[r["home_team"]] += 1
         played[r["away_team"]] += 1
 
     problems = []
-    if len(rows) != 380:
-        problems.append(f"{len(rows)} matches (expected 380)")
-    if len(teams) != 20:
-        problems.append(f"{len(teams)} teams (expected 20)")
-    odd = {t: n for t, n in played.items() if n != 38}
+    if len(rows) != MATCHES_PER_SEASON:
+        problems.append(f"{len(rows)} matches (expected {MATCHES_PER_SEASON})")
+    if len(teams) != TEAMS_PER_SEASON:
+        problems.append(f"{len(teams)} teams (expected {TEAMS_PER_SEASON})")
+    odd = {t: n for t, n in played.items() if n != GAMES_PER_TEAM}
     if odd:
-        problems.append(f"teams not on 38 games: {odd}")
-
-    if problems:
-        print(f"    ! season {season} looks incomplete: {'; '.join(problems)}", file=sys.stderr)
-    else:
-        print(f"    ok: 380 matches, 20 teams, all on 38 games")
+        problems.append(f"teams not on {GAMES_PER_TEAM} games: {odd}")
+    return problems
 
 
-def write_outputs(rows: list[dict], raw: list[dict], season: int, out_dir: str) -> None:
+def write_outputs(rows: list[dict], payload: dict, season: int, out_dir: str) -> None:
     stem = os.path.join(out_dir, f"understat_{LEAGUE}_{season}")
 
     with open(f"{stem}.json", "w", encoding="utf-8") as fh:
-        json.dump(raw, fh, ensure_ascii=False, indent=1)
+        json.dump(payload, fh, ensure_ascii=False, separators=(",", ":"))
 
     with open(f"{stem}.csv", "w", encoding="utf-8", newline="") as fh:
         writer = csv.DictWriter(fh, fieldnames=CSV_COLUMNS)
         writer.writeheader()
         writer.writerows(rows)
 
-    print(f"    wrote {stem}.json and {stem}.csv")
+
+def fetch_season(season: int, out_dir: str) -> bool:
+    print(f"[{season}/{season + 1}]", flush=True)
+
+    fixtures = payload = None
+    for label, fetcher in (("api", fetch_via_api), ("page fallback", fetch_via_page)):
+        try:
+            fixtures, payload = fetcher(season)
+            print(f"    via {label}: {len(fixtures)} fixtures", flush=True)
+            break
+        except FetchError as err:
+            print(f"    {label} failed: {err}", file=sys.stderr, flush=True)
+
+    if fixtures is None:
+        return False
+
+    rows = normalise(fixtures, season)
+    problems = check_season(rows)
+    if problems:
+        print(f"    ! incomplete: {'; '.join(problems)}", file=sys.stderr, flush=True)
+    else:
+        print(f"    ok: {MATCHES_PER_SEASON} matches, {TEAMS_PER_SEASON} teams, all on {GAMES_PER_TEAM} games", flush=True)
+
+    write_outputs(rows, payload, season, out_dir)
+    print(f"    wrote understat_{LEAGUE}_{season}.json / .csv", flush=True)
+    return True
 
 
 def main() -> int:
@@ -177,19 +250,10 @@ def main() -> int:
     os.makedirs(args.out, exist_ok=True)
 
     failures = []
-    for season in seasons:
-        url = BASE_URL.format(league=LEAGUE, year=season)
-        print(f"[{season}/{season + 1}] {url}")
-        try:
-            html = http_get(url)
-            raw = extract_dates_data(html, url)
-            rows = normalise(raw, season)
-            check_season(rows, season)
-            write_outputs(rows, raw, season, args.out)
-        except (FetchError, json.JSONDecodeError, KeyError) as err:
-            print(f"    FAILED: {err}", file=sys.stderr)
+    for i, season in enumerate(seasons):
+        if not fetch_season(season, args.out):
             failures.append(season)
-        if season != seasons[-1]:
+        if i < len(seasons) - 1:
             time.sleep(args.sleep)
 
     if failures:
