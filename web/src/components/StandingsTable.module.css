@@ -1,0 +1,26 @@
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+.table th,
+.table td {
+  padding: 4px 8px;
+  text-align: right;
+  border-bottom: 1px solid var(--border, #e5e7eb);
+}
+
+.table th:nth-child(2),
+.table td:nth-child(2) {
+  text-align: left;
+}
+
+.excluded {
+  opacity: 0.45;
+}
+
+.placeholder {
+  color: var(--muted, #6b7280);
+  padding: 24px 0;
+}
