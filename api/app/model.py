@@ -109,6 +109,28 @@ def ols_fit_loso(x: np.ndarray, y: np.ndarray, groups: np.ndarray) -> FitResult:
     )
 
 
+def ols_fit_per_group(x: np.ndarray, y: np.ndarray, groups: np.ndarray) -> FitResult:
+    """Method 2: fit each season pair separately, then average the scores.
+
+    One line apart from `ols_fit` (which pools every pair into a single fit):
+    here each group gets its own line, and the reported numbers are the mean
+    across groups rather than the pooled residuals.
+    """
+    x = np.asarray(x, dtype=float)
+    y = np.asarray(y, dtype=float)
+    groups = np.asarray(groups)
+
+    fits = [ols_fit(x[groups == g], y[groups == g]) for g in np.unique(groups)]
+    return FitResult(
+        rmse=float(np.mean([f.rmse for f in fits])),
+        mae=float(np.mean([f.mae for f in fits])),
+        r2=float(np.mean([f.r2 for f in fits])),
+        slope=float(np.mean([f.slope for f in fits])),
+        intercept=float(np.mean([f.intercept for f in fits])),
+        n=int(sum(f.n for f in fits)),
+    )
+
+
 def predicted_rank(x: np.ndarray, fit: FitResult) -> np.ndarray:
     """Map predictor values onto the final-position scale using a fitted line."""
     return fit.intercept + fit.slope * np.asarray(x, dtype=float)
