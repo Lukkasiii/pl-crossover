@@ -449,3 +449,9 @@ This project runs on a metered plan. Optimise every turn for that:
 - Prefer targeted edits over rewriting whole files.
 - When a command fails, read the error and fix it; do not paste the full
   traceback into the conversation.
+
+**Token discipline never costs scope.** It applies to conversation overhead —
+narration, restating plans, pasting files back, re-reading what you already
+read. It never justifies dropping a feature, skipping a test, weakening error
+handling, or shipping something the author cannot explain. If a turn forces a
+choice between the two, quality wins and you say so in one line.
