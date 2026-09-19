@@ -270,12 +270,48 @@ GET  /api/curves?metric=xg&method=pooled
                                        crossover, LOSO series
 POST /api/predict                      {metric, games, prior_weight, obs_variance}
 POST /api/ask                          preset question id -> cached answer + tool trace
-WS   /ws/replay                        two-way: client sends play/pause/seek,
-                                       server pushes numbered frames
+WS   /ws/replay?pair={id}            two-way: client sends play/pause/seek,
+                                       server pushes numbered snapshot frames
 
 POST /auth/register | /auth/login | /auth/refresh    GET /auth/me
 GET/POST/PUT/DELETE /api/scenarios                   protected
 ```
+
+### WebSocket frame protocol
+
+Frames are **pure snapshots, never deltas** — that is what makes seeking
+instant. One monotonic `seq` across both frame types. Build the frame list once
+per pair at application startup and cache it; do not recompute per connection.
+
+- `type: "match"` — one per match in chronological order (380). The full 20-row
+  table as of that instant, each team at *its own* games-played count. Teams
+  that have not started are flagged, not omitted.
+- `type: "round"` — the model panels. **Emit round frame N when
+  `min(games_played)` across all 20 teams reaches N**, which happens 38 times.
+
+  Do **not** emit one every 10 match frames. Ten matches equals one round only
+  if the league plays in strict round order, and it does not: postponements
+  leave teams several games apart. Measured on this dataset, "every 10th match"
+  fails to be a uniform checkpoint in 35 of 38 cases in 2020/21, 30 of 38 in
+  2022/23, with teams up to 6 games apart. Using it would silently mix a team on
+  12 games with a team on 18 inside one "round 15" RMSE.
+
+  Round frames are therefore unevenly spaced in the sequence. That is correct.
+  Total stays 418 frames.
+
+  Each round frame carries, for all four metrics: current-season RMSE / MAE /
+  R² at that games count, the prior-season baseline RMSE (constant, so the
+  client can draw the red line without a REST call), the Bayesian prior/data
+  weights, and a `crossover_passed` boolean so the ⚡ CROSSOVER highlight needs
+  no client-side comparison.
+
+- Client → server: `{"cmd":"play","speed":1..50}`, `{"cmd":"pause"}`,
+  `{"cmd":"seek","seq":N}`. `seek` replies immediately with the snapshot at N;
+  `pause` stops the stream without closing the socket.
+- **No auth on this endpoint** — the replay is public data. The README documents
+  the ticket pattern and the "browser WebSockets cannot send an Authorization
+  header" constraint as how it *would* be gated; unused plumbing is not built.
+
 
 ## Frontend depth — this is what separates the project
 
@@ -398,3 +434,18 @@ through other experience — the Figma-first build is the closest proxy here.
   form a 1..20 permutation, league goals for = goals against). Keep that bar.
 - The author must be able to explain every line in an interview. If a piece of
   generated code is not understood, stop and work through it before moving on.
+
+## Working style (token discipline)
+
+This project runs on a metered plan. Optimise every turn for that:
+
+- Read `CLAUDE.md` once per session. Do not re-read files you have already read
+  in this session, and never paste file contents back into the conversation.
+- Report results in five lines or fewer: what changed, tests passing, what is
+  next. No code walkthroughs, no restating the plan, no summaries of files you
+  just wrote — unless asked.
+- Work in long autonomous stretches. Finish a whole stage, then report once.
+  Ask only when a decision is genuinely blocking and not answered here.
+- Prefer targeted edits over rewriting whole files.
+- When a command fails, read the error and fix it; do not paste the full
+  traceback into the conversation.
