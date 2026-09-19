@@ -9,6 +9,9 @@ uvicorn[standard]>=0.27
 pydantic>=2.6
 python-jose[cryptography]>=3.3   # JWT
 passlib[bcrypt]>=1.7             # password hashing
+bcrypt<4.1,>=4.0                 # passlib 1.7.4's self-test crashes on bcrypt>=4.1 (removed __about__,
+                                  # started raising instead of truncating secrets over 72 bytes)
 
 # dev
 pytest>=8.0
+httpx2>=2.13              # starlette's TestClient needs it for WS + REST tests
