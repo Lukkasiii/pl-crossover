@@ -64,3 +64,10 @@ def client(db_path):
         yield c
 
     app.dependency_overrides.clear()
+
+
+@pytest.fixture()
+def second_client(client):
+    """An independent cookie jar against the same overridden app -- a second browser."""
+    with TestClient(app) as c:
+        yield c

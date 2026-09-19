@@ -107,6 +107,10 @@ CREATE TABLE users (
     id            INTEGER PRIMARY KEY,
     email         TEXT NOT NULL UNIQUE,
     password_hash TEXT NOT NULL,
+    -- Bumped on logout; a refresh token carries the version it was issued
+    -- under, so this is what makes logout actually revoke a stolen refresh
+    -- token instead of just replacing it with an equally-valid new one.
+    token_version INTEGER NOT NULL DEFAULT 0,
     created_at    TEXT NOT NULL DEFAULT (datetime('now'))
 );
 

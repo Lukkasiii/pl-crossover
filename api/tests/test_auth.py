@@ -53,3 +53,47 @@ def test_refresh_issues_a_usable_access_token(client):
 
 def test_refresh_without_cookie_fails(client):
     assert client.post("/auth/refresh").status_code == 401
+
+
+def test_logout_requires_a_token(client):
+    assert client.post("/auth/logout").status_code == 401
+
+
+def test_logout_revokes_the_refresh_token(client):
+    client.post("/auth/register", json={"email": "logout@example.com", "password": "hunter22"})
+    login = client.post("/auth/login", json={"email": "logout@example.com", "password": "hunter22"})
+    access = login.json()["access_token"]
+    stolen_refresh = login.cookies["refresh_token"]
+
+    r = client.post("/auth/logout", headers={"Authorization": f"Bearer {access}"})
+    assert r.status_code == 204
+
+    # The client's own cookie jar drops the now-expired cookie on its own;
+    # resend the old value explicitly to prove the *server* rejects it too,
+    # not just that the browser stopped sending it.
+    client.cookies.set("refresh_token", stolen_refresh)
+    r = client.post("/auth/refresh")
+    assert r.status_code == 401
+
+
+def test_logout_does_not_revoke_other_users_sessions(client, second_client):
+    """Alice and Bob use separate browsers (separate cookie jars); logging Alice
+    out must bump only Alice's token_version, not Bob's."""
+    client.post("/auth/register", json={"email": "alice@example.com", "password": "hunter22"})
+    client.post("/auth/register", json={"email": "bob@example.com", "password": "hunter22"})
+    alice = client.post("/auth/login", json={"email": "alice@example.com", "password": "hunter22"}).json()
+    second_client.post("/auth/login", json={"email": "bob@example.com", "password": "hunter22"})
+
+    client.post("/auth/logout", headers={"Authorization": f"Bearer {alice['access_token']}"})
+
+    assert client.post("/auth/refresh").status_code == 401  # alice: revoked
+    assert second_client.post("/auth/refresh").status_code == 200  # bob: untouched
+
+
+def test_login_gives_the_same_error_for_missing_user_and_wrong_password(client):
+    """The response must not reveal whether the email is registered at all."""
+    client.post("/auth/register", json={"email": "timing@example.com", "password": "hunter22"})
+    missing = client.post("/auth/login", json={"email": "nobody@example.com", "password": "hunter22"})
+    wrong = client.post("/auth/login", json={"email": "timing@example.com", "password": "wrong1234"})
+    assert missing.status_code == wrong.status_code == 401
+    assert missing.json()["detail"] == wrong.json()["detail"]

@@ -20,11 +20,11 @@ def get_current_user(
     if creds is None:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "missing bearer token")
     try:
-        user_id = decode_token(creds.credentials, "access", settings)
+        payload = decode_token(creds.credentials, "access", settings)
     except TokenError as exc:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, str(exc)) from exc
 
-    user = db.execute("SELECT id, email FROM users WHERE id = ?", (user_id,)).fetchone()
+    user = db.execute("SELECT id, email FROM users WHERE id = ?", (payload.user_id,)).fetchone()
     if user is None:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "user no longer exists")
     return user
