@@ -1,0 +1,14 @@
+# data pipeline + model engine
+numpy>=1.26
+pandas>=2.0
+openpyxl>=3.1          # reads the original coursework workbooks
+
+# api (next step)
+fastapi>=0.110
+uvicorn[standard]>=0.27
+pydantic>=2.6
+python-jose[cryptography]>=3.3   # JWT
+passlib[bcrypt]>=1.7             # password hashing
+
+# dev
+pytest>=8.0
