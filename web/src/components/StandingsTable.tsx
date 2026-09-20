@@ -32,7 +32,11 @@ export function StandingsTable({ rows, currentSeasonLabel }: StandingsTableProps
 
   return (
     <>
-      <div className={styles.tableWrap}>
+      {/* tabIndex + role/aria-label make the scrollable region itself reachable and
+          named for keyboard users -- axe's scrollable-region-focusable (serious,
+          wcag2a/2.1.1/2.1.3) flags a scrolling div with neither, since without them
+          a keyboard-only user has no way to pan to the table's right-hand columns. */}
+      <div className={styles.tableWrap} tabIndex={0} role="region" aria-label="Standings table, scrollable">
         <table className={styles.table}>
           <thead>
             <tr>
