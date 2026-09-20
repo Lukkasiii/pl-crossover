@@ -23,6 +23,10 @@
   color: var(--relegation);
 }
 
+.toolbar > :last-child {
+  margin-left: auto;
+}
+
 .player-controls {
   display: flex;
   flex-direction: column;

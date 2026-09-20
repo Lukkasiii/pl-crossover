@@ -16,6 +16,18 @@ crossover exactly rather than bracketing it: **11.8 games**, not "≈12."
 It is also a portfolio project built for a Frontend Engineer Intern application —
 see [Frontend decisions](#frontend-decisions) for what that means in practice.
 
+**Demo account** (only needed to save named parameter sets — see
+[Auth and saved scenarios](#auth-and-saved-scenarios)):
+
+```
+email:    demo@plcrossover.dev
+password: crossover-demo
+```
+
+Seed it into a local `data/pl.db` with `python3 scripts/seed_demo_account.py`
+(idempotent — safe to re-run). It is not needed to use the dashboard itself:
+replay, charts and the σ tuner are all public.
+
 ---
 
 ## Status
@@ -24,10 +36,10 @@ see [Frontend decisions](#frontend-decisions) for what that means in practice.
 |---|---|
 | Data pipeline | built, tested |
 | Model engine | built, tested, reproduces the original study |
-| REST + WebSocket API | built, 50 tests passing |
+| REST + WebSocket API | built, 51 tests passing |
 | React frontend | replay engine, standings, charts, seek/URL state, demo mode |
 | Docker + CI | built |
-| Auth + saved scenarios (backend) | built; no frontend UI yet |
+| Auth + saved scenarios | built end to end — sign in/register, scenarios panel |
 | Ask the Model (AI agent panel) | not started |
 
 ## Quickstart
@@ -102,6 +114,41 @@ constant prior baseline, the Bayesian weights, and a `crossover_passed` flag,
 so the client never has to compare numbers itself to know when to announce
 "⚡ CROSSOVER." 1x plays a frame every 200ms (~80-90s per season); 50x is ~4ms
 per frame, which is the actual load the render-decoupling below exists for.
+
+## Auth and saved scenarios
+
+**The dashboard stays public.** Replay, charts and the σ tuner all work
+signed out. Signing in unlocks exactly one thing: naming and saving the
+current `(metric, method, prior_weight, obs_variance)` so it can be reloaded
+later. There is no login wall anywhere in front of the data.
+
+**Access token in memory on the client, refresh token in an httpOnly cookie.**
+Not localStorage — anything that can run JS on the page can read
+localStorage, so an XSS payload would walk out with a live session. The
+access token lives in a plain module-level variable (`src/auth/tokenStore.ts`)
+and is gone on reload by design; a valid refresh cookie silently re-issues one
+on mount. The refresh cookie itself is scoped to `/auth`, httpOnly and
+same-site, so no JS — injected or not — ever reads it.
+
+**The fetch wrapper refreshes on 401 and retries once, single-flight.** Every
+panel on the dashboard can fire a request against an expired access token at
+the same moment; without coordination each would race to POST `/auth/refresh`
+against the same refresh cookie, and since refresh tokens are versioned
+(`token_version`, bumped on logout) rather than usable indefinitely, whichever
+refresh lands second would in some designs invalidate the first. One shared
+in-flight promise (`src/api/client.ts`) means concurrent 401s trigger exactly
+one refresh call; every request waiting on it retries with the same new
+token. `src/api/client.test.ts` asserts the call count directly.
+
+**No WebSocket auth ticket.** The spec this was built from calls for issuing
+a short-lived, single-use ticket from a REST endpoint (browsers can't attach
+an `Authorization` header to a WebSocket handshake) so `/ws/replay` could be
+gated per-user. It isn't built: `/ws/replay` streams public replay data with
+no per-user state, so there is nothing to gate. If the socket ever needed to
+carry account-specific state, the ticket pattern above — or the
+`Sec-WebSocket-Protocol` subprotocol, which can also carry a token in the
+handshake — is what would gate it; building the endpoint unused would just be
+dead plumbing.
 
 ## Frontend decisions
 
@@ -196,7 +243,7 @@ rows.
 
 ```bash
 python3 -m pytest api/tests -q   # 50 tests: model, API, auth, replay protocol
-cd web && npm run test           # Vitest: FrameCache, zone-band config
+cd web && npm run test           # Vitest: FrameCache, zone-band config, auth refresh
 cd web && npx tsc -b && npm run lint
 ```
 
@@ -266,6 +313,7 @@ scripts/
   export_openapi.py          dumps FastAPI's schema for openapi-typescript
   export_demo_frames.py      freezes the replay into web/public/demo/*.json
   validate_checkpoints.py    regression test against the original study
+  seed_demo_account.py       creates/resets the README's demo login
 api/
   app/model.py                OLS, leave-one-season-out, Bayesian blend, crossover
   app/replay.py                builds and caches the 418-frame list per pair
@@ -276,6 +324,9 @@ web/
   src/demo/                   useDemoReplay (static-JSON stand-in, same shape)
   src/charts/                 ECharts panels (RMSE curve, metric bars, weights)
   src/components/             standings table, zone bands, timeline, controls
+  src/auth/                   AuthContext, in-memory token store
+  src/components/auth/        sign-in/register panel, saved-scenarios panel
+  src/api/client.ts            openapi-fetch client + single-flight 401 refresh
 data/
   pl.db                       built database (committed, < 1MB)
   excel/                      the original coursework workbooks
