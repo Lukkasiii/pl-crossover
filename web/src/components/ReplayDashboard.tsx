@@ -62,27 +62,8 @@ export function ReplayDashboard({
 
   return (
     <main>
-      <PlayerControls
-        status={replay.status}
-        playing={replay.playing}
-        speed={replay.speed}
-        seq={replay.seq}
-        totalFrames={replay.totalFrames}
-        finished={replay.finished}
-        seeking={replay.seeking}
-        onPlay={replay.play}
-        onPause={replay.pause}
-        onSpeedChange={() => {}}
-        onSeek={replay.seek}
-      />
-
       <div className="layout">
-        <section className="panel standings">
-          <h2>Standings</h2>
-          <StandingsTable rows={replay.table} currentSeasonLabel={currentSeasonLabel} />
-        </section>
-
-        <div className="side-panels">
+        <div className="charts-column">
           <section className="panel">
             <div className="panel-header">
               <h2>RMSE curve</h2>
@@ -104,7 +85,9 @@ export function ReplayDashboard({
               <MetricsBarChart latestRound={replay.latestRound} />
             </div>
           </section>
+        </div>
 
+        <div className="side-column">
           <PredictionTuner
             metric={metric}
             games={replay.latestRound?.games ?? 1}
@@ -112,8 +95,27 @@ export function ReplayDashboard({
             onPriorWeightChange={onPriorWeightChange}
             obsVariance={obsVariance}
           />
+
+          <section className="panel standings">
+            <h2>Standings</h2>
+            <StandingsTable rows={replay.table} currentSeasonLabel={currentSeasonLabel} />
+          </section>
         </div>
       </div>
+
+      <PlayerControls
+        status={replay.status}
+        playing={replay.playing}
+        speed={replay.speed}
+        seq={replay.seq}
+        totalFrames={replay.totalFrames}
+        finished={replay.finished}
+        seeking={replay.seeking}
+        onPlay={replay.play}
+        onPause={replay.pause}
+        onSpeedChange={() => {}}
+        onSeek={replay.seek}
+      />
     </main>
   );
 }
