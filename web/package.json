@@ -10,6 +10,7 @@
     "demo:data": "cd .. && python3 scripts/export_demo_frames.py",
     "lint": "oxlint",
     "test": "vitest run",
+    "test:e2e": "playwright test",
     "preview": "vite preview",
     "generate:types": "cd .. && python3 scripts/export_openapi.py web/openapi.json && cd web && openapi-typescript openapi.json -o src/api/schema.ts"
   },

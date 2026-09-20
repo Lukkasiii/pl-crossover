@@ -19,6 +19,10 @@ openapi.json
 # carrying in git history when the CI/deploy job can rebuild it in under a second
 public/demo/*.json
 
+# Playwright
+/test-results/
+/playwright-report/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
