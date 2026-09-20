@@ -47,6 +47,25 @@ def test_round_frames_carry_all_four_metrics(client):
         assert "crossover_passed" in frame["metrics"]["xg"]
 
 
+def test_table_ranks_are_a_strict_permutation_even_when_teams_are_out_of_step(client):
+    """Match frames mix teams at different games_played counts whenever a
+    postponement has put them out of step. live_rank as stored in team_state
+    is only comparable within one games_played slice, so a frame's table must
+    recompute a fresh 1..N ranking across whoever has kicked off rather than
+    reusing each team's stored value -- otherwise two teams from different
+    slices can land on the same rank while another number is skipped.
+    """
+    with client.websocket_connect("/ws/replay?pair=1") as ws:
+        init = ws.receive_json()
+        ws.send_json({"cmd": "play", "speed": 50})
+        for _ in range(init["total_frames"]):
+            frame = ws.receive_json()
+            if frame["type"] != "match":
+                continue
+            started = [row for row in frame["table"] if row["games_played"] > 0]
+            assert sorted(row["live_rank"] for row in started) == list(range(1, len(started) + 1))
+
+
 def test_unknown_pair_closes_with_an_error(client):
     with client.websocket_connect("/ws/replay?pair=999") as ws:
         msg = ws.receive_json()

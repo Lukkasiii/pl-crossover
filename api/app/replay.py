@@ -17,7 +17,7 @@ FULL_SEASON_GAMES = 38
 
 
 def _table_snapshot(games_played: dict[int, int], team_state: dict, roster: dict, pair_teams: dict) -> list[dict]:
-    rows = []
+    started, not_started = [], []
     for team_id, name in roster.items():
         gp = games_played[team_id]
         info = pair_teams[team_id]
@@ -38,6 +38,9 @@ def _table_snapshot(games_played: dict[int, int], team_state: dict, roster: dict
                 "xgd": 0.0,
                 "live_rank": None,
             }
+            row["in_pair"] = bool(info["in_pair"])
+            row["final_rank"] = info["final_rank"]
+            not_started.append(row)
         else:
             st = team_state[(team_id, gp)]
             row = {
@@ -54,13 +57,22 @@ def _table_snapshot(games_played: dict[int, int], team_state: dict, roster: dict
                 "xg": st["xg"],
                 "xga": st["xga"],
                 "xgd": st["xgd"],
-                "live_rank": st["live_rank"],
             }
-        row["in_pair"] = bool(info["in_pair"])
-        row["final_rank"] = info["final_rank"]
-        rows.append(row)
-    rows.sort(key=lambda r: (r["live_rank"] is None, r["live_rank"] or 0))
-    return rows
+            row["in_pair"] = bool(info["in_pair"])
+            row["final_rank"] = info["final_rank"]
+            started.append(row)
+
+    # st["live_rank"] is only valid within teams sharing the same games_played
+    # (that is how build_db.py computed it). A match frame mixes teams at
+    # different counts whenever a postponement has put them out of step, so
+    # reusing that stored value here would compare ranks from unrelated
+    # permutations. Recompute fresh, across whoever has actually kicked off,
+    # with the league's own tiebreakers: points, goal diff, goals scored, name.
+    started.sort(key=lambda r: (-r["points"], -r["goal_diff"], -r["goals_for"], r["name"]))
+    for rank, row in enumerate(started, start=1):
+        row["live_rank"] = rank
+
+    return started + not_started
 
 
 def _round_frame(con: sqlite3.Connection, db_path: str, games: int) -> dict:
