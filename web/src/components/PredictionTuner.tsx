@@ -4,7 +4,6 @@ import { WeightBars } from "../charts/WeightBars";
 import { PredictRmseBars } from "../charts/PredictRmseBars";
 import { usePredict } from "../api/usePredict";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
-import { DEMO_MODE } from "../demo/mode";
 import type { Metric } from "../ws/types";
 
 const DEFAULT_PRIOR_WEIGHT = 5;
@@ -40,33 +39,27 @@ export function PredictionTuner({ metric, games }: PredictionTunerProps) {
         </span>
       </div>
 
-      {DEMO_MODE ? (
-        <p className="predict-note">Live only — the static demo has no backend to recompute this against.</p>
-      ) : (
-        <>
-          <Slider
-            aria-label="prior weight"
-            min={MIN_PRIOR_WEIGHT}
-            max={MAX_PRIOR_WEIGHT}
-            value={priorWeight}
-            onValueChange={setPriorWeight}
-            onValueCommit={setPriorWeight}
-          />
+      <Slider
+        aria-label="prior weight"
+        min={MIN_PRIOR_WEIGHT}
+        max={MAX_PRIOR_WEIGHT}
+        value={priorWeight}
+        onValueChange={setPriorWeight}
+        onValueCommit={setPriorWeight}
+      />
 
-          {error && <p className="predict-note error">failed to recompute the posterior</p>}
-          {!error && isLoading && <p className="predict-note">loading…</p>}
+      {error && <p className="predict-note error">failed to recompute the posterior</p>}
+      {!error && isLoading && <p className="predict-note">loading…</p>}
 
-          {!error && data && (
-            <div className={isFetching ? "predict-fading" : undefined}>
-              <div className="chart-box small">
-                <WeightBars weights={data ? { prior: data.weight_prior, data: data.weight_data } : null} />
-              </div>
-              <div className="chart-box">
-                <PredictRmseBars predict={data} />
-              </div>
-            </div>
-          )}
-        </>
+      {!error && data && (
+        <div className={isFetching ? "predict-fading" : undefined}>
+          <div className="chart-box small">
+            <WeightBars weights={{ prior: data.weight_prior, data: data.weight_data }} />
+          </div>
+          <div className="chart-box">
+            <PredictRmseBars predict={data} />
+          </div>
+        </div>
       )}
     </section>
   );
