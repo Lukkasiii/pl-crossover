@@ -10,7 +10,8 @@ test.describe("layout", () => {
   test("no horizontal overflow at desktop width", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/");
-    await page.getByRole("button", { name: /play/i }).click();
+    // The page autoplays on load (see ReplayDashboard), so the table fills
+    // in on its own -- pause once it has, to freeze the DOM for measurement.
     await expect(page.locator("table tbody tr").first()).toBeVisible();
     await page.getByRole("button", { name: /pause/i }).click();
 
@@ -21,7 +22,6 @@ test.describe("layout", () => {
   test("no horizontal overflow at phone width", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/");
-    await page.getByRole("button", { name: /play/i }).click();
     await expect(page.locator("table tbody tr").first()).toBeVisible();
     await page.getByRole("button", { name: /pause/i }).click();
 
@@ -35,7 +35,6 @@ test.describe("layout", () => {
   test("no horizontal overflow when resizing after load", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/");
-    await page.getByRole("button", { name: /play/i }).click();
     await expect(page.locator("table tbody tr").first()).toBeVisible();
     await page.getByRole("button", { name: /pause/i }).click();
 

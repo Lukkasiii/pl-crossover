@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useReplay } from "../ws/useReplay";
 import { useUrlWeekSync } from "../ws/useUrlWeekSync";
 import { StandingsTable } from "./StandingsTable";
@@ -42,6 +42,35 @@ export function ReplayDashboard({
   const replay = useReplay(pairId);
   const ready = replay.status === "open" && replay.totalFrames > 0;
   useUrlWeekSync(ready, replay.latestRound?.games, replay.seekToWeek);
+
+  // The demo must not open empty. Autoplay once the stream is ready, but:
+  // - if the URL already names a week (a shared link), resume playback from
+  //   there instead of restarting from zero. useUrlWeekSync's own seek can
+  //   still be in flight (a real network round trip over the socket), so
+  //   wait for the round panel to actually reach that week rather than
+  //   racing a `play` command against it.
+  // - under prefers-reduced-motion, don't auto-advance through the season at
+  //   all -- just land on the first frame (unless a URL week already placed
+  //   us somewhere) so the page opens showing something instead of nothing.
+  //   Landing on the *last* frame would read better, but reaching it means
+  //   `seek`ing there, and seek fetches one round trip per frame over the
+  //   live socket (see useReplaySocket) -- fine for a user-initiated jump,
+  //   not something to fire unprompted on load.
+  const autoplayedRef = useRef(false);
+  useEffect(() => {
+    if (autoplayedRef.current || !ready || replay.seeking) return;
+
+    const weekParam = Number(new URLSearchParams(window.location.search).get("week"));
+    const hasUrlWeek = Number.isInteger(weekParam) && weekParam >= 1 && weekParam <= 38;
+    if (hasUrlWeek && replay.latestRound?.games !== weekParam) return; // still catching up to it
+
+    autoplayedRef.current = true;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      if (!hasUrlWeek) replay.seek(0);
+    } else {
+      replay.play();
+    }
+  }, [ready, replay]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
