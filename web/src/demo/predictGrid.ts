@@ -43,8 +43,18 @@ function loadGrid(): Promise<PredictGrid> {
 
 export async function lookupPredict(metric: Metric, games: number, priorWeight: number): Promise<PredictOut> {
   const grid = await loadGrid();
+  // Index arithmetic, not a search: both axes are contiguous step-1 ranges
+  // fixed by export_predict_grid.py. That coupling is invisible at the call
+  // site, so a value the grid never baked fails here rather than rendering
+  // an empty chart from an undefined cell.
   const gi = games - grid.games[0];
   const pi = priorWeight - grid.priorWeights[0];
+  if (grid.games[gi] !== games || grid.priorWeights[pi] !== priorWeight) {
+    throw new Error(
+      `demo grid has no cell for games=${games}, prior_weight=${priorWeight}. ` +
+        `Re-run scripts/export_predict_grid.py if the slider's range or step changed.`,
+    );
+  }
   return {
     metric,
     games,
