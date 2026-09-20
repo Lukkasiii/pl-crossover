@@ -1,0 +1,9 @@
+.venv
+__pycache__
+*.pyc
+.git
+.pytest_cache
+data/raw
+web/node_modules
+web/dist
+web/public/demo/*.json

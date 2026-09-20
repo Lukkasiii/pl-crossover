@@ -3,7 +3,8 @@ __pycache__/
 .venv/
 venv/
 data/raw/
-data/pl.db
+# data/pl.db is committed (<1MB, built+validated) so CI and the demo export
+# never depend on a live Understat fetch -- see README.
 node_modules/
 dist/
 .env
