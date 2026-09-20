@@ -15,6 +15,10 @@ dist-ssr
 # regenerate with `npm run generate:types`
 openapi.json
 
+# regenerate with `npm run demo:data` -- frozen from data/pl.db, ~16MB, not worth
+# carrying in git history when the CI/deploy job can rebuild it in under a second
+public/demo/*.json
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

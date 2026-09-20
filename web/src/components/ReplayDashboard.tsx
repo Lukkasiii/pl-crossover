@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useReplaySocket } from "../ws/useReplaySocket";
+import { useReplay } from "../ws/useReplay";
 import { useUrlWeekSync } from "../ws/useUrlWeekSync";
 import { StandingsTable } from "./StandingsTable";
 import { PlayerControls } from "./PlayerControls";
@@ -24,7 +24,7 @@ interface ReplayDashboardProps {
  * initial state instead of needing an imperative reset effect.
  */
 export function ReplayDashboard({ pairId, currentSeasonLabel, metric, onMetricChange }: ReplayDashboardProps) {
-  const replay = useReplaySocket(pairId);
+  const replay = useReplay(pairId);
   const ready = replay.status === "open" && replay.totalFrames > 0;
   useUrlWeekSync(ready, replay.latestRound?.games, replay.seekToWeek);
 

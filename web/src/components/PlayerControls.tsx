@@ -32,11 +32,22 @@ export function PlayerControls({
 }: PlayerControlsProps) {
   const canPlay = status === "open";
 
+  const togglePlay = () => {
+    if (playing) {
+      onPause();
+    } else if (finished) {
+      onSeek(0); // sent before play() below -- same socket, so order is preserved
+      onPlay();
+    } else {
+      onPlay();
+    }
+  };
+
   return (
     <div className="player-controls">
       <div className="player-controls-row">
         <span title={status}>{statusDot(status)}</span>
-        <button onClick={() => (playing ? onPause() : onPlay())} disabled={!canPlay}>
+        <button onClick={togglePlay} disabled={!canPlay}>
           {playing ? "⏸ Pause" : finished ? "↻ Replay" : "▶ Play"}
         </button>
         <label>
