@@ -23,6 +23,11 @@ jobs:
         working-directory: web
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+        working-directory: .
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
@@ -32,6 +37,14 @@ jobs:
       - run: npm run lint
       - run: npx tsc -b
       - run: npm run test
+      # src/api/schema.ts is generated from the FastAPI OpenAPI schema
+      # (openapi-typescript, see package.json's generate:types) and committed
+      # rather than built at deploy time, so the frontend can typecheck
+      # against the real contract without a server running. Regenerating and
+      # diffing here is what keeps a route change from silently drifting the
+      # committed types out of date.
+      - run: npm run generate:types
+      - run: git diff --exit-code -- src/api/schema.ts
 
   e2e:
     runs-on: ubuntu-latest

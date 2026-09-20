@@ -2,20 +2,21 @@ import { useMemo } from "react";
 import type { EChartsOption } from "echarts";
 import { EChart } from "./EChart";
 import { colors, fonts } from "../theme";
-import type { RoundFrame } from "../ws/types";
 
 interface WeightBarsProps {
-  latestRound: RoundFrame | null;
+  weights: { prior: number; data: number } | null;
 }
 
 /**
- * The socket sends raw precision weights (w_prior fixed at 5, w_data growing
- * with games played), not shares -- normalize here so the bars read as the
- * 60% -> 27% prior share the study reports.
+ * Callers send raw precision weights (w_prior fixed at 5 by default, w_data
+ * growing with games played), not shares -- normalize here so the bars read
+ * as the 60% -> 27% prior share the study reports. Shared between the live
+ * replay panel (weights off the round frame) and the tunable prediction
+ * panel (weights off a POST /api/predict response).
  */
-export function WeightBars({ latestRound }: WeightBarsProps) {
+export function WeightBars({ weights }: WeightBarsProps) {
   const option = useMemo<EChartsOption>(() => {
-    const w = latestRound?.weights;
+    const w = weights;
     const total = w ? w.prior + w.data : 1;
     const priorShare = w ? w.prior / total : 1;
     const dataShare = w ? w.data / total : 0;
@@ -54,7 +55,7 @@ export function WeightBars({ latestRound }: WeightBarsProps) {
         },
       ],
     };
-  }, [latestRound]);
+  }, [weights]);
 
   return <EChart option={option} />;
 }
