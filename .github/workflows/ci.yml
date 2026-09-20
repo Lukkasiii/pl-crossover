@@ -40,7 +40,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install -r requirements.txt
+      # playwright.config.ts's webServer runs .venv/bin/python (same command
+      # as local dev, CLAUDE.md's Setup section) rather than branching on
+      # environment, so CI needs the venv at the same repo-root path.
+      - run: python -m venv .venv && .venv/bin/pip install -r requirements.txt
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
