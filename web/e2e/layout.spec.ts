@@ -28,4 +28,26 @@ test.describe("layout", () => {
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     expect(overflow).toBeLessThanOrEqual(0);
   });
+
+  // Covers the resize path, not just load-at-size: an ECharts canvas gets an
+  // explicit pixel width at init and only shrinks back if its ResizeObserver
+  // callback (chart.resize()) actually fires and completes before we measure.
+  test("no horizontal overflow when resizing after load", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/");
+    await page.getByRole("button", { name: /play/i }).click();
+    await expect(page.locator("table tbody tr").first()).toBeVisible();
+    await page.getByRole("button", { name: /pause/i }).click();
+
+    const overflowAt = async () =>
+      page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+
+    expect(await overflowAt()).toBeLessThanOrEqual(0);
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect.poll(overflowAt).toBeLessThanOrEqual(0);
+
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await expect.poll(overflowAt).toBeLessThanOrEqual(0);
+  });
 });
