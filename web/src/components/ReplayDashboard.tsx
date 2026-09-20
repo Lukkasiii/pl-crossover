@@ -21,6 +21,9 @@ interface ReplayDashboardProps {
   currentSeasonLabel: string;
   metric: Metric;
   onMetricChange: (metric: Metric) => void;
+  priorWeight: number;
+  onPriorWeightChange: (priorWeight: number) => void;
+  obsVariance: number;
 }
 
 /**
@@ -28,7 +31,15 @@ interface ReplayDashboardProps {
  * remounts this component and every hook inside it starts from a clean
  * initial state instead of needing an imperative reset effect.
  */
-export function ReplayDashboard({ pairId, currentSeasonLabel, metric, onMetricChange }: ReplayDashboardProps) {
+export function ReplayDashboard({
+  pairId,
+  currentSeasonLabel,
+  metric,
+  onMetricChange,
+  priorWeight,
+  onPriorWeightChange,
+  obsVariance,
+}: ReplayDashboardProps) {
   const replay = useReplay(pairId);
   const ready = replay.status === "open" && replay.totalFrames > 0;
   useUrlWeekSync(ready, replay.latestRound?.games, replay.seekToWeek);
@@ -102,7 +113,13 @@ export function ReplayDashboard({ pairId, currentSeasonLabel, metric, onMetricCh
             </div>
           </section>
 
-          <PredictionTuner metric={metric} games={replay.latestRound?.games ?? 1} />
+          <PredictionTuner
+            metric={metric}
+            games={replay.latestRound?.games ?? 1}
+            priorWeight={priorWeight}
+            onPriorWeightChange={onPriorWeightChange}
+            obsVariance={obsVariance}
+          />
         </div>
       </div>
     </main>

@@ -1,18 +1,19 @@
-import { useState } from "react";
 import { Slider } from "./ui/Slider";
 import { WeightBars } from "../charts/WeightBars";
 import { PredictRmseBars } from "../charts/PredictRmseBars";
-import { usePredict } from "../api/usePredict";
+import { usePredict, DEFAULT_OBS_VARIANCE } from "../api/usePredict";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import type { Metric } from "../ws/types";
 
-const DEFAULT_PRIOR_WEIGHT = 5;
 const MIN_PRIOR_WEIGHT = 1;
 const MAX_PRIOR_WEIGHT = 20;
 
 interface PredictionTunerProps {
   metric: Metric;
   games: number;
+  priorWeight: number;
+  onPriorWeightChange: (priorWeight: number) => void;
+  obsVariance?: number;
 }
 
 /**
@@ -22,11 +23,19 @@ interface PredictionTunerProps {
  * currently on. usePredict keys its TanStack Query cache by every input the
  * response depends on, so a stale request finishing late can't clobber a
  * newer one and dragging back to an already-seen value is a cache hit.
+ *
+ * `priorWeight` is controlled by App (not local state) so a saved scenario
+ * can restore it -- the slider is otherwise the only thing that ever sets it.
  */
-export function PredictionTuner({ metric, games }: PredictionTunerProps) {
-  const [priorWeight, setPriorWeight] = useState(DEFAULT_PRIOR_WEIGHT);
+export function PredictionTuner({
+  metric,
+  games,
+  priorWeight,
+  onPriorWeightChange,
+  obsVariance = DEFAULT_OBS_VARIANCE,
+}: PredictionTunerProps) {
   const debouncedPriorWeight = useDebouncedValue(priorWeight, 300);
-  const { data, isFetching, isLoading, error } = usePredict(metric, games, debouncedPriorWeight);
+  const { data, isFetching, isLoading, error } = usePredict(metric, games, debouncedPriorWeight, obsVariance);
 
   const sigmaPrior = Math.sqrt(1 / priorWeight);
 
@@ -44,8 +53,8 @@ export function PredictionTuner({ metric, games }: PredictionTunerProps) {
         min={MIN_PRIOR_WEIGHT}
         max={MAX_PRIOR_WEIGHT}
         value={priorWeight}
-        onValueChange={setPriorWeight}
-        onValueCommit={setPriorWeight}
+        onValueChange={onPriorWeightChange}
+        onValueCommit={onPriorWeightChange}
       />
 
       {error && <p className="predict-note error">failed to recompute the posterior</p>}
