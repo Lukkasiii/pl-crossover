@@ -76,7 +76,9 @@ function statusDot(status: ConnectionStatus): string {
     case "open":
       return "🟢 live";
     case "connecting":
-      return "🟡 connecting";
+      return "🟡 connecting…";
+    case "reconnecting":
+      return "🟡 reconnecting…";
     default:
       return "🔴 offline";
   }
