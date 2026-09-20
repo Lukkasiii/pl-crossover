@@ -11,13 +11,15 @@ const easeOutCubic = (t: number) => 1 - (1 - t) ** 3;
  * owning refs itself, so the caller keeps its own ref map.
  *
  * The "Play" phase is driven by requestAnimationFrame rather than a CSS
- * transition. A CSS-transitioned transform on a <tr> read back via a
- * forced-reflow getBoundingClientRect (needed to interrupt one reorder with
- * the next) compounds into garbage values within a few rapid re-renders --
- * confirmed empirically, matches `<tr>` being outside the elements the
- * transforms spec guarantees behave predictably on. Setting an exact
- * translateY every frame from our own arithmetic sidesteps it entirely: we
- * only ever read a position back after explicitly resetting to `none`.
+ * transition, because a reorder here can be interrupted by the next one a
+ * few frames later. getBoundingClientRect() during a running transition
+ * reports the *interpolated* position, not the layout position, so a delta
+ * measured mid-flight is measured against a moving target and compounds
+ * into garbage within a few rapid re-renders -- confirmed empirically.
+ * Resetting to `transform: none` before measuring is the standard way out,
+ * but under a transition that reset animates too, so the read is still a
+ * mid-flight value. Driving the offset ourselves avoids the problem at the
+ * root: a position is only ever read back after an instantaneous reset.
  *
  * No dependency array on the main effect: this needs to run after *every*
  * commit, comparing against the positions captured after the *previous*
