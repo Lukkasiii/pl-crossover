@@ -5,6 +5,9 @@ venv/
 data/raw/
 # data/pl.db is committed (<1MB, built+validated) so CI and the demo export
 # never depend on a live Understat fetch -- see README.
+# .e2e-pl.db is a disposable copy of it (web/playwright.config.ts) so the
+# auth e2e spec's writes never touch the tracked file.
+data/.e2e-pl.db
 node_modules/
 dist/
 .env
