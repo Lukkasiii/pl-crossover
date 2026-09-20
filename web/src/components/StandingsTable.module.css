@@ -25,6 +25,10 @@
   border-left: 3px solid transparent;
 }
 
+.table tbody tr.hovered {
+  background: var(--panel);
+}
+
 .excluded {
   opacity: 0.45;
 }
@@ -61,4 +65,9 @@
   height: 10px;
   border-radius: 2px;
   display: inline-block;
+}
+
+.excludedSwatch {
+  background: var(--text-secondary);
+  opacity: 0.45;
 }
