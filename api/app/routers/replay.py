@@ -14,7 +14,7 @@ from ..replay import get_frames
 
 router = APIRouter(tags=["replay"])
 
-BASE_FRAME_INTERVAL = 0.05  # seconds per frame at 1x
+BASE_FRAME_INTERVAL = 0.2  # seconds per frame at 1x -- a full season runs ~80-90s
 MIN_SPEED, MAX_SPEED = 1.0, 50.0
 
 

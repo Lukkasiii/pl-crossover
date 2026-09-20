@@ -10,6 +10,7 @@ function App() {
   const [metric, setMetric] = useState<Metric>("points");
 
   const activePairId = pairId ?? pairs?.[0]?.id ?? null;
+  const activePair = pairs?.find((p) => p.id === activePairId) ?? null;
 
   return (
     <div className="app">
@@ -36,8 +37,14 @@ function App() {
         {seasonsError && <span className="error">{seasonsError}</span>}
       </div>
 
-      {activePairId !== null && (
-        <ReplayDashboard key={activePairId} pairId={activePairId} metric={metric} onMetricChange={setMetric} />
+      {activePairId !== null && activePair !== null && (
+        <ReplayDashboard
+          key={activePairId}
+          pairId={activePairId}
+          currentSeasonLabel={activePair.current_season}
+          metric={metric}
+          onMetricChange={setMetric}
+        />
       )}
     </div>
   );

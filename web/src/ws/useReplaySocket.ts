@@ -1,81 +1,97 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { WS_BASE_URL } from "../api/client";
-import type { ReplayCommand, ReplayFrame, RoundFrame, TableRow } from "./types";
+import { FrameCache } from "./frameCache";
+import type { ReplayCommand, ReplayFrame } from "./types";
 
 export type ConnectionStatus = "connecting" | "open" | "closed" | "error";
 
 interface ReplayState {
   status: ConnectionStatus;
   totalFrames: number;
-  seq: number;
+  /** -1 before the first frame has been shown */
+  viewSeq: number;
   playing: boolean;
   speed: number;
   finished: boolean;
   error: string | null;
-  table: TableRow[] | null;
-  /** indexed by games - 1; holes only before that round has streamed in */
-  rounds: (RoundFrame | undefined)[];
+  /** true while a seek is scanning frames the client hasn't cached yet */
+  seeking: boolean;
 }
 
 const initialState: ReplayState = {
   status: "connecting",
   totalFrames: 0,
-  seq: 0,
+  viewSeq: -1,
   playing: false,
   speed: 1,
   finished: false,
   error: null,
-  table: null,
-  rounds: [],
+  seeking: false,
 };
 
 /**
- * Owns the /ws/replay connection for one season pair. Match and round
- * frames arrive far faster than the UI needs to paint at high replay
- * speed (up to 50x => a frame every ~1ms), so incoming frames are
- * buffered in refs and only committed to React state once per
- * animation frame -- the render rate stays capped at the display's
- * refresh rate regardless of how fast the socket delivers data.
+ * Owns the /ws/replay connection for one season pair.
+ *
+ * Every match/round frame the server has ever sent is kept in a FrameCache
+ * (see frameCache.ts). React state only tracks the playhead (viewSeq) and
+ * connection flags; the visible table and round history come from
+ * useSyncExternalStore reading that cache. Two things fall out of that
+ * split for free:
+ *
+ * - during normal playback, one cache write per message plus one state
+ *   commit per animation frame keeps the render rate capped however fast
+ *   the socket streams (up to 50x = a frame every ~4ms)
+ * - seeking backward to an already-seen seq is a pure cache read, no
+ *   network round trip
+ *
+ * Seeking forward past what has streamed in has to fetch the gap first
+ * (`seek` fetches frame-by-frame in order) because the round panels need
+ * every round frame up to that point, not just the one at the target.
  */
 export function useReplaySocket(pairId: number) {
   const [state, setState] = useState<ReplayState>(initialState);
   const wsRef = useRef<WebSocket | null>(null);
-  const pendingTable = useRef<TableRow[] | null>(null);
-  const pendingRounds = useRef<RoundFrame[]>([]);
-  const pendingSeq = useRef<number | null>(null);
+
+  const [cache] = useState(() => new FrameCache());
+
+  const resolverQueueRef = useRef<((frame: ReplayFrame | null) => void)[]>([]);
+  const isSeekingRef = useRef(false);
+
+  const pendingSeqRef = useRef<number | null>(null);
   const rafRef = useRef<number | null>(null);
 
   const flush = useCallback(() => {
     rafRef.current = null;
-    const table = pendingTable.current;
-    const rounds = pendingRounds.current;
-    const seq = pendingSeq.current;
-    if (table === null && rounds.length === 0 && seq === null) return;
-
-    pendingTable.current = null;
-    pendingRounds.current = [];
-    pendingSeq.current = null;
-
-    setState((prev) => {
-      let nextRounds = prev.rounds;
-      if (rounds.length > 0) {
-        nextRounds = [...prev.rounds];
-        for (const r of rounds) nextRounds[r.games - 1] = r;
-      }
-      return {
-        ...prev,
-        table: table ?? prev.table,
-        rounds: nextRounds,
-        seq: seq ?? prev.seq,
-      };
-    });
+    const seq = pendingSeqRef.current;
+    if (seq === null) return;
+    pendingSeqRef.current = null;
+    setState((s) => (s.viewSeq === seq ? s : { ...s, viewSeq: seq }));
   }, []);
 
   const scheduleFlush = useCallback(() => {
     if (rafRef.current === null) rafRef.current = requestAnimationFrame(flush);
   }, [flush]);
 
+  const send = useCallback((cmd: ReplayCommand) => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) wsRef.current.send(JSON.stringify(cmd));
+  }, []);
+
+  /** Sends a command and resolves with the one frame that answers it; null if the socket wasn't open to send on. */
+  const requestFrame = useCallback((cmd: ReplayCommand) => {
+    return new Promise<ReplayFrame | null>((resolve) => {
+      if (wsRef.current?.readyState !== WebSocket.OPEN) {
+        resolve(null);
+        return;
+      }
+      resolverQueueRef.current.push(resolve);
+      wsRef.current.send(JSON.stringify(cmd));
+    });
+  }, []);
+
   useEffect(() => {
+    resolverQueueRef.current = [];
+    pendingSeqRef.current = null;
+
     const ws = new WebSocket(`${WS_BASE_URL}/ws/replay?pair=${pairId}`);
     wsRef.current = ws;
 
@@ -84,18 +100,23 @@ export function useReplaySocket(pairId: number) {
     ws.onerror = () => setState((s) => ({ ...s, status: "error" }));
     ws.onmessage = (ev) => {
       const frame: ReplayFrame = JSON.parse(ev.data);
+
+      // A pending seek's answer is consumed here instead of the normal
+      // streaming path -- the caller is awaiting it directly.
+      if (resolverQueueRef.current.length > 0 && (frame.type === "match" || frame.type === "round")) {
+        cache.add(frame);
+        resolverQueueRef.current.shift()!(frame);
+        return;
+      }
+
       switch (frame.type) {
         case "init":
           setState((s) => ({ ...s, totalFrames: frame.total_frames }));
           break;
         case "match":
-          pendingTable.current = frame.table;
-          pendingSeq.current = frame.seq;
-          scheduleFlush();
-          break;
         case "round":
-          pendingRounds.current.push(frame);
-          pendingSeq.current = frame.seq;
+          cache.add(frame);
+          pendingSeqRef.current = frame.seq;
           scheduleFlush();
           break;
         case "done":
@@ -112,21 +133,15 @@ export function useReplaySocket(pairId: number) {
       wsRef.current = null;
       if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
     };
-  }, [pairId, scheduleFlush]);
-
-  const send = useCallback((cmd: ReplayCommand) => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) wsRef.current.send(JSON.stringify(cmd));
-  }, []);
+  }, [pairId, cache, scheduleFlush]);
 
   const play = useCallback(
     (speed?: number) => {
-      setState((s) => {
-        const nextSpeed = speed ?? s.speed;
-        send({ cmd: "play", speed: nextSpeed });
-        return { ...s, playing: true, speed: nextSpeed, finished: false };
-      });
+      const nextSpeed = speed ?? state.speed;
+      send({ cmd: "play", speed: nextSpeed });
+      setState((s) => ({ ...s, playing: true, speed: nextSpeed, finished: false }));
     },
-    [send],
+    [send, state.speed],
   );
 
   const pause = useCallback(() => {
@@ -135,14 +150,66 @@ export function useReplaySocket(pairId: number) {
   }, [send]);
 
   const seek = useCallback(
-    (seq: number) => {
-      send({ cmd: "seek", seq });
+    async (targetSeq: number) => {
+      if (isSeekingRef.current) return;
+      const target = Math.max(0, Math.min(targetSeq, state.totalFrames - 1));
+      if (state.playing) pause();
+
+      isSeekingRef.current = true;
+      if (target > cache.cachedThrough) {
+        setState((s) => ({ ...s, seeking: true }));
+        for (let i = cache.cachedThrough + 1; i <= target; i++) {
+          const frame = await requestFrame({ cmd: "seek", seq: i });
+          if (frame === null) break;
+        }
+        setState((s) => ({ ...s, seeking: false }));
+      } else {
+        // Already cached -- just tell the server so its own cursor agrees, for the next play().
+        send({ cmd: "seek", seq: target });
+      }
+      isSeekingRef.current = false;
+      setState((s) => ({ ...s, viewSeq: target, finished: target >= s.totalFrames - 1 }));
     },
-    [send],
+    [state.playing, state.totalFrames, cache, pause, requestFrame, send],
   );
 
-  const roundsSoFar = state.rounds.filter((r): r is RoundFrame => r !== undefined);
+  /** For the `?week=` deep link: scan forward until that round has streamed in, without rendering every step. */
+  const seekToWeek = useCallback(
+    async (week: number) => {
+      if (isSeekingRef.current || week <= 0) return;
+      const cached = cache.roundAtWeek(week);
+      if (cached) {
+        setState((s) => ({ ...s, viewSeq: cached.seq }));
+        return;
+      }
+
+      isSeekingRef.current = true;
+      setState((s) => ({ ...s, seeking: true }));
+      let found: number | null = null;
+      for (let i = cache.cachedThrough + 1; found === null && i < state.totalFrames; i++) {
+        const frame = await requestFrame({ cmd: "seek", seq: i });
+        if (frame === null) break;
+        if (frame.type === "round" && frame.games === week) found = frame.seq;
+      }
+      isSeekingRef.current = false;
+      setState((s) => ({ ...s, seeking: false, viewSeq: found ?? s.viewSeq }));
+    },
+    [state.totalFrames, cache, requestFrame],
+  );
+
+  const getSnapshot = useCallback(() => cache.getSnapshot(state.viewSeq), [cache, state.viewSeq]);
+  const { table, roundsSoFar } = useSyncExternalStore(cache.subscribe, getSnapshot);
   const latestRound = roundsSoFar.length > 0 ? roundsSoFar[roundsSoFar.length - 1] : null;
 
-  return { ...state, roundsSoFar, latestRound, play, pause, seek };
+  return {
+    ...state,
+    seq: state.viewSeq,
+    table,
+    roundsSoFar,
+    latestRound,
+    play,
+    pause,
+    seek,
+    seekToWeek,
+  };
 }
