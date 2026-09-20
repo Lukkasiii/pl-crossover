@@ -3,13 +3,17 @@ import { useReplay } from "../ws/useReplay";
 import { useUrlWeekSync } from "../ws/useUrlWeekSync";
 import { StandingsTable } from "./StandingsTable";
 import { PlayerControls } from "./PlayerControls";
+import { Select } from "./ui/Select";
 import { RmseChart } from "../charts/RmseChart";
 import { MetricsBarChart } from "../charts/MetricsBarChart";
 import { WeightBars } from "../charts/WeightBars";
 import { METRICS, type Metric } from "../ws/types";
 
 const METRIC_LABELS: Record<Metric, string> = { xg: "xG", xgd: "xGD", gd: "GD", points: "Points" };
-const EDITABLE_TAGS = new Set(["INPUT", "SELECT", "TEXTAREA"]);
+// Native form tags plus the interactive roles Radix's Select trigger
+// (a <button>) and Slider thumb (a <span role="slider">) render as --
+// their own key handling should win over the page-level shortcuts below.
+const EDITABLE_SELECTOR = 'input, select, textarea, button, [role="slider"], [role="combobox"]';
 
 interface ReplayDashboardProps {
   pairId: number;
@@ -30,7 +34,7 @@ export function ReplayDashboard({ pairId, currentSeasonLabel, metric, onMetricCh
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLElement && EDITABLE_TAGS.has(e.target.tagName)) return;
+      if (e.target instanceof HTMLElement && e.target.closest(EDITABLE_SELECTOR)) return;
       if (e.code === "Space") {
         e.preventDefault();
         if (replay.playing) replay.pause();
@@ -71,13 +75,12 @@ export function ReplayDashboard({ pairId, currentSeasonLabel, metric, onMetricCh
           <section className="panel">
             <div className="panel-header">
               <h2>RMSE curve</h2>
-              <select value={metric} onChange={(e) => onMetricChange(e.target.value as Metric)}>
-                {METRICS.map((m) => (
-                  <option key={m} value={m}>
-                    {METRIC_LABELS[m]}
-                  </option>
-                ))}
-              </select>
+              <Select
+                aria-label="metric"
+                value={metric}
+                onValueChange={(v) => onMetricChange(v as Metric)}
+                options={METRICS.map((m) => ({ value: m, label: METRIC_LABELS[m] }))}
+              />
             </div>
             <div className="chart-box">
               <RmseChart metric={metric} roundsSoFar={replay.roundsSoFar} />

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useSeasons } from "./api/useSeasons";
 import { ReplayDashboard } from "./components/ReplayDashboard";
+import { Select } from "./components/ui/Select";
 import type { Metric } from "./ws/types";
 import "./App.css";
 
@@ -20,20 +21,13 @@ function App() {
       </header>
 
       <div className="toolbar">
-        <label>
-          season pair{" "}
-          <select
-            value={activePairId ?? ""}
-            onChange={(e) => setPairId(Number(e.target.value))}
-            disabled={!pairs}
-          >
-            {pairs?.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.label}
-              </option>
-            ))}
-          </select>
-        </label>
+        <Select
+          aria-label="season pair"
+          value={String(activePairId ?? "")}
+          onValueChange={(v) => setPairId(Number(v))}
+          disabled={!pairs}
+          options={pairs?.map((p) => ({ value: String(p.id), label: p.label })) ?? []}
+        />
         {seasonsError && <span className="error">{seasonsError}</span>}
       </div>
 

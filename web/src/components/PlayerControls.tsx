@@ -1,4 +1,5 @@
 import { Timeline } from "./Timeline";
+import { Select } from "./ui/Select";
 import type { ConnectionStatus } from "../ws/useReplaySocket";
 
 const SPEEDS = [1, 5, 10, 25, 50];
@@ -50,24 +51,17 @@ export function PlayerControls({
         <button onClick={togglePlay} disabled={!canPlay}>
           {playing ? "⏸ Pause" : finished ? "↻ Replay" : "▶ Play"}
         </button>
-        <label>
-          speed{" "}
-          <select
-            value={speed}
-            onChange={(e) => {
-              const next = Number(e.target.value);
-              onSpeedChange(next);
-              if (playing) onPlay(next);
-            }}
-          >
-            {SPEEDS.map((s) => (
-              <option key={s} value={s}>
-                {s}x
-              </option>
-            ))}
-          </select>
-        </label>
-        <span>
+        <Select
+          aria-label="replay speed"
+          value={String(speed)}
+          onValueChange={(v) => {
+            const next = Number(v);
+            onSpeedChange(next);
+            if (playing) onPlay(next);
+          }}
+          options={SPEEDS.map((s) => ({ value: String(s), label: `${s}x` }))}
+        />
+        <span className="frame-count">
           frame {Math.max(seq, 0)} / {totalFrames || "?"}
           {seeking && " (seeking…)"}
         </span>

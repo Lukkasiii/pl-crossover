@@ -7,10 +7,10 @@ export interface ZoneBand {
 }
 
 const CONVENTIONAL_BANDS: ZoneBand[] = [
-  { key: "cl", label: "Champions League", from: 1, to: 4, color: "#1d4ed8" },
-  { key: "el", label: "Europa League", from: 5, to: 5, color: "#f97316" },
-  { key: "ecl", label: "Conference League", from: 6, to: 6, color: "#16a34a" },
-  { key: "rel", label: "Relegation", from: 18, to: 20, color: "#dc2626" },
+  { key: "cl", label: "Champions League", from: 1, to: 4, color: "var(--indigo)" },
+  { key: "el", label: "Europa League", from: 5, to: 5, color: "var(--orange)" },
+  { key: "ecl", label: "Conference League", from: 6, to: 6, color: "var(--cyan)" },
+  { key: "rel", label: "Relegation", from: 18, to: 20, color: "var(--relegation)" },
 ];
 
 /**
@@ -23,10 +23,10 @@ const CONVENTIONAL_BANDS: ZoneBand[] = [
  */
 const SEASON_OVERRIDES: Record<string, ZoneBand[]> = {
   "2024/25": [
-    { key: "cl", label: "Champions League", from: 1, to: 5, color: "#1d4ed8" },
-    { key: "el", label: "Europa League", from: 6, to: 6, color: "#f97316" },
-    { key: "ecl", label: "Conference League", from: 7, to: 7, color: "#16a34a" },
-    { key: "rel", label: "Relegation", from: 18, to: 20, color: "#dc2626" },
+    { key: "cl", label: "Champions League", from: 1, to: 5, color: "var(--indigo)" },
+    { key: "el", label: "Europa League", from: 6, to: 6, color: "var(--orange)" },
+    { key: "ecl", label: "Conference League", from: 7, to: 7, color: "var(--cyan)" },
+    { key: "rel", label: "Relegation", from: 18, to: 20, color: "var(--relegation)" },
   ],
 };
 

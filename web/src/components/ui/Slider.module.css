@@ -1,0 +1,40 @@
+.root {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 20px;
+  touch-action: none;
+}
+
+.root[data-disabled] {
+  opacity: 0.5;
+}
+
+.track {
+  position: relative;
+  flex-grow: 1;
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+}
+
+.range {
+  position: absolute;
+  height: 100%;
+  background: var(--green);
+  border-radius: 2px;
+}
+
+.thumb {
+  display: block;
+  width: 14px;
+  height: 14px;
+  background: var(--text);
+  border-radius: 50%;
+}
+
+.thumb:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}

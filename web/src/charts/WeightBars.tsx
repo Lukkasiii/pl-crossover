@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import type { EChartsOption } from "echarts";
 import { EChart } from "./EChart";
+import { colors, fonts } from "../theme";
 import type { RoundFrame } from "../ws/types";
 
 interface WeightBarsProps {
@@ -30,16 +31,26 @@ export function WeightBars({ latestRound }: WeightBarsProps) {
           type: "bar",
           stack: "weight",
           data: [priorShare],
-          itemStyle: { color: "#ef4444" },
-          label: { show: true, formatter: () => `${(priorShare * 100).toFixed(0)}%`, position: "insideLeft" },
+          itemStyle: { color: colors.red },
+          label: {
+            show: true,
+            formatter: () => `${(priorShare * 100).toFixed(0)}%`,
+            position: "insideLeft",
+            fontFamily: fonts.mono,
+          },
         },
         {
           name: "Current season (data)",
           type: "bar",
           stack: "weight",
           data: [dataShare],
-          itemStyle: { color: "#3b82f6" },
-          label: { show: true, formatter: () => `${(dataShare * 100).toFixed(0)}%`, position: "insideRight" },
+          itemStyle: { color: colors.blue },
+          label: {
+            show: true,
+            formatter: () => `${(dataShare * 100).toFixed(0)}%`,
+            position: "insideRight",
+            fontFamily: fonts.mono,
+          },
         },
       ],
     };
