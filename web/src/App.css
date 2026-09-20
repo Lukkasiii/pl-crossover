@@ -31,7 +31,11 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  margin-bottom: 16px;
+  margin-top: 16px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
 }
 
 .player-controls-row {
@@ -48,7 +52,7 @@
 
 .layout {
   display: grid;
-  grid-template-columns: 1.2fr 1fr;
+  grid-template-columns: 1.6fr 1fr;
   gap: 16px;
   align-items: start;
 }
@@ -72,7 +76,8 @@
   justify-content: space-between;
 }
 
-.side-panels {
+.charts-column,
+.side-column {
   display: flex;
   flex-direction: column;
   gap: 16px;
