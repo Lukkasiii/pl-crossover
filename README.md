@@ -117,6 +117,19 @@ per frame, which is the actual load the render-decoupling below exists for.
 
 ## Auth and saved scenarios
 
+`AuthPanel` and `ScenariosPanel` return nothing under `VITE_DEMO_MODE` — the
+static demo has no backend to authenticate against — so this is the one
+feature the deployed demo can never show. The GIF below is the real round
+trip instead: signing in as the seeded demo account, tuning σ, saving it as a
+named scenario, reloading (the access token is gone, the session survives on
+the refresh cookie), loading the scenario back, renaming, deleting, and
+signing out. It's `e2e/auth-scenarios.spec.ts` itself, recorded —
+`RECORD_DEMO=1 npx playwright test e2e/auth-scenarios.spec.ts` inserts a few
+beats between steps so the flow is watchable; the assertions are identical to
+a normal run.
+
+![Recording of signing in, tuning sigma, saving/loading/renaming/deleting a scenario, and signing out](design/auth-scenarios.gif)
+
 **The dashboard stays public.** Replay, charts and the σ tuner all work
 signed out. Signing in unlocks exactly one thing: naming and saving the
 current `(metric, method, prior_weight, obs_variance)` so it can be reloaded
@@ -152,7 +165,18 @@ dead plumbing.
 
 ## Frontend decisions
 
-Each entry is problem → solution → number, in the order they were built.
+### Design: mockup vs. built
+
+The closest thing a solo project has to "collaborate with designers" is
+mocking it up first and building to that. Left, the Figma-first mockup;
+right, the built dashboard.
+
+<table>
+<tr><td><img src="design/mockup.png" alt="Figma mockup of the dashboard" width="420"></td>
+<td><img src="design/screenshot.png" alt="The built dashboard: standings, RMSE curve with the crossover marker, and the tunable prior weight panel" width="420"></td></tr>
+</table>
+
+Each entry below is problem → solution → number, in the order they were built.
 
 **Problem: at 50x, a naive `setState` per WebSocket message drops frames.**
 `useReplaySocket` mutates a `FrameCache` (plain class, outside React) on every
@@ -187,6 +211,29 @@ scans forward (silently, via the same seek machinery) until that round has
 streamed in, then jumps. `sigma` isn't in the URL yet — no control sets it
 until Feature 2 (tunable σ_prior) exists, and an inert query param is worse
 than none.
+
+**Problem: the crossover badge appeared twice** — glued onto the "Bayesian
+weight" heading and, separately, as a marker on the RMSE curve — reading as a
+stray fragment in the first spot. The RMSE curve already shows *where* it
+happens (a labeled line at the exact game count); the heading text was
+redundant with strictly less information, so it's gone. One badge, one home.
+
+**Problem: the weight bars were drawn in two places** — a static panel tied to
+the replay's fixed default prior weight, and again inside "Tune the prior"
+tied to whatever the slider was set to — identical at the default and only
+diverging once dragged. The static panel is gone; "Tune the prior" is the only
+weight-bars panel now, and since it re-fetches on every round the replay
+streams in (not just on slider drag), it still animates through the season
+exactly like the one it replaced, whenever the slider is left at its default.
+
+**Problem: two standings rows crossing during a FLIP swap were unreadable for
+~100ms** — `<tr>` had no explicit background, so mid-animation the two rows'
+text painted directly over each other. `transform` already gives each row its
+own stacking context (so the later-DOM-order row already paints on top, no
+`z-index` needed); it just had nothing opaque to occlude with. Giving every
+row `background: var(--panel)` — the same color the table already sat on, so
+no visible change outside a swap — turns that overlap into a clean pass
+instead of a blend.
 
 **Bundle size:** 791KB JS / 261KB gzip after tree-shaking ECharts to just the
 line/bar charts and components this app uses (`echarts/core` + named imports,
@@ -331,6 +378,10 @@ data/
   pl.db                       built database (committed, < 1MB)
   excel/                      the original coursework workbooks
   raw/                        fetched match data (gitignored)
+design/
+  mockup.png                  Figma-first mockup, next to the built result
+  screenshot.png               the built result
+  auth-scenarios.gif           e2e/auth-scenarios.spec.ts, recorded
 ```
 
 ## Sources

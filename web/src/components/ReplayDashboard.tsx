@@ -6,7 +6,6 @@ import { PlayerControls } from "./PlayerControls";
 import { Select } from "./ui/Select";
 import { RmseChart } from "../charts/RmseChart";
 import { MetricsBarChart } from "../charts/MetricsBarChart";
-import { WeightBars } from "../charts/WeightBars";
 import { PredictionTuner } from "./PredictionTuner";
 import { METRICS, type Metric } from "../ws/types";
 
@@ -103,13 +102,6 @@ export function ReplayDashboard({
             <h2>Current RMSE by metric</h2>
             <div className="chart-box">
               <MetricsBarChart latestRound={replay.latestRound} />
-            </div>
-          </section>
-
-          <section className="panel">
-            <h2>Bayesian weight {replay.latestRound?.metrics[metric].crossover_passed && "⚡ CROSSOVER"}</h2>
-            <div className="chart-box small">
-              <WeightBars weights={replay.latestRound?.weights ?? null} />
             </div>
           </section>
 

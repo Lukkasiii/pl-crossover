@@ -21,8 +21,14 @@
   font-family: var(--font-body);
 }
 
+/* An explicit, opaque background (not "inherit the panel's") matters during
+   a FLIP swap: `transform` gives every row its own stacking context, so the
+   later-DOM-order row already paints over the earlier one -- but only an
+   opaque background makes that an occlusion instead of both rows' text
+   blending together while they cross paths mid-animation. */
 .table tbody tr {
   border-left: 3px solid transparent;
+  background: var(--panel);
 }
 
 .table tbody tr.hovered {

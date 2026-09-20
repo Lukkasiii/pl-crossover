@@ -1,12 +1,31 @@
 import { execFileSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 const DEMO_EMAIL = "demo@plcrossover.dev";
 const DEMO_PASSWORD = "crossover-demo";
 
+// The assertions above already prove each step landed the instant it can;
+// these beats only exist so a human watching the recording can tell one step
+// apart from the next. Set only when producing the README's demo GIF
+// (RECORD_DEMO=1 npx playwright test e2e/auth-scenarios.spec.ts) -- plain
+// `npm run test:e2e` stays fast.
+const RECORD_DEMO = process.env.RECORD_DEMO === "1";
+async function beat(page: Page) {
+  if (RECORD_DEMO) await page.waitForTimeout(700);
+}
+
 const REPO_ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
+
+// The auth UI has no other window into it: AuthPanel and ScenariosPanel
+// return null under DEMO_MODE (no backend behind the static demo build), so
+// the deployed demo can never show them. This is the one place that can --
+// recording this spec is how the README's auth section gets a real GIF of
+// it working instead of the feature being invisible everywhere but a local
+// checkout. A smaller viewport keeps the source video (and the GIF made
+// from it) down in size without cropping any panel out of frame.
+test.use({ video: "on", viewport: { width: 960, height: 720 } });
 
 test.beforeAll(() => {
   // data/pl.db ships with no account rows (a6fec41) -- a fresh checkout has
@@ -28,6 +47,7 @@ test("auth and saved scenarios round trip", async ({ page }) => {
   // --- logged out: the dashboard itself has no login wall -----------------
   await page.getByRole("button", { name: /play/i }).click();
   await expect(page.locator("table tbody tr").first()).toBeVisible();
+  await beat(page);
   await page.getByRole("button", { name: /pause/i }).click();
 
   const sigmaSlider = page.getByRole("slider", { name: "prior weight" });
@@ -36,6 +56,7 @@ test("auth and saved scenarios round trip", async ({ page }) => {
   await expect(page.getByText(/w_prior = 12\b/)).toBeVisible();
 
   await expect(page.getByRole("heading", { name: "Saved scenarios" })).toHaveCount(0);
+  await beat(page);
 
   // --- sign in as the seeded demo account ----------------------------------
   // Before the popover opens, "Sign in" only matches this one button --
@@ -45,17 +66,21 @@ test("auth and saved scenarios round trip", async ({ page }) => {
   const authDialog = page.getByRole("dialog", { name: "Sign in" });
   await authDialog.getByLabel("Email").fill(DEMO_EMAIL);
   await authDialog.getByLabel("Password").fill(DEMO_PASSWORD);
+  await beat(page);
   await authDialog.getByRole("button", { name: "Sign in" }).click();
 
   await expect(authDialog).toBeHidden();
   await expect(page.getByText(DEMO_EMAIL)).toBeVisible();
+  await beat(page);
 
   // --- save the current sigma as a named scenario --------------------------
   await page.getByLabel("scenario name").fill("sigma twelve");
+  await beat(page);
   await page.getByRole("button", { name: "Save current" }).click();
 
   const savedRow = page.getByRole("listitem").filter({ hasText: "sigma twelve" });
   await expect(savedRow).toContainText("w=12");
+  await beat(page);
 
   // --- reload: the access token is gone, the refresh cookie survives -------
   await page.reload();
@@ -63,6 +88,7 @@ test("auth and saved scenarios round trip", async ({ page }) => {
   // App state (not session state) resets on reload -- confirms the next
   // "Load" is what restores 12, not a value that never left.
   await expect(page.getByText(/w_prior = 5\b/)).toBeVisible();
+  await beat(page);
 
   const reloadedRow = page.getByRole("listitem").filter({ hasText: "sigma twelve" });
   await expect(reloadedRow).toContainText("w=12");
@@ -70,6 +96,7 @@ test("auth and saved scenarios round trip", async ({ page }) => {
   // --- load restores the tuned sigma ---------------------------------------
   await reloadedRow.getByRole("button", { name: "Load" }).click();
   await expect(page.getByText(/w_prior = 12\b/)).toBeVisible();
+  await beat(page);
 
   // --- rename ---------------------------------------------------------------
   await reloadedRow.getByRole("button", { name: "Rename" }).click();
@@ -78,21 +105,26 @@ test("auth and saved scenarios round trip", async ({ page }) => {
   // instant editing starts. ScenariosPanel labels the input "rename <name>".
   const renameInput = page.getByRole("textbox", { name: "rename sigma twelve" });
   await renameInput.fill("aggressive sigma");
+  await beat(page);
   await renameInput.press("Enter");
 
   const renamedRow = page.getByRole("listitem").filter({ hasText: "aggressive sigma" });
   await expect(renamedRow).toBeVisible();
   await expect(page.getByRole("listitem").filter({ hasText: "sigma twelve" })).toHaveCount(0);
+  await beat(page);
 
   // --- delete -----------------------------------------------------------------
   await renamedRow.getByRole("button", { name: "Delete" }).click();
   await expect(page.getByText("no saved scenarios yet")).toBeVisible();
+  await beat(page);
 
   // --- sign out: saving disappears, the dashboard keeps working ------------
   await page.getByRole("button", { name: "Sign out" }).click();
   await expect(page.getByRole("button", { name: "Sign in" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Saved scenarios" })).toHaveCount(0);
+  await beat(page);
 
   await page.getByRole("button", { name: /play/i }).click();
   await expect(page.getByRole("button", { name: /pause/i })).toBeVisible();
+  await beat(page);
 });
