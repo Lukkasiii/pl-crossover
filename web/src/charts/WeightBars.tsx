@@ -10,9 +10,10 @@ interface WeightBarsProps {
 /**
  * Callers send raw precision weights (w_prior fixed at 5 by default, w_data
  * growing with games played), not shares -- normalize here so the bars read
- * as the 60% -> 27% prior share the study reports. Shared between the live
- * replay panel (weights off the round frame) and the tunable prediction
- * panel (weights off a POST /api/predict response).
+ * as the 60% -> 27% prior share the study reports. Used only by the tunable
+ * prediction panel (weights off a POST /api/predict response) -- a second
+ * copy driven straight off the replay's round frame used to sit above it,
+ * identical at the slider's default, so it was folded into this one.
  */
 export function WeightBars({ weights }: WeightBarsProps) {
   const option = useMemo<EChartsOption>(() => {
