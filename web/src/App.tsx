@@ -18,18 +18,18 @@ function App() {
       <header className="app-header">
         <h1>PL Crossover</h1>
         <p className="subtitle">When does this season start predicting the final table better than last season did?</p>
-      </header>
 
-      <div className="toolbar">
-        <Select
-          aria-label="season pair"
-          value={String(activePairId ?? "")}
-          onValueChange={(v) => setPairId(Number(v))}
-          disabled={!pairs}
-          options={pairs?.map((p) => ({ value: String(p.id), label: p.label })) ?? []}
-        />
-        {seasonsError && <span className="error">{seasonsError}</span>}
-      </div>
+        <div className="toolbar">
+          <Select
+            aria-label="season pair"
+            value={String(activePairId ?? "")}
+            onValueChange={(v) => setPairId(Number(v))}
+            disabled={!pairs}
+            options={pairs?.map((p) => ({ value: String(p.id), label: p.label })) ?? []}
+          />
+          {seasonsError && <span className="error">{seasonsError}</span>}
+        </div>
+      </header>
 
       {activePairId !== null && activePair !== null && (
         <ReplayDashboard

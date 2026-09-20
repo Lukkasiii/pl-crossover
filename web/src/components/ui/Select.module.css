@@ -47,11 +47,16 @@
   align-items: center;
   justify-content: space-between;
   cursor: pointer;
-  outline: none;
 }
 
+/* --border on --panel is ~1.1:1 -- nowhere near the 3:1 a keyboard/pointer
+   highlight needs, so it doubled as an (invisible) focus indicator. The
+   outline matches the Slider thumb's focus ring (--blue on --panel is
+   ~5.8:1) instead of relying on background contrast alone. */
 .item[data-highlighted] {
   background: var(--border);
+  outline: 2px solid var(--blue);
+  outline-offset: -2px;
 }
 
 .indicator {

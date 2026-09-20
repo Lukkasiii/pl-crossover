@@ -47,7 +47,9 @@ export function PlayerControls({
   return (
     <div className="player-controls">
       <div className="player-controls-row">
-        <span title={status}>{statusDot(status)}</span>
+        <span title={status} role="status">
+          <span aria-hidden="true">{statusEmoji(status)}</span> {statusLabel(status)}
+        </span>
         <button onClick={togglePlay} disabled={!canPlay}>
           {playing ? "⏸ Pause" : finished ? "↻ Replay" : "▶ Play"}
         </button>
@@ -71,15 +73,27 @@ export function PlayerControls({
   );
 }
 
-function statusDot(status: ConnectionStatus): string {
+function statusEmoji(status: ConnectionStatus): string {
   switch (status) {
     case "open":
-      return "🟢 live";
+      return "🟢";
     case "connecting":
-      return "🟡 connecting…";
     case "reconnecting":
-      return "🟡 reconnecting…";
+      return "🟡";
     default:
-      return "🔴 offline";
+      return "🔴";
+  }
+}
+
+function statusLabel(status: ConnectionStatus): string {
+  switch (status) {
+    case "open":
+      return "live";
+    case "connecting":
+      return "connecting…";
+    case "reconnecting":
+      return "reconnecting…";
+    default:
+      return "offline";
   }
 }

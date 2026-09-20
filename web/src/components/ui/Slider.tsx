@@ -20,14 +20,16 @@ export function Slider({ value, min, max, disabled, onValueChange, onValueCommit
       step={1}
       value={[value]}
       disabled={disabled}
-      aria-label={aria["aria-label"]}
       onValueChange={([v]) => onValueChange(v)}
       onValueCommit={([v]) => onValueCommit(v)}
     >
       <RadixSlider.Track className={styles.track}>
         <RadixSlider.Range className={styles.range} />
       </RadixSlider.Track>
-      <RadixSlider.Thumb className={styles.thumb} />
+      {/* role="slider" lives on the Thumb, not the Root -- an aria-label on
+          Root never reaches assistive tech, which announces an unnamed
+          slider. */}
+      <RadixSlider.Thumb className={styles.thumb} aria-label={aria["aria-label"]} />
     </RadixSlider.Root>
   );
 }

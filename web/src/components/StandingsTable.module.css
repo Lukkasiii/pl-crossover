@@ -29,8 +29,13 @@
   background: var(--panel);
 }
 
+/* Not `opacity` -- at a low enough value to read as visibly "excluded" it
+   also dims the text below the 4.5:1 AA text-contrast minimum (measured:
+   0.45 opacity landed at 4.04:1 against --panel). --text-secondary is a
+   fixed color already verified at ~6.75:1, so it greys the row out without
+   the contrast riding on where an arbitrary alpha value happens to land. */
 .excluded {
-  opacity: 0.45;
+  color: var(--text-secondary);
 }
 
 .championMark {
