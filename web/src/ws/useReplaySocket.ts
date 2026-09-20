@@ -113,21 +113,28 @@ export function useReplaySocket(pairId: number) {
     [send],
   );
 
-  /** Fast-forwards a freshly (re)opened socket's server-side cursor through everything already cached, then resumes playback if the user had it running when the connection dropped. */
+  /**
+   * Fast-forwards a freshly (re)opened socket's server-side cursor to
+   * everything already cached, then resumes playback if the user had it
+   * running when the connection dropped. One seek is enough: the server
+   * sets its cursor directly to the requested seq (routers/replay.py's
+   * "seek" branch, not a per-frame walk), and every frame up to
+   * cachedThrough is already in the client cache from before the drop --
+   * there's nothing to re-render, only the server's cursor to catch up.
+   */
   const resumeAfterReconnect = useCallback(async () => {
     if (isSeekingRef.current) return; // a manual seek is already mid-flight; let it own the catch-up
     const target = cache.cachedThrough;
+    let caughtUp = true;
     if (target >= 0) {
       isSeekingRef.current = true;
       setState((s) => ({ ...s, seeking: true }));
-      for (let i = 0; i <= target; i++) {
-        const frame = await requestFrame({ cmd: "seek", seq: i });
-        if (frame === null) break; // dropped again mid catch-up -- the next reconnect resumes from here
-      }
+      const frame = await requestFrame({ cmd: "seek", seq: target });
+      caughtUp = frame !== null; // dropped again mid catch-up -- the next reconnect tries again
       isSeekingRef.current = false;
       setState((s) => ({ ...s, seeking: false }));
     }
-    if (liveStateRef.current.playing) play(liveStateRef.current.speed);
+    if (caughtUp && liveStateRef.current.playing) play(liveStateRef.current.speed);
   }, [cache, requestFrame, play]);
 
   useEffect(() => {
