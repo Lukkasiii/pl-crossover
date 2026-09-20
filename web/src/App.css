@@ -52,14 +52,17 @@
 
 .layout {
   display: grid;
-  grid-template-columns: 1.6fr 1fr;
+  /* fr tracks default to min-width: auto, so a wide table or chart holds its
+     track open past its fr share and the ratio never applies -- minmax(0, _)
+     lets the track actually shrink below its content's natural width. */
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
   gap: 16px;
   align-items: start;
 }
 
 @media (max-width: 900px) {
   .layout {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 

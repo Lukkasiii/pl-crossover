@@ -32,77 +32,79 @@ export function StandingsTable({ rows, currentSeasonLabel }: StandingsTableProps
 
   return (
     <>
-      <table className={styles.table}>
-        <thead>
-          <tr>
-            <th scope="col">#</th>
-            <th scope="col">Team</th>
-            <th scope="col">
-              <abbr title="Games played">P</abbr>
-            </th>
-            <th scope="col">
-              <abbr title="Wins">W</abbr>
-            </th>
-            <th scope="col">
-              <abbr title="Draws">D</abbr>
-            </th>
-            <th scope="col">
-              <abbr title="Losses">L</abbr>
-            </th>
-            <th scope="col">
-              <abbr title="Goal difference">GD</abbr>
-            </th>
-            <th scope="col">
-              <abbr title="Points">Pts</abbr>
-            </th>
-            <th scope="col">
-              <abbr title="Expected goal difference">xGD</abbr>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row) => {
-            const band = bandForRank(bands, row.live_rank);
-            const isChampion = row.live_rank === 1;
-            const ariaLabel = `${row.name}, ${row.live_rank ?? "unranked"}${band ? `, ${band.label}` : ""}${isChampion ? ", champions" : ""}${row.in_pair ? "" : ", outside the 17-team common sample"}`;
-            return (
-              <tr
-                key={row.team_id}
-                ref={(el) => {
-                  if (el) rowRefs.current.set(row.team_id, el);
-                  else rowRefs.current.delete(row.team_id);
-                }}
-                className={[row.in_pair ? "" : styles.excluded, row.team_id === hoveredTeamId ? styles.hovered : ""]
-                  .filter(Boolean)
-                  .join(" ")}
-                style={{ borderLeftColor: band?.color ?? "transparent" }}
-                aria-label={ariaLabel}
-                onMouseEnter={() => setHoveredTeamId(row.team_id)}
-                onMouseLeave={() => setHoveredTeamId((id) => (id === row.team_id ? null : id))}
-              >
-                <td>
-                  {isChampion && (
-                    <span className={styles.championMark} aria-hidden="true">
-                      &#127942;
-                    </span>
-                  )}
-                  {row.live_rank ?? "-"}
-                </td>
-                <td className={styles.teamName}>{broadcastName(row.name)}</td>
-                <td>{row.games_played}</td>
-                <td>{row.wins}</td>
-                <td>{row.draws}</td>
-                <td>{row.losses}</td>
-                <td>{row.goal_diff}</td>
-                <td>
-                  <Points value={row.points} />
-                </td>
-                <td>{row.xgd.toFixed(2)}</td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+      <div className={styles.tableWrap}>
+        <table className={styles.table}>
+          <thead>
+            <tr>
+              <th scope="col">#</th>
+              <th scope="col">Team</th>
+              <th scope="col">
+                <abbr title="Games played">P</abbr>
+              </th>
+              <th scope="col">
+                <abbr title="Wins">W</abbr>
+              </th>
+              <th scope="col">
+                <abbr title="Draws">D</abbr>
+              </th>
+              <th scope="col">
+                <abbr title="Losses">L</abbr>
+              </th>
+              <th scope="col">
+                <abbr title="Goal difference">GD</abbr>
+              </th>
+              <th scope="col">
+                <abbr title="Points">Pts</abbr>
+              </th>
+              <th scope="col">
+                <abbr title="Expected goal difference">xGD</abbr>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => {
+              const band = bandForRank(bands, row.live_rank);
+              const isChampion = row.live_rank === 1;
+              const ariaLabel = `${row.name}, ${row.live_rank ?? "unranked"}${band ? `, ${band.label}` : ""}${isChampion ? ", champions" : ""}${row.in_pair ? "" : ", outside the 17-team common sample"}`;
+              return (
+                <tr
+                  key={row.team_id}
+                  ref={(el) => {
+                    if (el) rowRefs.current.set(row.team_id, el);
+                    else rowRefs.current.delete(row.team_id);
+                  }}
+                  className={[row.in_pair ? "" : styles.excluded, row.team_id === hoveredTeamId ? styles.hovered : ""]
+                    .filter(Boolean)
+                    .join(" ")}
+                  style={{ borderLeftColor: band?.color ?? "transparent" }}
+                  aria-label={ariaLabel}
+                  onMouseEnter={() => setHoveredTeamId(row.team_id)}
+                  onMouseLeave={() => setHoveredTeamId((id) => (id === row.team_id ? null : id))}
+                >
+                  <td>
+                    {isChampion && (
+                      <span className={styles.championMark} aria-hidden="true">
+                        &#127942;
+                      </span>
+                    )}
+                    {row.live_rank ?? "-"}
+                  </td>
+                  <td className={styles.teamName}>{broadcastName(row.name)}</td>
+                  <td>{row.games_played}</td>
+                  <td>{row.wins}</td>
+                  <td>{row.draws}</td>
+                  <td>{row.losses}</td>
+                  <td>{row.goal_diff}</td>
+                  <td>
+                    <Points value={row.points} />
+                  </td>
+                  <td>{row.xgd.toFixed(2)}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
       <ul className={styles.legend} aria-hidden="true">
         {bands.map((b) => (
           <li key={b.key}>

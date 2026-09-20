@@ -1,3 +1,10 @@
+.tableWrap {
+  /* table-layout: auto never shrinks a table below its content's width, so
+     without this the table pushes its panel -- and the whole page -- wider
+     instead of scrolling on narrow viewports. */
+  overflow-x: auto;
+}
+
 .table {
   width: 100%;
   border-collapse: collapse;
