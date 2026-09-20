@@ -41,7 +41,7 @@ export function useDemoReplay(pairId: number) {
         setFrames(data);
         setState((s) => ({ ...s, status: "open" }));
       })
-      .catch(() => setState((s) => ({ ...s, status: "error" })));
+      .catch(() => setState((s) => ({ ...s, status: "offline" })));
     return () => {
       cancelled = true;
     };
