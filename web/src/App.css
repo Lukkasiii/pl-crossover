@@ -81,3 +81,23 @@
 .chart-box.small {
   height: 80px;
 }
+
+.predict-value {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.predict-note {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.predict-note.error {
+  color: var(--relegation);
+}
+
+.predict-fading {
+  opacity: 0.5;
+  transition: opacity 150ms ease;
+}
