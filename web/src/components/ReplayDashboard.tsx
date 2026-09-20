@@ -51,7 +51,7 @@ export function ReplayDashboard({ pairId, currentSeasonLabel, metric, onMetricCh
   }, [replay]);
 
   return (
-    <>
+    <main>
       <PlayerControls
         status={replay.status}
         playing={replay.playing}
@@ -66,7 +66,7 @@ export function ReplayDashboard({ pairId, currentSeasonLabel, metric, onMetricCh
         onSeek={replay.seek}
       />
 
-      <main className="layout">
+      <div className="layout">
         <section className="panel standings">
           <h2>Standings</h2>
           <StandingsTable rows={replay.table} currentSeasonLabel={currentSeasonLabel} />
@@ -104,7 +104,7 @@ export function ReplayDashboard({ pairId, currentSeasonLabel, metric, onMetricCh
 
           <PredictionTuner metric={metric} games={replay.latestRound?.games ?? 1} />
         </div>
-      </main>
-    </>
+      </div>
+    </main>
   );
 }

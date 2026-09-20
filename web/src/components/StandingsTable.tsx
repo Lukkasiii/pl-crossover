@@ -35,15 +35,29 @@ export function StandingsTable({ rows, currentSeasonLabel }: StandingsTableProps
       <table className={styles.table}>
         <thead>
           <tr>
-            <th>#</th>
-            <th>Team</th>
-            <th>P</th>
-            <th>W</th>
-            <th>D</th>
-            <th>L</th>
-            <th>GD</th>
-            <th>Pts</th>
-            <th>xGD</th>
+            <th scope="col">#</th>
+            <th scope="col">Team</th>
+            <th scope="col">
+              <abbr title="Games played">P</abbr>
+            </th>
+            <th scope="col">
+              <abbr title="Wins">W</abbr>
+            </th>
+            <th scope="col">
+              <abbr title="Draws">D</abbr>
+            </th>
+            <th scope="col">
+              <abbr title="Losses">L</abbr>
+            </th>
+            <th scope="col">
+              <abbr title="Goal difference">GD</abbr>
+            </th>
+            <th scope="col">
+              <abbr title="Points">Pts</abbr>
+            </th>
+            <th scope="col">
+              <abbr title="Expected goal difference">xGD</abbr>
+            </th>
           </tr>
         </thead>
         <tbody>
