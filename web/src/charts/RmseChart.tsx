@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import type { EChartsOption } from "echarts";
 import { EChart } from "./EChart";
+import { colors, fonts } from "../theme";
 import type { Metric, RoundFrame } from "../ws/types";
 
 const FULL_SEASON_GAMES = 38;
@@ -30,7 +31,7 @@ export function RmseChart({ metric, roundsSoFar }: RmseChartProps) {
       grid: { left: 48, right: 16, top: 32, bottom: 32 },
       tooltip: { trigger: "axis" },
       legend: { top: 0, data: ["Current season", "Last season (prior)"] },
-      xAxis: { type: "category", name: "games played", data: games },
+      xAxis: { type: "category", name: "games played", data: games, axisLabel: { fontFamily: fonts.mono } },
       yAxis: { type: "value", name: "RMSE (positions)" },
       series: [
         {
@@ -39,14 +40,14 @@ export function RmseChart({ metric, roundsSoFar }: RmseChartProps) {
           data: current,
           showSymbol: false,
           connectNulls: false,
-          lineStyle: { width: 2, color: "#3b82f6" },
+          lineStyle: { width: 2, color: colors.green },
           markLine:
             crossoverGames === null
               ? undefined
               : {
                   symbol: "none",
                   label: { formatter: "⚡ crossover" },
-                  lineStyle: { color: "#f59e0b" },
+                  lineStyle: { color: colors.gold },
                   data: [{ xAxis: crossoverGames - 1 }],
                 },
         },
@@ -55,7 +56,7 @@ export function RmseChart({ metric, roundsSoFar }: RmseChartProps) {
           type: "line",
           data: prior,
           showSymbol: false,
-          lineStyle: { width: 1, color: "#ef4444", type: "dashed" },
+          lineStyle: { width: 1, color: colors.red, type: "dashed" },
         },
       ],
     };

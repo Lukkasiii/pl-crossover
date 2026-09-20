@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import type { TableRow } from "../ws/types";
 import { bandForRank, bandsForSeason } from "./zoneBands";
+import { broadcastName } from "../teamNames";
 import styles from "./StandingsTable.module.css";
 
 interface StandingsTableProps {
@@ -51,7 +52,7 @@ export function StandingsTable({ rows, currentSeasonLabel }: StandingsTableProps
                   )}
                   {row.live_rank ?? "-"}
                 </td>
-                <td>{row.name}</td>
+                <td className={styles.teamName}>{broadcastName(row.name)}</td>
                 <td>{row.games_played}</td>
                 <td>{row.wins}</td>
                 <td>{row.draws}</td>

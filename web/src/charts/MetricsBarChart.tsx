@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import type { EChartsOption } from "echarts";
 import { EChart } from "./EChart";
+import { colors } from "../theme";
 import { METRICS, type RoundFrame } from "../ws/types";
 
 const LABELS: Record<string, string> = { xg: "xG", xgd: "xGD", gd: "GD", points: "Points" };
@@ -21,7 +22,7 @@ export function MetricsBarChart({ latestRound }: MetricsBarChartProps) {
           name: "Current-season RMSE",
           type: "bar",
           data: METRICS.map((m) => latestRound?.metrics[m]?.rmse ?? 0),
-          itemStyle: { color: "#3b82f6" },
+          itemStyle: { color: colors.green },
         },
       ],
     }),
