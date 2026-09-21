@@ -69,6 +69,24 @@ jobs:
       - run: npm run test:e2e
         working-directory: web
 
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker compose up --build -d
+      - name: wait for api and web to answer
+        run: |
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:8000/api/seasons > /dev/null && curl -sf http://localhost:5173/ > /dev/null && exit 0
+            sleep 2
+          done
+          echo "api or web never came up"
+          docker compose logs
+          exit 1
+      - run: docker compose logs
+        if: always()
+      - run: docker compose down
+
   deploy-demo:
     needs: [backend, frontend, e2e]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
