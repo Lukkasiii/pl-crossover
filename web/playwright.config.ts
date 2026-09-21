@@ -20,16 +20,6 @@ export default defineConfig({
   testDir: "e2e",
   timeout: 30_000,
   fullyParallel: true,
-  // Every page now autoplays on load (see ReplayDashboard), so every spec's
-  // browser tab is an actively streaming WebSocket + chart-redrawing page,
-  // not just the ones that click Play -- all sharing the one uvicorn
-  // process the webServer below starts. replay-resilience.spec.ts measures
-  // real wall-clock frame delivery under a tight timeout, and Playwright's
-  // default worker count (half the machine's cores) is enough concurrent
-  // load on an 8-core dev machine to make that assertion flake. Capped
-  // rather than left to the default, so it doesn't regress if the CI
-  // runner's core count changes under us.
-  workers: 2,
   webServer: [
     {
       command: ".venv/bin/python -m uvicorn api.app.main:app --port 8000",

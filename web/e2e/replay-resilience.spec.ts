@@ -19,13 +19,6 @@ async function readFrame(frameCount: Locator): Promise<number> {
  * is exercising the real reconnect path end to end, not a mock.
  */
 test("replay resumes after the connection drops mid-stream", async ({ page }) => {
-  // Explicit, generous viewport: the page grows taller as the standings
-  // table and model panels fill in, and the speed <select> below them needs
-  // to stay on screen for the click below -- the default test viewport is
-  // short enough that a slow tick (heavier under a parallel run, where
-  // several tabs are autoplaying and streaming at once) can leave the
-  // trigger's dropdown positioned outside it.
-  await page.setViewportSize({ width: 1440, height: 900 });
   const clientRoutes: Parameters<Parameters<typeof page.routeWebSocket>[1]>[0][] = [];
   await page.routeWebSocket(/\/ws\/replay/, (ws) => {
     const server = ws.connectToServer();
@@ -38,19 +31,25 @@ test("replay resumes after the connection drops mid-stream", async ({ page }) =>
   // Autoplay (see ReplayDashboard) starts the stream without a click.
   await expect(page.getByRole("button", { name: /pause/i })).toBeVisible({ timeout: 10_000 });
   await expect(page.getByTitle("open")).toBeVisible({ timeout: 10_000 });
+  // Wait for the standings table to actually have a row before touching the
+  // speed selector below it. StandingsTable's placeholder ("Press play...")
+  // is much shorter than the populated table, so the page grows by several
+  // hundred pixels the moment the first match frame lands -- pushing the
+  // player-controls bar (and this select) further down the page. Racing that
+  // one-time growth is what made this flaky: opening the dropdown before it
+  // happens gets a popper position computed against the *short* layout, and
+  // that position goes stale (off-screen) once the page grows underneath it,
+  // since nothing reopens the popper to reposition it. Waiting for a row
+  // here -- the same signal every other spec already waits on -- guarantees
+  // the growth has already happened, so the popper's position is stable and
+  // correct from the moment it opens.
+  await expect(page.locator("table tbody tr").first()).toBeVisible();
   // The speed select is a controlled component that only takes effect
   // while already playing (PlayerControls only calls onPlay(next) -- which
   // is what actually updates the streamed speed -- inside its `if
   // (playing)` branch), so it has to be changed after Play, not before.
   await page.getByRole("combobox", { name: "replay speed" }).click();
-  // force: true -- the replay is actively streaming while this dropdown is
-  // open (selecting a speed only takes effect while playing, see above), so
-  // the standings table and chart panels above it are continuously
-  // reflowing. That's a moving target for Playwright's normal actionability
-  // wait (which polls for the option's bounding box to go two ticks without
-  // changing), so it bypasses that wait and dispatches the click at the
-  // option's current position instead.
-  await page.getByRole("option", { name: "10x" }).click({ force: true });
+  await page.getByRole("option", { name: "10x" }).click();
 
   const frameCount = page.locator(".frame-count");
   // Deliberately not the first few frames: at frame 1-9 the counter moving

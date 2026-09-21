@@ -55,11 +55,14 @@ export function ReplayDashboard({
   //   (full standings, full RMSE curve, crossover marker) rather than an
   //   empty one. In DEMO_MODE every frame is already local JSON, so this is
   //   a synchronous index change, free. Over the live socket, `seek` still
-  //   asks for one frame per round trip (see useReplaySocket) -- but that's
-  //   418 small round trips, not the network-bound 400 I'd first assumed:
-  //   measured against the local dev server, the whole season resolves in
-  //   ~190ms. A slower/remote deployment pays more, but it's a one-time,
-  //   bounded load before the first paint, not something to special-case.
+  //   asks for one frame per round trip (see useReplaySocket) -- 418 of
+  //   them, resolving in ~190ms measured against the local dev server. That
+  //   number is over loopback, though: this project's live/socket mode is
+  //   local-only (the deployed public demo always runs DEMO_MODE), so it's
+  //   left as-is here, but it does not generalize -- at a 30ms RTT the same
+  //   418 round trips is 12+ seconds of an apparently frozen page, for
+  //   exactly the users this branch is meant to serve. Whoever points this
+  //   at a real, non-local backend needs to revisit this before shipping it.
   const autoplayedRef = useRef(false);
   useEffect(() => {
     if (autoplayedRef.current || !ready || replay.seeking) return;
