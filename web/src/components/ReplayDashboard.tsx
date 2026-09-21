@@ -50,12 +50,16 @@ export function ReplayDashboard({
   //   wait for the round panel to actually reach that week rather than
   //   racing a `play` command against it.
   // - under prefers-reduced-motion, don't auto-advance through the season at
-  //   all -- just land on the first frame (unless a URL week already placed
-  //   us somewhere) so the page opens showing something instead of nothing.
-  //   Landing on the *last* frame would read better, but reaching it means
-  //   `seek`ing there, and seek fetches one round trip per frame over the
-  //   live socket (see useReplaySocket) -- fine for a user-initiated jump,
-  //   not something to fire unprompted on load.
+  //   all -- land on the *final* frame (unless a URL week already placed us
+  //   somewhere) so the page still opens on a settled, complete picture
+  //   (full standings, full RMSE curve, crossover marker) rather than an
+  //   empty one. In DEMO_MODE every frame is already local JSON, so this is
+  //   a synchronous index change, free. Over the live socket, `seek` still
+  //   asks for one frame per round trip (see useReplaySocket) -- but that's
+  //   418 small round trips, not the network-bound 400 I'd first assumed:
+  //   measured against the local dev server, the whole season resolves in
+  //   ~190ms. A slower/remote deployment pays more, but it's a one-time,
+  //   bounded load before the first paint, not something to special-case.
   const autoplayedRef = useRef(false);
   useEffect(() => {
     if (autoplayedRef.current || !ready || replay.seeking) return;
@@ -66,7 +70,7 @@ export function ReplayDashboard({
 
     autoplayedRef.current = true;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      if (!hasUrlWeek) replay.seek(0);
+      if (!hasUrlWeek) replay.seek(replay.totalFrames - 1);
     } else {
       replay.play();
     }
