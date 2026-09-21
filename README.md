@@ -52,6 +52,10 @@ docker compose up --build
 # api:      http://localhost:8000
 ```
 
+The `docker` job in CI builds both images with this exact command, starts
+them, and curls the API and the frontend before tearing down — so this claim
+is checked on every push, not taken on trust.
+
 **Local dev:**
 
 ```bash
@@ -176,6 +180,41 @@ right, the built dashboard.
 <td><img src="design/screenshot.png" alt="The built dashboard: standings, RMSE curve with the crossover marker, and the tunable prior weight panel" width="420"></td></tr>
 </table>
 
+`design/screenshot.png` above is a full-page capture (1360×1569) — right for
+this README, wrong for a link-preview card. Social platforms crop `og:image`
+to roughly 1.91:1, so that shot would show whatever 1.91:1 slice lands in the
+middle — standings rows, no title, no curve. `design/og-image.png` is a
+separate, deliberately landscape (1200×630) crop used only for `og:image` /
+`twitter:image` in `index.html`, framed to keep the title and the RMSE curve
+in the box regardless of where a platform crops it.
+
+Four things in the mockup never got built, each dropped on purpose rather than
+by running out of time:
+
+- **Shaded regions under the RMSE curve** (before/after the crossover). The
+  chart already has a labeled crossover line doing that job; a second visual
+  device for the same fact would be decoration, not information — see the
+  "one badge, one home" call below for the same reasoning applied to the
+  crossover badge.
+- **Static G5/G10/G15/G20 reference bars** under the weight panel. Those were
+  the four checkpoints the original coursework could compute. The live replay
+  already recomputes the real Bayesian weight at every games-played count and
+  animates through those exact four values on its way past them — a frozen
+  copy of numbers the live bar already passes through exactly would be
+  redundant at best, and one more thing to keep in sync at worst.
+- **Calendar date endpoints on the timeline** ("Aug 13" / "May 22"). The whole
+  reason `team_state` is indexed by games played rather than matchweek is that
+  calendar time is *not* the right axis for this analysis — see "Indexing by
+  games played, not matchweek" below. Printing season start/end dates on the
+  scrubber would quietly reintroduce the axis the model deliberately ignores.
+- **The crossover-distinction footnote** ("the weight crossover and the error
+  crossover are different events…"). That sentence lives in
+  [The model](#the-model) instead. In the mockup it's static caption text; in
+  the build the same distinction is *shown* — the RMSE curve and the weight
+  bars are two panels that visibly cross at different games-played counts —
+  so restating it in prose on the dashboard itself would just be a caption
+  explaining what the two panels already demonstrate.
+
 Each entry below is problem → solution → number, in the order they were built.
 
 **Problem: at 50x, a naive `setState` per WebSocket message drops frames.**
@@ -235,14 +274,82 @@ row `background: var(--panel)` — the same color the table already sat on, so
 no visible change outside a swap — turns that overlap into a clean pass
 instead of a blend.
 
-**Bundle size:** 791KB JS / 261KB gzip after tree-shaking ECharts to just the
-line/bar charts and components this app uses (`echarts/core` + named imports,
-not `import * as echarts from "echarts"`). Not yet code-split; the Ask panel
+**Not built: linked cross-chart highlighting.** The bonus list calls for
+hovering a team and having every chart highlight it. None of the three chart
+panels carry a team dimension to link against — the RMSE curve, the per-metric
+bars and the weight bars are all pooled/aggregate series over all 17 fitted
+teams, not per-team series. Only the standings table is per-team. Building the
+hover-link would mean adding a team dimension to charts that are aggregate by
+design, so it's skipped rather than built and left dangling.
+
+**Bundle size:** 932KB JS / 307KB gzip (`npm run build:demo`, the exact build
+GitHub Pages serves) after tree-shaking ECharts to just the line/bar charts
+this app uses (`echarts/core` + named imports, not
+`import * as echarts from "echarts"`). Not yet code-split; the Ask panel
 (Feature 3) is the obvious lazy-load candidate once it exists.
 
-**Chrome Performance before/after and a Lighthouse score are not filled in
-yet** — they belong here once there's a deployed demo to measure against
-rather than a local dev server.
+**Lighthouse Performance is 55, measured once, against the real deployed
+site** (`npx lighthouse https://lukkasiii.github.io/pl-crossover/`, default
+mobile-simulated throttling: 4x CPU, 150ms RTT, ~1.6Mbps): Accessibility 100,
+Best Practices 100, SEO 100, and on that one run — First Contentful Paint
+4.2s, Largest Contentful Paint 5.0s, Total Blocking Time 640ms, Time to
+Interactive 5.2s. Everything below this paragraph is a **separate, local**
+experiment run to attribute that number, and its absolute scores are not
+comparable to the 55 above — different machine, no real network hop to
+GitHub Pages, and (in the final round) two Chrome instances sharing one CPU.
+Only the *relative* comparison between arms is meaningful.
+
+Attributing the 55: is it the 932KB unsplit bundle, or autoplay — the season
+playing itself the instant the page loads, with a `requestAnimationFrame`
+loop and chart re-renders running inside Lighthouse's measurement window on
+top of the 2MB (55.8KB gzip) demo-frames fetch? First pass, three sequential
+runs per arm (build autoplay-on, measure three times; then rebuild
+autoplay-off — landing on the final frame instead, the path
+`prefers-reduced-motion` already takes — measure three more): Performance
+77/77/88 with autoplay vs. 87/86/81 without, a 9-point gap, with FCP/LCP/SI
+each about 1s faster off. That looked like a real effect — until the network
+waterfall was checked directly: `frames-1.json` transfers 55.8KB gzip and
+finishes at ~250ms unthrottled in every run, on-arm or off, thousands of
+milliseconds before LCP fires. It cannot be costing a full second; it isn't
+big enough or late enough to reach the metric that supposedly moved.
+
+That contradiction meant the first pass was confounded, not conclusive: the
+two arms were measured in separate **sequential blocks** minutes apart (build
+→ 3× measure → rebuild → 3× measure), so any drift in the host machine's load
+between blocks — thermal state, background processes, a Chrome relaunch —
+lands entirely on one arm and reads as an "autoplay effect." Re-run
+correctly: both builds served concurrently on separate ports and measured
+**interleaved** (on, off, on, off, ×4) so both arms share identical machine
+conditions at every point in time:
+
+| | Performance | FCP | LCP | SI | TBT |
+|---|---|---|---|---|---|
+| autoplay on, interleaved (4 runs) | 62/60/57/57 (med. 58.5) | med. 6.38s | med. 6.62s | med. 6.38s | med. 194ms |
+| autoplay off, interleaved (4 runs) | 59/58/60/58 (med. 58.5) | med. 6.38s | med. 6.62s | med. 6.38s | med. 189ms |
+
+Identical medians on every metric. The absolute numbers are worse than the
+first pass (two Chrome instances now contending for one CPU), which is
+exactly why they're not compared to the 55 above — but the on/off delta,
+which is what this experiment exists to measure, collapses to noise once the
+confound is removed. **Verdict: autoplay costs nothing measurable; the 55 is
+the bundle.** No mitigation needed — the page opens non-empty for free. The
+932KB JS / 307KB gzip bundle above is the defensible cause (present, unparsed
+and unexecuted, before anything paints, on both arms, every run); the fix is
+code-splitting (starting with the Ask panel once it exists), not touching
+autoplay.
+
+**Sustained frame rate at 50x**, measured with Playwright driving the same
+deployed demo (10 `requestAnimationFrame` samples over 3s while the replay
+streams at 50x, so ~250 socket-equivalent messages/sec): **60fps sustained**,
+the same as idle — the rAF-buffered render path never drops below the
+display's own refresh rate even at the fastest speed, which is the thing the
+buffering exists to guarantee.
+
+**Parse time of the 2MB demo frames JSON**, measured in-page (`fetch` +
+`JSON.parse` on `frames-1.json`, 2,051,789 bytes, median of 10 runs in headless
+Chromium): **~4.3ms**. Small enough relative to a frame budget that it isn't a
+stutter risk on its own; the cost that matters is the one-time network fetch,
+not the parse.
 
 ## The model
 
@@ -380,7 +487,8 @@ data/
   raw/                        fetched match data (gitignored)
 design/
   mockup.png                  Figma-first mockup, next to the built result
-  screenshot.png               the built result
+  screenshot.png               the built result, full-page, for this README
+  og-image.png                 landscape crop for link-preview cards (see below)
   auth-scenarios.gif           e2e/auth-scenarios.spec.ts, recorded
 ```
 
