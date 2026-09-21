@@ -177,16 +177,24 @@ right, the built dashboard.
 
 <table>
 <tr><td><img src="design/mockup.png" alt="Figma mockup of the dashboard" width="420"></td>
-<td><img src="design/screenshot.png" alt="The built dashboard: standings, RMSE curve with the crossover marker, and the tunable prior weight panel" width="420"></td></tr>
+<td><img src="web/public/screenshot.png" alt="The built dashboard: standings, RMSE curve with the crossover marker, and the tunable prior weight panel" width="420"></td></tr>
 </table>
 
-`design/screenshot.png` above is a full-page capture (1360×1569) — right for
-this README, wrong for a link-preview card. Social platforms crop `og:image`
-to roughly 1.91:1, so that shot would show whatever 1.91:1 slice lands in the
-middle — standings rows, no title, no curve. `design/og-image.png` is a
-separate, deliberately landscape (1200×630) crop used only for `og:image` /
-`twitter:image` in `index.html`, framed to keep the title and the RMSE curve
-in the box regardless of where a platform crops it.
+`web/public/screenshot.png` above is a full-page capture (1360×1569) — right
+for this README, wrong for a link-preview card. Social platforms crop
+`og:image` to roughly 1.91:1, so that shot would show whatever 1.91:1 slice
+lands in the middle — standings rows, no title, no curve.
+`web/public/og-image.png` is a separate, deliberately landscape (1200×630)
+crop used only for `og:image` / `twitter:image` in `index.html`, framed to
+keep the title and the RMSE curve in the box regardless of where a platform
+crops it. Both live under `web/public/` rather than `design/` — an earlier
+version symlinked them there, which broke the Docker build: `docker-compose`
+builds the `web` image from the `./web` context alone, so a symlink pointing
+outside it (`../../design/...`) has no target inside the image, and on a
+machine with `core.symlinks=false` (this one) it does not even check out as a
+symlink — git materializes it as a plain text file containing the link
+target's path string, breaking any consumer even outside Docker. One real
+file, in the one place that must have it, dodges both problems.
 
 Four things in the mockup never got built, each dropped on purpose rather than
 by running out of time:
@@ -481,14 +489,15 @@ web/
   src/auth/                   AuthContext, in-memory token store
   src/components/auth/        sign-in/register panel, saved-scenarios panel
   src/api/client.ts            openapi-fetch client + single-flight 401 refresh
+  public/screenshot.png        full-page shot, for this README (real file --
+                                not a symlink; see mockup-vs-built above)
+  public/og-image.png          landscape crop, for og:image/twitter:image only
 data/
   pl.db                       built database (committed, < 1MB)
   excel/                      the original coursework workbooks
   raw/                        fetched match data (gitignored)
 design/
   mockup.png                  Figma-first mockup, next to the built result
-  screenshot.png               the built result, full-page, for this README
-  og-image.png                 landscape crop for link-preview cards (see below)
   auth-scenarios.gif           e2e/auth-scenarios.spec.ts, recorded
 ```
 
