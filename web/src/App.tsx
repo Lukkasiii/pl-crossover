@@ -41,7 +41,17 @@ function App() {
   return (
     <div className="app">
       <header className="app-header">
-        <h1>PL Crossover</h1>
+        <div className="app-header-top">
+          <h1>PL Crossover</h1>
+          <a
+            className="repo-link"
+            href="https://github.com/Lukkasiii/pl-crossover"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            GitHub ↗
+          </a>
+        </div>
         <p className="subtitle">When does this season start predicting the final table better than last season did?</p>
 
         <div className="toolbar">

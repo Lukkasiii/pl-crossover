@@ -7,6 +7,26 @@
   margin: 0 auto;
 }
 
+.app-header-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+
+.repo-link {
+  font-size: 13px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.repo-link:hover,
+.repo-link:focus-visible {
+  text-decoration: underline;
+}
+
 .app-header .subtitle {
   color: var(--text-secondary);
   font-size: 14px;
