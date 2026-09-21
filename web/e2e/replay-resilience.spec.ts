@@ -28,8 +28,22 @@ test("replay resumes after the connection drops mid-stream", async ({ page }) =>
   });
 
   await page.goto("/");
-  await page.getByRole("button", { name: /play/i }).click();
+  // Autoplay (see ReplayDashboard) starts the stream without a click.
+  await expect(page.getByRole("button", { name: /pause/i })).toBeVisible({ timeout: 10_000 });
   await expect(page.getByTitle("open")).toBeVisible({ timeout: 10_000 });
+  // Wait for the standings table to actually have a row before touching the
+  // speed selector below it. StandingsTable's placeholder ("Press play...")
+  // is much shorter than the populated table, so the page grows by several
+  // hundred pixels the moment the first match frame lands -- pushing the
+  // player-controls bar (and this select) further down the page. Racing that
+  // one-time growth is what made this flaky: opening the dropdown before it
+  // happens gets a popper position computed against the *short* layout, and
+  // that position goes stale (off-screen) once the page grows underneath it,
+  // since nothing reopens the popper to reposition it. Waiting for a row
+  // here -- the same signal every other spec already waits on -- guarantees
+  // the growth has already happened, so the popper's position is stable and
+  // correct from the moment it opens.
+  await expect(page.locator("table tbody tr").first()).toBeVisible();
   // The speed select is a controlled component that only takes effect
   // while already playing (PlayerControls only calls onPlay(next) -- which
   // is what actually updates the streamed speed -- inside its `if

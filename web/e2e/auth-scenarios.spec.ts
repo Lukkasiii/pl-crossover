@@ -45,7 +45,7 @@ test("auth and saved scenarios round trip", async ({ page }) => {
   await page.goto("/");
 
   // --- logged out: the dashboard itself has no login wall -----------------
-  await page.getByRole("button", { name: /play/i }).click();
+  // Autoplay (see ReplayDashboard) starts the stream without a click.
   await expect(page.locator("table tbody tr").first()).toBeVisible();
   await beat(page);
   await page.getByRole("button", { name: /pause/i }).click();
@@ -88,6 +88,12 @@ test("auth and saved scenarios round trip", async ({ page }) => {
   // App state (not session state) resets on reload -- confirms the next
   // "Load" is what restores 12, not a value that never left.
   await expect(page.getByText(/w_prior = 5\b/)).toBeVisible();
+  // The reload re-mounts the page, so autoplay starts the replay running
+  // again -- pause it so the "clicking Play still works" check at the end
+  // of this test starts from a known, stopped state instead of a race with
+  // however far autoplay has gotten by then.
+  await expect(page.getByRole("button", { name: /pause/i })).toBeVisible();
+  await page.getByRole("button", { name: /pause/i }).click();
   await beat(page);
 
   const reloadedRow = page.getByRole("listitem").filter({ hasText: "sigma twelve" });
