@@ -363,6 +363,20 @@ path, the bundle loads, and `BrowserRouter` renders the real route from
 build — it's not dead weight, it's the only thing making `/season` or
 `/scenarios` survive a refresh on the deployed site.
 
+Verified by `e2e/production-base.spec.ts`, run via `npm run
+test:e2e:prod-base` (CI job `e2e-prod-base`, gating `deploy-demo`): it
+builds the real demo bundle and serves it through
+`e2e/ghPagesStaticServer.mjs`, which reproduces GitHub Pages' actual
+semantics (exact-file-or-404.html-with-404-status, no redirect) rather than
+trusting `vite preview`'s more permissive built-in SPA fallback — the two
+are not the same thing, and only one of them is what production does. It
+checks all seven sidebar routes both by clicking the nav link (does the URL
+still say what it should a couple of seconds later, once anything
+autoplay-triggered has had time to fire) and by hitting the URL directly
+(does the 404.html fallback actually recover it). This is the only place
+that runs the app under the real `/pl-crossover/` basename — see the
+`useUrlParamWriter` basename bug below, which was invisible everywhere else.
+
 ### Design system
 
 Locked at Stage 5; every later page is built on it, don't relitigate it.
@@ -411,6 +425,22 @@ hand-formatted.
   directly (always current, unlike a React-tracked snapshot) and navigating
   to an explicit `{ pathname, search }`. Any future `?param=` needs to go
   through it too, not a fresh `useSearchParams`.
+
+  **A third bug in the same hook, only visible under a real basename:**
+  `window.location.pathname` is the full browser path, basename included
+  (`/pl-crossover/season`); `<BrowserRouter basename>` expects `navigate()`'s
+  `pathname` *without* it and prepends the basename itself. Passing the full
+  path double-prepended it — `/pl-crossover/pl-crossover/season` matched no
+  route and fell through to the `*` → `<Navigate to="/">` catch-all, so
+  clicking into `/season` on the deployed demo silently bounced back to `/`
+  a few seconds later (once autoplay's first `?week=` write fired).
+  `useUrlParamWriter` now strips `import.meta.env.BASE_URL` before handing
+  the pathname to `navigate()`. **This is exactly why the dev-mode suite
+  (`e2e/*.spec.ts`, base `"/"`) cannot be trusted for anything that touches
+  the URL**: stripping a basename of `"/"` is a no-op, so a broken and a
+  correct implementation are indistinguishable there. Anything that reads or
+  writes `window.location`/`navigate()` needs `e2e/production-base.spec.ts`
+  (below) to actually prove it, not just the main suite going green.
 - **Domain notation is not UI chrome and is not translated**: `w_prior`,
   `σ_prior`, RMSE, MAE, R², xG, xGD, GD are standard statistical/football
   notation, the same in both languages, the same way a formula wouldn't be
