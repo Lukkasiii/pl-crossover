@@ -1,28 +1,71 @@
 :root {
-  --bg: #14061b;
-  --panel: #1d0c27;
-  --border: #2e1639;
+  /* Premier League brand palette -- colours only, never the lion mark or
+     the "Premier League" wordmark. Surfaces darken toward --primary. */
+  --primary: #37003c;
+  --accent: #e90052;
+  /* #e90052 on our dark surfaces is ~4.1:1 -- fine for large text/UI, not
+     for small body text (needs 4.5:1). Use --accent-text wherever the pink
+     carries small text. */
+  --accent-text: #ff4f8b;
+  --secondary: #04f5ff;
+  --success: #00ff85;
+
+  --bg: #1a0a22;
+  --panel: #241030;
+  --border: #3a2447;
   --text: #f4ecf8;
   --text-secondary: #a796b2;
 
   /* season/model semantics: green = current season, red = last season
-     (prior), blue = current evidence (the Bayesian data weight) */
-  --green: #2ee59d;
-  --red: #e5484d;
-  --blue: #4c8dff;
+     (prior), blue = current evidence (the Bayesian data weight). Re-derived
+     against the darker v2 background; every one of these is checked >= AA
+     (4.5:1) against both --bg and --panel -- see CLAUDE.md "Design system". */
+  --green: var(--success);
+  --red: #ff5c6c;
+  --blue: var(--secondary);
 
-  /* European zones + relegation */
+  /* Zone bands (see src/components/zoneBands.ts), re-derived from the brand
+     palette: Champions League purple, Europa orange, Conference cyan,
+     relegation red. --gold is the odd one out -- not a zone colour, it
+     marks the champion row and the blended-prediction bar. */
   --gold: #e8b93a;
-  --indigo: #7c6bf5;
-  --orange: #f5943c;
-  --cyan: #34c2c9;
-  --relegation: #c7454a;
+  --indigo: #b98bff;
+  --orange: #ffb066;
+  --cyan: var(--secondary);
+  --relegation: #ff7a85;
+
+  /* 4px spacing scale -- replaces the one-off px values Stage 1-4 CSS used
+     throughout (gap: 16px, padding: 24px, ...). Use these tokens, not raw
+     pixel values, in any new or touched CSS. */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* Type ramp. line-height is unitless (scales with font-size); letter
+     spacing tightens as size grows, per the existing h1 rule. */
+  --text-xs: 12px;
+  --text-sm: 14px;
+  --text-base: 16px;
+  --text-lg: 18px;
+  --text-xl: 22px;
+  --text-2xl: 28px;
+  --text-3xl: 34px;
+  --leading-tight: 1.18;
+  --leading-normal: 1.45;
+  --leading-relaxed: 1.6;
 
   --font-heading: "Bricolage Grotesque", system-ui, sans-serif;
   --font-body: "IBM Plex Sans", system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
 
-  font: 16px/145% var(--font-body);
+  font: var(--text-base) / var(--leading-normal) var(--font-body);
   letter-spacing: 0.1px;
   color-scheme: dark;
   color: var(--text);
@@ -51,16 +94,16 @@ h2 {
 }
 
 h1 {
-  font-size: 32px;
+  font-size: var(--text-3xl);
   letter-spacing: -0.5px;
   margin: 0;
 }
 
 h2 {
-  font-size: 18px;
-  line-height: 118%;
+  font-size: var(--text-lg);
+  line-height: var(--leading-tight);
   letter-spacing: -0.24px;
-  margin: 0 0 8px;
+  margin: 0 0 var(--space-2);
 }
 
 p {
@@ -73,7 +116,7 @@ button {
   background: var(--panel);
   border: 1px solid var(--border);
   border-radius: 6px;
-  padding: 6px 12px;
+  padding: var(--space-2) var(--space-3);
   cursor: pointer;
 }
 
