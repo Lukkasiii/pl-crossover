@@ -12,12 +12,17 @@ interface SelectProps {
   options: SelectOption[];
   disabled?: boolean;
   "aria-label": string;
+  "data-testid"?: string;
 }
 
 export function Select({ value, onValueChange, options, disabled, ...aria }: SelectProps) {
   return (
     <RadixSelect.Root value={value} onValueChange={onValueChange} disabled={disabled}>
-      <RadixSelect.Trigger className={styles.trigger} aria-label={aria["aria-label"]}>
+      <RadixSelect.Trigger
+        className={styles.trigger}
+        aria-label={aria["aria-label"]}
+        data-testid={aria["data-testid"]}
+      >
         <RadixSelect.Value />
         <RadixSelect.Icon className={styles.icon}>▾</RadixSelect.Icon>
       </RadixSelect.Trigger>

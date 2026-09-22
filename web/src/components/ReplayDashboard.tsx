@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useReplay } from "../ws/useReplay";
 import { useUrlWeekSync } from "../ws/useUrlWeekSync";
 import { StandingsTable } from "./StandingsTable";
@@ -7,9 +8,15 @@ import { Select } from "./ui/Select";
 import { RmseChart } from "../charts/RmseChart";
 import { MetricsBarChart } from "../charts/MetricsBarChart";
 import { PredictionTuner } from "./PredictionTuner";
+import { useLocale } from "../i18n/LocaleContext";
 import { METRICS, type Metric } from "../ws/types";
 
-const METRIC_LABELS: Record<Metric, string> = { xg: "xG", xgd: "xGD", gd: "GD", points: "Points" };
+const METRIC_LABEL_KEYS: Record<Metric, "replay.metric.xg" | "replay.metric.xgd" | "replay.metric.gd" | "replay.metric.points"> = {
+  xg: "replay.metric.xg",
+  xgd: "replay.metric.xgd",
+  gd: "replay.metric.gd",
+  points: "replay.metric.points",
+};
 // Native form tags plus the interactive roles Radix's Select trigger
 // (a <button>) and Slider thumb (a <span role="slider">) render as --
 // their own key handling should win over the page-level shortcuts below.
@@ -39,6 +46,8 @@ export function ReplayDashboard({
   onPriorWeightChange,
   obsVariance,
 }: ReplayDashboardProps) {
+  const { t } = useLocale();
+  const [searchParams] = useSearchParams();
   const replay = useReplay(pairId);
   const ready = replay.status === "open" && replay.totalFrames > 0;
   useUrlWeekSync(ready, replay.latestRound?.games, replay.seekToWeek);
@@ -67,7 +76,7 @@ export function ReplayDashboard({
   useEffect(() => {
     if (autoplayedRef.current || !ready || replay.seeking) return;
 
-    const weekParam = Number(new URLSearchParams(window.location.search).get("week"));
+    const weekParam = Number(searchParams.get("week"));
     const hasUrlWeek = Number.isInteger(weekParam) && weekParam >= 1 && weekParam <= 38;
     if (hasUrlWeek && replay.latestRound?.games !== weekParam) return; // still catching up to it
 
@@ -77,7 +86,7 @@ export function ReplayDashboard({
     } else {
       replay.play();
     }
-  }, [ready, replay]);
+  }, [ready, replay, searchParams]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -97,17 +106,21 @@ export function ReplayDashboard({
   }, [replay]);
 
   return (
-    <main>
+    // AppShell already provides the page's one <main> landmark -- a second
+    // one here (this used to be the page's own root, pre-v2) trips axe's
+    // landmark-no-duplicate-main / landmark-main-is-top-level rules.
+    <div>
       <div className="layout">
         <div className="charts-column">
           <section className="panel">
             <div className="panel-header">
-              <h2>RMSE curve</h2>
+              <h2>{t("replay.rmseCurve")}</h2>
               <Select
-                aria-label="metric"
+                aria-label={t("replay.metricLabel")}
+                data-testid="metric-select"
                 value={metric}
                 onValueChange={(v) => onMetricChange(v as Metric)}
-                options={METRICS.map((m) => ({ value: m, label: METRIC_LABELS[m] }))}
+                options={METRICS.map((m) => ({ value: m, label: t(METRIC_LABEL_KEYS[m]) }))}
               />
             </div>
             <div className="chart-box">
@@ -116,7 +129,7 @@ export function ReplayDashboard({
           </section>
 
           <section className="panel">
-            <h2>Current RMSE by metric</h2>
+            <h2>{t("replay.currentRmseByMetric")}</h2>
             <div className="chart-box">
               <MetricsBarChart latestRound={replay.latestRound} />
             </div>
@@ -133,7 +146,18 @@ export function ReplayDashboard({
           />
 
           <section className="panel standings">
-            <h2>Standings</h2>
+            <div className="panel-header">
+              <h2>{t("standings.heading")}</h2>
+              {replay.latestRound && (
+                <span
+                  className="predict-value"
+                  data-testid="current-round"
+                  data-games={replay.latestRound.games}
+                >
+                  {t("standings.roundLabel", { games: replay.latestRound.games })}
+                </span>
+              )}
+            </div>
             <StandingsTable rows={replay.table} currentSeasonLabel={currentSeasonLabel} />
           </section>
         </div>
@@ -152,6 +176,6 @@ export function ReplayDashboard({
         onSpeedChange={() => {}}
         onSeek={replay.seek}
       />
-    </main>
+    </div>
   );
 }

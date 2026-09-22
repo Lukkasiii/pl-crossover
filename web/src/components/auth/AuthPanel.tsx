@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { useAuth } from "../../auth/AuthContext";
 import { DEMO_MODE } from "../../demo/mode";
+import { useLocale } from "../../i18n/LocaleContext";
 import styles from "./AuthPanel.module.css";
 
 type Tab = "login" | "register";
@@ -12,6 +13,7 @@ type Tab = "login" | "register";
  * scenarios and nothing else.
  */
 export function AuthPanel() {
+  const { t } = useLocale();
   const { user, loading, login, register, logout } = useAuth();
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<Tab>("login");
@@ -25,9 +27,11 @@ export function AuthPanel() {
   if (user) {
     return (
       <div className={styles.panel}>
-        <span className={styles.account}>{user.email}</span>
-        <button type="button" onClick={() => logout()}>
-          Sign out
+        <span className={styles.account} data-testid="account-email">
+          {user.email}
+        </span>
+        <button type="button" onClick={() => logout()} data-testid="sign-out-button">
+          {t("auth.signOut")}
         </button>
       </div>
     );
@@ -48,7 +52,7 @@ export function AuthPanel() {
       else await register(email, password);
       closeAndReset();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "something went wrong");
+      setError(err instanceof Error ? err.message : t("auth.genericError"));
     } finally {
       setSubmitting(false);
     }
@@ -56,12 +60,17 @@ export function AuthPanel() {
 
   return (
     <div className={styles.panel}>
-      <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open}>
-        Sign in
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        data-testid="sign-in-open-button"
+      >
+        {t("auth.signIn")}
       </button>
 
       {open && (
-        <div className={styles.popover} role="dialog" aria-label="Sign in">
+        <div className={styles.popover} role="dialog" aria-label={t("auth.signIn")} data-testid="auth-dialog">
           <div className={styles.tabs} role="tablist">
             <button
               type="button"
@@ -69,8 +78,9 @@ export function AuthPanel() {
               aria-pressed={tab === "login"}
               aria-selected={tab === "login"}
               onClick={() => setTab("login")}
+              data-testid="auth-tab-login"
             >
-              Sign in
+              {t("auth.signIn")}
             </button>
             <button
               type="button"
@@ -78,24 +88,26 @@ export function AuthPanel() {
               aria-pressed={tab === "register"}
               aria-selected={tab === "register"}
               onClick={() => setTab("register")}
+              data-testid="auth-tab-register"
             >
-              Register
+              {t("auth.register")}
             </button>
           </div>
 
           <form className={styles.form} onSubmit={submit}>
             <label>
-              Email
+              {t("auth.email")}
               <input
                 type="email"
                 required
                 autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                data-testid="auth-email-input"
               />
             </label>
             <label>
-              Password
+              {t("auth.password")}
               <input
                 type="password"
                 required
@@ -103,6 +115,7 @@ export function AuthPanel() {
                 autoComplete={tab === "login" ? "current-password" : "new-password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                data-testid="auth-password-input"
               />
             </label>
             {error && (
@@ -110,8 +123,8 @@ export function AuthPanel() {
                 {error}
               </p>
             )}
-            <button type="submit" disabled={submitting}>
-              {tab === "login" ? "Sign in" : "Create account"}
+            <button type="submit" disabled={submitting} data-testid="auth-submit-button">
+              {tab === "login" ? t("auth.signIn") : t("auth.createAccount")}
             </button>
           </form>
         </div>

@@ -16,15 +16,24 @@ async function beat(page: Page) {
   if (RECORD_DEMO) await page.waitForTimeout(700);
 }
 
+// Scenario rows are keyed by server-assigned id, not name, so the spec
+// locates them by data-testid prefix + visible text rather than a fixed id.
+function scenarioRow(page: Page, name: string) {
+  return page.locator('[data-testid^="scenario-row-"]').filter({ hasText: name });
+}
+
 const REPO_ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 
 // The auth UI has no other window into it: AuthPanel and ScenariosPanel
-// return null under DEMO_MODE (no backend behind the static demo build), so
-// the deployed demo can never show them. This is the one place that can --
-// recording this spec is how the README's auth section gets a real GIF of
-// it working instead of the feature being invisible everywhere but a local
-// checkout. A smaller viewport keeps the source video (and the GIF made
-// from it) down in size without cropping any panel out of frame.
+// return null/a sign-in prompt under DEMO_MODE (no backend behind the
+// static demo build), so the deployed demo can never show them. This is the
+// one place that can -- recording this spec is how the README's auth
+// section gets a real GIF of it working instead of the feature being
+// invisible everywhere but a local checkout. A smaller viewport keeps the
+// source video (and the GIF made from it) down in size without cropping any
+// panel out of frame, and stays above the 720px sidebar-to-drawer
+// breakpoint so the sidebar (and AuthPanel inside it) is always visible,
+// not behind a drawer toggle.
 test.use({ video: "on", viewport: { width: 960, height: 720 } });
 
 test.beforeAll(() => {
@@ -42,95 +51,110 @@ test.beforeAll(() => {
 });
 
 test("auth and saved scenarios round trip", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/season");
 
   // --- logged out: the dashboard itself has no login wall -----------------
   // Autoplay (see ReplayDashboard) starts the stream without a click.
   await expect(page.locator("table tbody tr").first()).toBeVisible();
   await beat(page);
-  await page.getByRole("button", { name: /pause/i }).click();
+  await page.getByTestId("player-toggle").click();
 
-  const sigmaSlider = page.getByRole("slider", { name: "prior weight" });
+  const sigmaSlider = page.getByTestId("prior-weight-slider");
   await sigmaSlider.focus();
   for (let i = 0; i < 7; i++) await sigmaSlider.press("ArrowRight"); // default 5 -> 12
   await expect(page.getByText(/w_prior = 12\b/)).toBeVisible();
 
-  await expect(page.getByRole("heading", { name: "Saved scenarios" })).toHaveCount(0);
+  // --- /scenarios while signed out: a prompt, not the panel ----------------
+  await page.getByTestId("nav-scenarios").click();
+  await expect(page.getByTestId("scenarios-sign-in-prompt")).toBeVisible();
   await beat(page);
 
-  // --- sign in as the seeded demo account ----------------------------------
-  // Before the popover opens, "Sign in" only matches this one button --
-  // once it's open, the tab and the submit button reuse the same label, so
-  // later lookups are scoped to the dialog (see below) to stay unambiguous.
-  await page.getByRole("button", { name: "Sign in" }).click();
-  const authDialog = page.getByRole("dialog", { name: "Sign in" });
-  await authDialog.getByLabel("Email").fill(DEMO_EMAIL);
-  await authDialog.getByLabel("Password").fill(DEMO_PASSWORD);
+  // --- sign in as the seeded demo account (AuthPanel lives in the sidebar,
+  // reachable from every route) ---------------------------------------------
+  await page.getByTestId("sign-in-open-button").click();
+  const authDialog = page.getByTestId("auth-dialog");
+  await authDialog.getByTestId("auth-email-input").fill(DEMO_EMAIL);
+  await authDialog.getByTestId("auth-password-input").fill(DEMO_PASSWORD);
   await beat(page);
-  await authDialog.getByRole("button", { name: "Sign in" }).click();
+  await authDialog.getByTestId("auth-submit-button").click();
 
   await expect(authDialog).toBeHidden();
-  await expect(page.getByText(DEMO_EMAIL)).toBeVisible();
+  await expect(page.getByTestId("account-email")).toHaveText(DEMO_EMAIL);
   await beat(page);
 
   // --- save the current sigma as a named scenario --------------------------
-  await page.getByLabel("scenario name").fill("sigma twelve");
+  await expect(page.getByTestId("scenarios-sign-in-prompt")).toBeHidden();
+  await page.getByTestId("scenario-name-input").fill("sigma twelve");
   await beat(page);
-  await page.getByRole("button", { name: "Save current" }).click();
+  await page.getByTestId("scenario-save-button").click();
 
-  const savedRow = page.getByRole("listitem").filter({ hasText: "sigma twelve" });
+  const savedRow = scenarioRow(page, "sigma twelve");
   await expect(savedRow).toContainText("w=12");
   await beat(page);
 
   // --- reload: the access token is gone, the refresh cookie survives -------
   await page.reload();
-  await expect(page.getByText(DEMO_EMAIL)).toBeVisible({ timeout: 10_000 });
-  // App state (not session state) resets on reload -- confirms the next
-  // "Load" is what restores 12, not a value that never left.
+  await expect(page.getByTestId("account-email")).toHaveText(DEMO_EMAIL, { timeout: 10_000 });
+  const reloadedRow = scenarioRow(page, "sigma twelve");
+  await expect(reloadedRow).toContainText("w=12");
+
+  // ReplayParamsContext (not server state) resets on reload -- confirms the
+  // "Load" below is what restores 12, not a value that never left the page.
+  await page.getByTestId("nav-season").click();
+  await expect(page.locator("table tbody tr").first()).toBeVisible();
   await expect(page.getByText(/w_prior = 5\b/)).toBeVisible();
-  // The reload re-mounts the page, so autoplay starts the replay running
+  // The reload/nav re-mounts /season, so autoplay starts the replay running
   // again -- pause it so the "clicking Play still works" check at the end
   // of this test starts from a known, stopped state instead of a race with
   // however far autoplay has gotten by then.
-  await expect(page.getByRole("button", { name: /pause/i })).toBeVisible();
-  await page.getByRole("button", { name: /pause/i }).click();
+  await expect(page.getByTestId("player-toggle")).toHaveAttribute("data-state", "playing");
+  await page.getByTestId("player-toggle").click();
   await beat(page);
 
-  const reloadedRow = page.getByRole("listitem").filter({ hasText: "sigma twelve" });
-  await expect(reloadedRow).toContainText("w=12");
-
-  // --- load restores the tuned sigma ---------------------------------------
-  await reloadedRow.getByRole("button", { name: "Load" }).click();
+  // --- load restores the tuned sigma, across the route split ---------------
+  await page.getByTestId("nav-scenarios").click();
+  const rowBeforeLoad = scenarioRow(page, "sigma twelve");
+  await rowBeforeLoad.locator('[data-testid^="scenario-load-"]').click();
+  await page.getByTestId("nav-season").click();
   await expect(page.getByText(/w_prior = 12\b/)).toBeVisible();
   await beat(page);
 
   // --- rename ---------------------------------------------------------------
-  await reloadedRow.getByRole("button", { name: "Rename" }).click();
-  // Not scoped to reloadedRow: renaming swaps the name text for an <input>,
-  // so a locator still filtering on "sigma twelve" text stops matching the
-  // instant editing starts. ScenariosPanel labels the input "rename <name>".
-  const renameInput = page.getByRole("textbox", { name: "rename sigma twelve" });
+  await page.getByTestId("nav-scenarios").click();
+  const rowToRename = scenarioRow(page, "sigma twelve");
+  await rowToRename.locator('[data-testid^="scenario-rename-btn-"]').click();
+  // Not scoped to a name filter: renaming swaps the name text for an
+  // <input>, so a locator still filtering on "sigma twelve" text stops
+  // matching the instant editing starts. The input's data-testid is keyed
+  // by scenario id, which the row testid also carries, so this derives it
+  // from the row rather than needing the id as a separate variable.
+  const renameInput = page.locator('[data-testid^="scenario-rename-input-"]');
   await renameInput.fill("aggressive sigma");
   await beat(page);
   await renameInput.press("Enter");
 
-  const renamedRow = page.getByRole("listitem").filter({ hasText: "aggressive sigma" });
+  const renamedRow = scenarioRow(page, "aggressive sigma");
   await expect(renamedRow).toBeVisible();
-  await expect(page.getByRole("listitem").filter({ hasText: "sigma twelve" })).toHaveCount(0);
+  await expect(scenarioRow(page, "sigma twelve")).toHaveCount(0);
   await beat(page);
 
   // --- delete -----------------------------------------------------------------
-  await renamedRow.getByRole("button", { name: "Delete" }).click();
-  await expect(page.getByText("no saved scenarios yet")).toBeVisible();
+  await renamedRow.locator('[data-testid^="scenario-delete-"]').click();
+  await expect(page.getByTestId("scenarios-empty")).toBeVisible();
   await beat(page);
 
   // --- sign out: saving disappears, the dashboard keeps working ------------
-  await page.getByRole("button", { name: "Sign out" }).click();
-  await expect(page.getByRole("button", { name: "Sign in" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Saved scenarios" })).toHaveCount(0);
+  await page.getByTestId("sign-out-button").click();
+  await expect(page.getByTestId("sign-in-open-button")).toBeVisible();
+  await expect(page.getByTestId("scenarios-sign-in-prompt")).toBeVisible();
   await beat(page);
 
-  await page.getByRole("button", { name: /play/i }).click();
-  await expect(page.getByRole("button", { name: /pause/i })).toBeVisible();
+  await page.getByTestId("nav-season").click();
+  // The route remount re-triggers autoplay -- confirm it's actually running,
+  // then confirm the toggle still works post-sign-out, not just that it's
+  // in some state or other.
+  await expect(page.getByTestId("player-toggle")).toHaveAttribute("data-state", "playing");
+  await page.getByTestId("player-toggle").click();
+  await expect(page.getByTestId("player-toggle")).toHaveAttribute("data-state", "paused");
   await beat(page);
 });

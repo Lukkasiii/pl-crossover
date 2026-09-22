@@ -3,6 +3,7 @@ import { WeightBars } from "../charts/WeightBars";
 import { PredictRmseBars } from "../charts/PredictRmseBars";
 import { usePredict, DEFAULT_OBS_VARIANCE } from "../api/usePredict";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
+import { useLocale } from "../i18n/LocaleContext";
 import type { Metric } from "../ws/types";
 
 const MIN_PRIOR_WEIGHT = 1;
@@ -34,6 +35,7 @@ export function PredictionTuner({
   onPriorWeightChange,
   obsVariance = DEFAULT_OBS_VARIANCE,
 }: PredictionTunerProps) {
+  const { t } = useLocale();
   const debouncedPriorWeight = useDebouncedValue(priorWeight, 300);
   const { data, isFetching, isLoading, error } = usePredict(metric, games, debouncedPriorWeight, obsVariance);
 
@@ -42,14 +44,15 @@ export function PredictionTuner({
   return (
     <section className="panel">
       <div className="panel-header">
-        <h2>Tune the prior</h2>
+        <h2>{t("replay.tunePrior")}</h2>
         <span className="predict-value">
           w_prior = {priorWeight} (σ_prior ≈ {sigmaPrior.toFixed(2)})
         </span>
       </div>
 
       <Slider
-        aria-label="prior weight"
+        aria-label={t("replay.priorWeightLabel")}
+        data-testid="prior-weight-slider"
         min={MIN_PRIOR_WEIGHT}
         max={MAX_PRIOR_WEIGHT}
         value={priorWeight}
@@ -57,8 +60,8 @@ export function PredictionTuner({
         onValueCommit={onPriorWeightChange}
       />
 
-      {error && <p className="predict-note error">failed to recompute the posterior</p>}
-      {!error && isLoading && <p className="predict-note">loading…</p>}
+      {error && <p className="predict-note error">{t("replay.failedPredict")}</p>}
+      {!error && isLoading && <p className="predict-note">{t("replay.loading")}</p>}
 
       {!error && data && (
         <div className={isFetching ? "predict-fading" : undefined}>

@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import type { EChartsOption } from "echarts";
 import { EChart } from "./EChart";
 import { colors, fonts } from "../theme";
+import { useLocale } from "../i18n/LocaleContext";
 
 interface WeightBarsProps {
   weights: { prior: number; data: number } | null;
@@ -16,6 +17,7 @@ interface WeightBarsProps {
  * identical at the slider's default, so it was folded into this one.
  */
 export function WeightBars({ weights }: WeightBarsProps) {
+  const { t } = useLocale();
   const option = useMemo<EChartsOption>(() => {
     const w = weights;
     const total = w ? w.prior + w.data : 1;
@@ -29,7 +31,7 @@ export function WeightBars({ weights }: WeightBarsProps) {
       yAxis: { type: "category", data: ["weight"], show: false },
       series: [
         {
-          name: "Last season (prior)",
+          name: t("chart.priorSeason"),
           type: "bar",
           stack: "weight",
           data: [priorShare],
@@ -42,7 +44,7 @@ export function WeightBars({ weights }: WeightBarsProps) {
           },
         },
         {
-          name: "Current season (data)",
+          name: t("chart.currentSeasonData"),
           type: "bar",
           stack: "weight",
           data: [dataShare],
@@ -56,7 +58,7 @@ export function WeightBars({ weights }: WeightBarsProps) {
         },
       ],
     };
-  }, [weights]);
+  }, [weights, t]);
 
   return <EChart option={option} />;
 }
