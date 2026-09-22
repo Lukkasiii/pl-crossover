@@ -396,6 +396,21 @@ hand-formatted.
 - **Locale lives in the URL** (`?lang=en` / `?lang=zh`), not `localStorage` —
   a shared link must render in the language the sender saw, and a refresh
   must not silently flip language on the visitor.
+- **`?lang=` and `?week=` are two independent writers on the same URL —
+  route them through one hook (`src/routing/useUrlParamWriter.ts`), not two
+  separate `useSearchParams` calls.** Caught by hand, not by the suite:
+  switching language while on `/season` bounced to `/`, because
+  react-router's `setSearchParams`/relative `"?..."` navigation resolves
+  against the *nearest matched route's static path* — for `LocaleProvider`
+  (mounted above `<Routes>`) that path is empty, so it silently lands on
+  `/`. A second bug showed up fixing the first: writing an *absolute*
+  pathname from each hook's own `useLocation()` snapshot dropped whichever
+  param wrote second, because the two hooks could each capture `location`
+  from a render one tick behind the other's already-committed write.
+  `useUrlParamWriter` fixes both by reading/writing `window.location`
+  directly (always current, unlike a React-tracked snapshot) and navigating
+  to an explicit `{ pathname, search }`. Any future `?param=` needs to go
+  through it too, not a fresh `useSearchParams`.
 - **Domain notation is not UI chrome and is not translated**: `w_prior`,
   `σ_prior`, RMSE, MAE, R², xG, xGD, GD are standard statistical/football
   notation, the same in both languages, the same way a formula wouldn't be
