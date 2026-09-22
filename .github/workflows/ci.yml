@@ -69,6 +69,31 @@ jobs:
       - run: npm run test:e2e
         working-directory: web
 
+  e2e-prod-base:
+    runs-on: ubuntu-latest
+    # Runs against the actual GitHub Pages base ("/pl-crossover/"), not the
+    # dev server's "/" -- a navigation resolved against the wrong basename
+    # is indistinguishable from a correct one when the basename is "/", so
+    # the `e2e` job above cannot catch this class of bug. See
+    # e2e/production-base.spec.ts and CLAUDE.md.
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+        working-directory: web
+      - run: npx playwright install --with-deps chromium
+        working-directory: web
+      - run: npm run test:e2e:prod-base
+        working-directory: web
+
   docker:
     runs-on: ubuntu-latest
     steps:
@@ -88,7 +113,7 @@ jobs:
       - run: docker compose down
 
   deploy-demo:
-    needs: [backend, frontend, e2e]
+    needs: [backend, frontend, e2e, e2e-prod-base]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:

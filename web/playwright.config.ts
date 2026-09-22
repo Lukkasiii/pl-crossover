@@ -18,6 +18,11 @@ copyFileSync(path.join(REPO_ROOT, "data", "pl.db"), SCRATCH_DB);
 // of the resilience test is a live socket that can actually be dropped.
 export default defineConfig({
   testDir: "e2e",
+  // production-base.spec.ts runs under its own config (playwright.prod-base
+  // .config.ts, `npm run test:e2e:prod-base`) against a built demo bundle
+  // served at the real GitHub Pages base -- it 404s everything here, where
+  // the dev server serves from base "/", not "/pl-crossover/".
+  testIgnore: /production-base\.spec\.ts/,
   timeout: 30_000,
   fullyParallel: true,
   webServer: [

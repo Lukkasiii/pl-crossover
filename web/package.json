@@ -12,6 +12,7 @@
     "lint": "oxlint",
     "test": "vitest run",
     "test:e2e": "playwright test",
+    "test:e2e:prod-base": "npm run demo:data && npm run build:demo && playwright test --config=playwright.prod-base.config.ts",
     "preview": "vite preview",
     "generate:types": "cd .. && python3 scripts/export_openapi.py web/openapi.json && cd web && openapi-typescript openapi.json -o src/api/schema.ts"
   },
