@@ -4,6 +4,7 @@ import { bandForRank, bandsForSeason } from "./zoneBands";
 import { broadcastName } from "../teamNames";
 import { useFlip } from "./useFlip";
 import { useTweenedNumber } from "./useTweenedNumber";
+import { useLocale } from "../i18n/LocaleContext";
 import styles from "./StandingsTable.module.css";
 
 interface StandingsTableProps {
@@ -16,6 +17,7 @@ function Points({ value }: { value: number }) {
 }
 
 export function StandingsTable({ rows, currentSeasonLabel }: StandingsTableProps) {
+  const { t } = useLocale();
   const bands = useMemo(() => bandsForSeason(currentSeasonLabel), [currentSeasonLabel]);
   const rowRefs = useRef<Map<number, HTMLTableRowElement>>(new Map());
   const [hoveredTeamId, setHoveredTeamId] = useState<number | null>(null);
@@ -27,7 +29,7 @@ export function StandingsTable({ rows, currentSeasonLabel }: StandingsTableProps
   );
 
   if (rows === null) {
-    return <p className={styles.placeholder}>Press play to start the replay.</p>;
+    return <p className={styles.placeholder}>{t("standings.pressPlay")}</p>;
   }
 
   return (
@@ -36,32 +38,32 @@ export function StandingsTable({ rows, currentSeasonLabel }: StandingsTableProps
           named for keyboard users -- axe's scrollable-region-focusable (serious,
           wcag2a/2.1.1/2.1.3) flags a scrolling div with neither, since without them
           a keyboard-only user has no way to pan to the table's right-hand columns. */}
-      <div className={styles.tableWrap} tabIndex={0} role="region" aria-label="Standings table, scrollable">
+      <div className={styles.tableWrap} tabIndex={0} role="region" aria-label={t("standings.scrollableRegion")}>
         <table className={styles.table}>
           <thead>
             <tr>
               <th scope="col">#</th>
-              <th scope="col">Team</th>
+              <th scope="col">{t("standings.col.team")}</th>
               <th scope="col">
-                <abbr title="Games played">P</abbr>
+                <abbr title={t("standings.col.played")}>P</abbr>
               </th>
               <th scope="col">
-                <abbr title="Wins">W</abbr>
+                <abbr title={t("standings.col.wins")}>W</abbr>
               </th>
               <th scope="col">
-                <abbr title="Draws">D</abbr>
+                <abbr title={t("standings.col.draws")}>D</abbr>
               </th>
               <th scope="col">
-                <abbr title="Losses">L</abbr>
+                <abbr title={t("standings.col.losses")}>L</abbr>
               </th>
               <th scope="col">
-                <abbr title="Goal difference">GD</abbr>
+                <abbr title={t("standings.col.goalDiff")}>GD</abbr>
               </th>
               <th scope="col">
-                <abbr title="Points">Pts</abbr>
+                <abbr title={t("standings.col.points")}>Pts</abbr>
               </th>
               <th scope="col">
-                <abbr title="Expected goal difference">xGD</abbr>
+                <abbr title={t("standings.col.xgd")}>xGD</abbr>
               </th>
             </tr>
           </thead>
@@ -69,7 +71,7 @@ export function StandingsTable({ rows, currentSeasonLabel }: StandingsTableProps
             {rows.map((row) => {
               const band = bandForRank(bands, row.live_rank);
               const isChampion = row.live_rank === 1;
-              const ariaLabel = `${row.name}, ${row.live_rank ?? "unranked"}${band ? `, ${band.label}` : ""}${isChampion ? ", champions" : ""}${row.in_pair ? "" : ", outside the 17-team common sample"}`;
+              const ariaLabel = `${row.name}, ${row.live_rank ?? t("standings.unranked")}${band ? `, ${t(band.labelKey)}` : ""}${isChampion ? `, ${t("standings.champions")}` : ""}${row.in_pair ? "" : `, ${t("standings.outsideSample")}`}`;
               return (
                 <tr
                   key={row.team_id}
@@ -113,12 +115,12 @@ export function StandingsTable({ rows, currentSeasonLabel }: StandingsTableProps
         {bands.map((b) => (
           <li key={b.key}>
             <span className={styles.swatch} style={{ background: b.color }} />
-            {b.label}
+            {t(b.labelKey)}
           </li>
         ))}
         <li>
           <span className={`${styles.swatch} ${styles.excludedSwatch}`} />
-          Outside the 17-team common sample
+          {t("standings.legend.outsideSample")}
         </li>
       </ul>
     </>

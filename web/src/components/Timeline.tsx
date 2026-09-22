@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Slider } from "./ui/Slider";
+import { useLocale } from "../i18n/LocaleContext";
 
 interface TimelineProps {
   seq: number;
@@ -15,6 +16,7 @@ interface TimelineProps {
  * catch-up on every pixel of motion.
  */
 export function Timeline({ seq, totalFrames, disabled, onSeek }: TimelineProps) {
+  const { t } = useLocale();
   const [dragValue, setDragValue] = useState<number | null>(null);
   const max = Math.max(totalFrames - 1, 0);
   const value = dragValue ?? Math.max(seq, 0);
@@ -29,7 +31,8 @@ export function Timeline({ seq, totalFrames, disabled, onSeek }: TimelineProps) 
 
   return (
     <Slider
-      aria-label="replay position"
+      aria-label={t("player.positionLabel")}
+      data-testid="replay-timeline"
       min={0}
       max={max}
       value={value}

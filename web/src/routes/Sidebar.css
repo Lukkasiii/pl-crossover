@@ -1,0 +1,153 @@
+.sidebar-topbar {
+  display: none;
+  align-items: center;
+  padding: var(--space-3) var(--space-4);
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.sidebar-title {
+  font-family: var(--font-heading);
+  font-weight: 500;
+  font-size: var(--text-lg);
+  color: var(--text);
+  text-decoration: none;
+}
+
+.sidebar-toggle {
+  display: none;
+}
+
+.sidebar {
+  width: 220px;
+  flex: 0 0 220px;
+  box-sizing: border-box;
+  background: var(--panel);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  padding: var(--space-6) var(--space-4);
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  overflow-y: auto;
+}
+
+.sidebar-title-desktop {
+  padding: 0 var(--space-2);
+}
+
+.sidebar-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  flex: 1;
+}
+
+.sidebar-link {
+  display: block;
+  padding: var(--space-2) var(--space-3);
+  border-radius: 6px;
+  border-left: 3px solid transparent;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: var(--text-sm);
+}
+
+.sidebar-link:hover {
+  color: var(--text);
+}
+
+.sidebar-link:focus-visible {
+  outline: 2px solid var(--secondary);
+  outline-offset: 2px;
+}
+
+.sidebar-link-active {
+  color: var(--text);
+  background: var(--bg);
+  border-left-color: var(--accent);
+}
+
+.sidebar-footer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: auto;
+}
+
+.locale-switcher {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.locale-switcher button[aria-pressed="true"] {
+  border-color: var(--secondary);
+  color: var(--secondary);
+}
+
+.sidebar-repo-link {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  text-decoration: none;
+}
+
+.sidebar-repo-link:hover,
+.sidebar-repo-link:focus-visible {
+  text-decoration: underline;
+}
+
+/* Narrow widths: the permanent column becomes a full-screen drawer, toggled
+   from a fixed button that sits above the drawer's own stacking context so
+   it stays reachable to close it, not just open it (see Sidebar.tsx). */
+@media (max-width: 720px) {
+  .sidebar-topbar {
+    display: flex;
+  }
+
+  .sidebar-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    top: var(--space-3);
+    right: var(--space-4);
+    z-index: 40;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+  }
+
+  .sidebar-title-desktop {
+    display: none;
+  }
+
+  .sidebar {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100svh;
+    border-right: none;
+    transform: translateY(-100%);
+    visibility: hidden;
+    pointer-events: none;
+    transition:
+      transform 160ms ease,
+      visibility 160ms;
+    z-index: 30;
+    padding-top: var(--space-16);
+  }
+
+  .sidebar-open {
+    transform: translateY(0);
+    visibility: visible;
+    pointer-events: auto;
+  }
+}

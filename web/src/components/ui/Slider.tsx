@@ -7,6 +7,7 @@ interface SliderProps {
   max: number;
   disabled?: boolean;
   "aria-label": string;
+  "data-testid"?: string;
   onValueChange: (value: number) => void;
   onValueCommit: (value: number) => void;
 }
@@ -29,7 +30,7 @@ export function Slider({ value, min, max, disabled, onValueChange, onValueCommit
       {/* role="slider" lives on the Thumb, not the Root -- an aria-label on
           Root never reaches assistive tech, which announces an unnamed
           slider. */}
-      <RadixSlider.Thumb className={styles.thumb} aria-label={aria["aria-label"]} />
+      <RadixSlider.Thumb className={styles.thumb} aria-label={aria["aria-label"]} data-testid={aria["data-testid"]} />
     </RadixSlider.Root>
   );
 }

@@ -1,13 +1,23 @@
 import { useState } from "react";
 import { useAuth } from "../../auth/AuthContext";
 import { useScenarios, type ScenarioOut, type ScenarioParams } from "../../api/useScenarios";
+import { useLocale } from "../../i18n/LocaleContext";
+import type { TranslationKey } from "../../i18n/dictionaries";
 import styles from "./ScenariosPanel.module.css";
 
-const METRIC_LABELS: Record<ScenarioParams["metric"], string> = { xg: "xG", xgd: "xGD", gd: "GD", points: "Points" };
-const METHOD_LABELS: Record<ScenarioParams["method"], string> = { pooled: "pooled", per_season: "per-season" };
+const METRIC_LABEL_KEYS: Record<ScenarioParams["metric"], TranslationKey> = {
+  xg: "replay.metric.xg",
+  xgd: "replay.metric.xgd",
+  gd: "replay.metric.gd",
+  points: "replay.metric.points",
+};
+const METHOD_LABEL_KEYS: Record<ScenarioParams["method"], TranslationKey> = {
+  pooled: "scenarios.method.pooled",
+  per_season: "scenarios.method.per_season",
+};
 
-function summarize(params: ScenarioParams): string {
-  return `${METRIC_LABELS[params.metric]} · ${METHOD_LABELS[params.method]} · w=${params.prior_weight} · σ²=${params.obs_variance}`;
+function summarize(t: (key: TranslationKey) => string, params: ScenarioParams): string {
+  return `${t(METRIC_LABEL_KEYS[params.metric])} · ${t(METHOD_LABEL_KEYS[params.method])} · w=${params.prior_weight} · σ²=${params.obs_variance}`;
 }
 
 interface ScenariosPanelProps {
@@ -22,6 +32,7 @@ interface ScenariosPanelProps {
  * own those values, App does, so loading a scenario just calls back up.
  */
 export function ScenariosPanel({ current, onLoad }: ScenariosPanelProps) {
+  const { t } = useLocale();
   const { user } = useAuth();
   const { scenarios, isLoading, error, save, rename, remove } = useScenarios();
   const [newName, setNewName] = useState("");
@@ -55,31 +66,36 @@ export function ScenariosPanel({ current, onLoad }: ScenariosPanelProps) {
 
   return (
     <section className="panel">
-      <h2>Saved scenarios</h2>
+      <h2>{t("scenarios.heading")}</h2>
 
       <form className={styles.saveRow} onSubmit={submitSave}>
         <input
-          aria-label="scenario name"
-          placeholder="name this scenario…"
+          aria-label={t("scenarios.nameLabel")}
+          placeholder={t("scenarios.namePlaceholder")}
           value={newName}
           onChange={(e) => setNewName(e.target.value)}
           maxLength={100}
+          data-testid="scenario-name-input"
         />
-        <button type="submit" disabled={!newName.trim() || save.isPending}>
-          Save current
+        <button type="submit" disabled={!newName.trim() || save.isPending} data-testid="scenario-save-button">
+          {t("scenarios.saveCurrent")}
         </button>
       </form>
 
-      {error && <p className={styles.error}>failed to load scenarios</p>}
-      {!error && isLoading && <p className={styles.empty}>loading…</p>}
-      {!error && !isLoading && scenarios.length === 0 && <p className={styles.empty}>no saved scenarios yet</p>}
+      {error && <p className={styles.error}>{t("scenarios.failedToLoad")}</p>}
+      {!error && isLoading && <p className={styles.empty}>{t("scenarios.loading")}</p>}
+      {!error && !isLoading && scenarios.length === 0 && (
+        <p className={styles.empty} data-testid="scenarios-empty">
+          {t("scenarios.empty")}
+        </p>
+      )}
 
       <ul className={styles.list}>
         {scenarios.map((s) => (
-          <li key={s.id} className={styles.row}>
+          <li key={s.id} className={styles.row} data-testid={`scenario-row-${s.id}`}>
             {renamingId === s.id ? (
               <input
-                aria-label={`rename ${s.name}`}
+                aria-label={`${t("scenarios.renameLabelPrefix")} ${s.name}`}
                 autoFocus
                 value={renameValue}
                 onChange={(e) => setRenameValue(e.target.value)}
@@ -89,21 +105,27 @@ export function ScenariosPanel({ current, onLoad }: ScenariosPanelProps) {
                 }}
                 onBlur={() => commitRename(s.id)}
                 maxLength={100}
+                data-testid={`scenario-rename-input-${s.id}`}
               />
             ) : (
-              <div className={styles.name}>
+              <div className={styles.name} data-testid={`scenario-name-${s.id}`}>
                 {s.name}
-                <div className={styles.summary}>{summarize(s.params)}</div>
+                <div className={styles.summary}>{summarize(t, s.params)}</div>
               </div>
             )}
-            <button type="button" onClick={() => onLoad(s.params)}>
-              Load
+            <button type="button" onClick={() => onLoad(s.params)} data-testid={`scenario-load-${s.id}`}>
+              {t("scenarios.load")}
             </button>
-            <button type="button" onClick={() => startRename(s)}>
-              Rename
+            <button type="button" onClick={() => startRename(s)} data-testid={`scenario-rename-btn-${s.id}`}>
+              {t("scenarios.rename")}
             </button>
-            <button type="button" onClick={() => remove.mutate(s.id)} disabled={remove.isPending}>
-              Delete
+            <button
+              type="button"
+              onClick={() => remove.mutate(s.id)}
+              disabled={remove.isPending}
+              data-testid={`scenario-delete-${s.id}`}
+            >
+              {t("scenarios.delete")}
             </button>
           </li>
         ))}

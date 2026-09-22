@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import type { EChartsOption } from "echarts";
 import { EChart } from "./EChart";
 import { colors, fonts } from "../theme";
+import { useLocale } from "../i18n/LocaleContext";
 import type { Metric, RoundFrame } from "../ws/types";
 
 const FULL_SEASON_GAMES = 38;
@@ -12,6 +13,7 @@ interface RmseChartProps {
 }
 
 export function RmseChart({ metric, roundsSoFar }: RmseChartProps) {
+  const { t } = useLocale();
   const option = useMemo<EChartsOption>(() => {
     const games = Array.from({ length: FULL_SEASON_GAMES }, (_, i) => i + 1);
     const current: (number | null)[] = games.map(() => null);
@@ -30,12 +32,12 @@ export function RmseChart({ metric, roundsSoFar }: RmseChartProps) {
     return {
       grid: { left: 48, right: 16, top: 32, bottom: 32 },
       tooltip: { trigger: "axis" },
-      legend: { top: 0, data: ["Current season", "Last season (prior)"] },
-      xAxis: { type: "category", name: "games played", data: games, axisLabel: { fontFamily: fonts.mono } },
-      yAxis: { type: "value", name: "RMSE (positions)" },
+      legend: { top: 0, data: [t("chart.currentSeason"), t("chart.priorSeason")] },
+      xAxis: { type: "category", name: t("chart.gamesPlayed"), data: games, axisLabel: { fontFamily: fonts.mono } },
+      yAxis: { type: "value", name: t("chart.rmsePositions") },
       series: [
         {
-          name: "Current season",
+          name: t("chart.currentSeason"),
           type: "line",
           data: current,
           showSymbol: false,
@@ -46,13 +48,13 @@ export function RmseChart({ metric, roundsSoFar }: RmseChartProps) {
               ? undefined
               : {
                   symbol: "none",
-                  label: { formatter: "⚡ crossover" },
+                  label: { formatter: t("chart.crossoverMarker") },
                   lineStyle: { color: colors.gold },
                   data: [{ xAxis: crossoverGames - 1 }],
                 },
         },
         {
-          name: "Last season (prior)",
+          name: t("chart.priorSeason"),
           type: "line",
           data: prior,
           showSymbol: false,
@@ -60,7 +62,7 @@ export function RmseChart({ metric, roundsSoFar }: RmseChartProps) {
         },
       ],
     };
-  }, [metric, roundsSoFar]);
+  }, [metric, roundsSoFar, t]);
 
   return <EChart option={option} />;
 }

@@ -3,11 +3,23 @@ import { expect, type Locator, test } from "@playwright/test";
 const DROP_AT_FRAME = 300; // deep enough that the old O(n) round-trip catch-up (~13ms/frame through the WS proxy below, measured) can't finish inside RESUME_TIMEOUT_MS
 const RESUME_TIMEOUT_MS = 2_000; // single-seek catch-up resumes in one round trip (~tens of ms); 300 sequential round trips takes ~4s
 
+// `data-seq` is a plain numeric attribute, not translated UI text -- reading
+// it here (rather than parsing PlayerControls' visible "frame N / M" string)
+// keeps this spec correct regardless of locale. See CLAUDE.md's i18n
+// contract: test hooks are data-testid/data attributes, never locale text.
 async function readFrame(frameCount: Locator): Promise<number> {
-  const text = await frameCount.textContent();
-  const match = text?.match(/frame (\d+)/);
-  return match ? Number(match[1]) : -1;
+  const seq = await frameCount.getAttribute("data-seq");
+  return seq ? Number(seq) : -1;
 }
+
+// Season's header (title, subtitle, season-pair toolbar) plus two chart
+// panels now sit above the player controls -- at Playwright's default
+// viewport height the speed-select trigger can land close enough to the
+// fold that its Radix popper's collision-avoidance repositioning is
+// borderline, flaking the option click below. Not what this spec is
+// about (that's layout.spec.ts's job), so it just uses a viewport tall
+// enough that nothing here is near an edge.
+test.use({ viewport: { width: 1280, height: 1400 } });
 
 /**
  * Intercepts the replay WebSocket and, once it's streaming, closes the
@@ -27,9 +39,9 @@ test("replay resumes after the connection drops mid-stream", async ({ page }) =>
     clientRoutes.push(ws);
   });
 
-  await page.goto("/");
+  await page.goto("/season");
   // Autoplay (see ReplayDashboard) starts the stream without a click.
-  await expect(page.getByRole("button", { name: /pause/i })).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByTestId("player-toggle")).toHaveAttribute("data-state", "playing", { timeout: 10_000 });
   await expect(page.getByTitle("open")).toBeVisible({ timeout: 10_000 });
   // Wait for the standings table to actually have a row before touching the
   // speed selector below it. StandingsTable's placeholder ("Press play...")
@@ -48,10 +60,10 @@ test("replay resumes after the connection drops mid-stream", async ({ page }) =>
   // while already playing (PlayerControls only calls onPlay(next) -- which
   // is what actually updates the streamed speed -- inside its `if
   // (playing)` branch), so it has to be changed after Play, not before.
-  await page.getByRole("combobox", { name: "replay speed" }).click();
+  await page.getByTestId("speed-select").click();
   await page.getByRole("option", { name: "10x" }).click();
 
-  const frameCount = page.locator(".frame-count");
+  const frameCount = page.getByTestId("frame-counter");
   // Deliberately not the first few frames: at frame 1-9 the counter moving
   // at all after reconnect would trivially satisfy a weak assertion, catch-up
   // or not, since even a from-scratch resume is at frame 1 by then.

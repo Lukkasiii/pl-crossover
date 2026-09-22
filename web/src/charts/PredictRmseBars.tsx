@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import type { EChartsOption } from "echarts";
 import { EChart } from "./EChart";
 import { colors } from "../theme";
+import { useLocale } from "../i18n/LocaleContext";
 import type { PredictOut } from "../api/usePredict";
 
 interface PredictRmseBarsProps {
@@ -15,12 +16,13 @@ interface PredictRmseBarsProps {
  * one's in the blended (gold) result.
  */
 export function PredictRmseBars({ predict, className }: PredictRmseBarsProps) {
+  const { t } = useLocale();
   const option = useMemo<EChartsOption>(
     () => ({
       grid: { left: 48, right: 16, top: 16, bottom: 24 },
       tooltip: { trigger: "axis" },
-      xAxis: { type: "category", data: ["Last season", "This season", "Blended"] },
-      yAxis: { type: "value", name: "RMSE (positions)" },
+      xAxis: { type: "category", data: [t("chart.lastSeason"), t("chart.thisSeason"), t("chart.blended")] },
+      yAxis: { type: "value", name: t("chart.rmsePositions") },
       series: [
         {
           type: "bar",
@@ -32,7 +34,7 @@ export function PredictRmseBars({ predict, className }: PredictRmseBarsProps) {
         },
       ],
     }),
-    [predict],
+    [predict, t],
   );
 
   return <EChart option={option} className={className} />;

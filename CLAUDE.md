@@ -34,8 +34,13 @@ works — which means an interviewer cannot tell this project apart from anyone
 else's.
 
 **So: move the hard problems into the browser, and make them visible within 30
-seconds of opening the demo.** Depth beats breadth. Do not add pages or
-features beyond what is listed here. Keep the backend thin.
+seconds of opening the demo.** Depth beats breadth. Keep the backend thin.
+
+Through Stage 4 this meant one page. **v2 (Stage 5) splits it into seven
+routes** — see [v2 — multi-page dashboard](#v2--multi-page-dashboard) below
+for why and for the routes, design tokens and i18n contract that govern
+everything built from here on. The "depth beats breadth" rule still applies
+*within* each page; it no longer means *one* page.
 
 ## State
 
@@ -45,13 +50,15 @@ features beyond what is listed here. Keep the backend thin.
 | ETL → SQLite | done, 14 tests passing |
 | Model engine (OLS, LOSO, Bayesian, crossover) | done, reproduces the original study |
 | 38-matchweek curves | done, `data/curves.json` |
-| REST + WebSocket API | **next** |
-| Auth + saved scenarios | next |
-| React frontend | not started |
+| REST + WebSocket API | done, `api/tests` passing |
+| Auth + saved scenarios | done end to end — register/login/refresh, scenarios CRUD |
+| React frontend — replay engine, standings, charts, tuner, auth UI, demo mode | done (Stages 1–4) |
+| Docker + CI + deploy (static demo on GitHub Pages) | done |
+| Multi-page shell: routing, sidebar nav, design tokens, i18n | **in progress (Stage 5)** |
+| Page contents beyond Overview/Season/Scenarios | not started — placeholders |
 | Ask the Model panel | not started |
-| Docker + CI + deploy | not started |
 
-Four commits, pushed to `github.com/Lukkasiii/pl-crossover`.
+Pushed to `github.com/Lukkasiii/pl-crossover`.
 
 ## Setup
 
@@ -313,6 +320,127 @@ per pair at application startup and cache it; do not recompute per connection.
   header" constraint as how it *would* be gated; unused plumbing is not built.
 
 
+## v2 — multi-page dashboard
+
+Stages 1–4 shipped one page: header, replay dashboard, prediction tuner,
+scenarios panel, all stacked in `App.tsx`. That was correct while the frontend
+was proving out the hard real-time problems (Feature 1–3 above). It stops
+being correct once there is more to show than one page can hold without
+diluting the 30-second read — a wall of panels reads as *more*, not as
+*deeper*. v2 gives each concern its own route instead.
+
+### Routes
+
+| Route | Content |
+|---|---|
+| `/` | Overview — landing page, the 30-second pitch, links into the rest |
+| `/season` | Season Replay Engine — the Stage 1–4 dashboard (replay, RMSE curve, prediction tuner, standings) moved here unchanged |
+| `/model` | The Bayesian model explained: the blend formula, prior-share-by-checkpoint table |
+| `/teams` | All teams, one list |
+| `/teams/:slug` | One team's history across season pairs |
+| `/compare` | Side-by-side: two teams, or two season pairs |
+| `/method` | The three methodologies (pooled / per-season / rank-based) and why only two ship — see "Results to preserve" above |
+| `/scenarios` | Saved scenarios — the Stage 4 auth + scenarios panel moved here unchanged. Auth-gated *for saving*, same rule as before: signed out shows a sign-in prompt inline, never a redirect wall |
+
+Stage 5 builds the shell and the navigation for all seven routes. `/season`
+and `/scenarios` carry real content (the existing components, relocated, not
+rewritten). The other five are placeholders — reachable, correctly routed,
+correct page title — until their own stage. Do not backfill their content
+early; do not skip building their nav entry because it's "just a
+placeholder."
+
+Every route is lazy-loaded (`React.lazy` + `Suspense`). `/` needs no ECharts
+at all — it was the biggest chunk of the pre-v2 bundle sitting on the one
+route that least needed it.
+
+**Deep links need a static-hosting fallback.** The demo deploys to GitHub
+Pages (`web/dist`, no server, no rewrites) — a direct hit or refresh on
+`/pl-crossover/season` 404s unless GH Pages has something to fall back to.
+`npm run build:demo` now runs a `postbuild:demo` step that copies
+`dist/index.html` to `dist/404.html`; GH Pages serves that for any unknown
+path, the bundle loads, and `BrowserRouter` renders the real route from
+`window.location` once it's up. Don't remove this when touching the demo
+build — it's not dead weight, it's the only thing making `/season` or
+`/scenarios` survive a refresh on the deployed site.
+
+### Design system
+
+Locked at Stage 5; every later page is built on it, don't relitigate it.
+
+- **Palette** (colours only — never the lion mark or the "Premier League"
+  wordmark): primary `#37003C`, accent `#E90052`, secondary `#04F5FF`,
+  success `#00FF85`.
+- **Surfaces darken toward the primary purple**: `--bg: #1A0A22`,
+  `--panel: #241030`, borders tinted purple to match — replacing the
+  Stage 1–4 near-black tokens.
+- **Zone colours are re-derived from this palette**, not carried over from
+  Stage 4: Champions League → purple, Europa → orange, Conference → cyan,
+  relegation → red. Every foreground/background pairing must pass WCAG AA;
+  axe (`e2e/accessibility.spec.ts`) checks this on every PR, not just at
+  design time.
+- **Type ramp, line heights, and a 4px spacing scale**, all as CSS custom
+  properties. The Stage 1–4 CSS used one-off `px` values throughout
+  (`gap: 16px`, `padding: 24px`, …); that inconsistency, not missing
+  typefaces, was the reason the page didn't read as one system. Keep the
+  existing typefaces (Bricolage Grotesque / IBM Plex Sans / IBM Plex Mono).
+- **Left sidebar navigation as the shell**, collapsing to a top drawer at
+  narrow widths. Current route highlighted, every entry keyboard-reachable
+  (tab order + visible focus, not just clickable).
+
+### i18n contract
+
+English and Chinese, switcher in the header, every UI-chrome string keyed
+through a dictionary (`src/i18n/`). Numbers and dates go through `Intl`, not
+hand-formatted.
+
+- **Locale lives in the URL** (`?lang=en` / `?lang=zh`), not `localStorage` —
+  a shared link must render in the language the sender saw, and a refresh
+  must not silently flip language on the visitor.
+- **`?lang=` and `?week=` are two independent writers on the same URL —
+  route them through one hook (`src/routing/useUrlParamWriter.ts`), not two
+  separate `useSearchParams` calls.** Caught by hand, not by the suite:
+  switching language while on `/season` bounced to `/`, because
+  react-router's `setSearchParams`/relative `"?..."` navigation resolves
+  against the *nearest matched route's static path* — for `LocaleProvider`
+  (mounted above `<Routes>`) that path is empty, so it silently lands on
+  `/`. A second bug showed up fixing the first: writing an *absolute*
+  pathname from each hook's own `useLocation()` snapshot dropped whichever
+  param wrote second, because the two hooks could each capture `location`
+  from a render one tick behind the other's already-committed write.
+  `useUrlParamWriter` fixes both by reading/writing `window.location`
+  directly (always current, unlike a React-tracked snapshot) and navigating
+  to an explicit `{ pathname, search }`. Any future `?param=` needs to go
+  through it too, not a fresh `useSearchParams`.
+- **Domain notation is not UI chrome and is not translated**: `w_prior`,
+  `σ_prior`, RMSE, MAE, R², xG, xGD, GD are standard statistical/football
+  notation, the same in both languages, the same way a formula wouldn't be
+  translated mid-derivation. Button labels, headings, nav entries, form
+  labels, empty states and error messages are chrome and are translated.
+- **Test hooks are `data-testid`, never locale-dependent text.** The
+  Playwright specs predate i18n and located elements by visible text
+  (`getByRole(..., { name: ... })`) — that breaks the instant a string goes
+  through the dictionary. Every element an e2e spec touches now carries a
+  stable `data-testid` (or, where the accessible name itself needs testing,
+  a state attribute like `data-state="playing"` instead of matching the
+  label text). This was migrated *before* strings were extracted, in its own
+  commit, with the suite green on English text only, specifically so the
+  extraction commit couldn't hide a locator regression inside a string diff.
+
+### Known, deferred: Safari grey chart
+
+`theme.ts` reads CSS custom properties once at module load
+(`getComputedStyle(document.documentElement)`) and bakes the resolved colours
+into the ECharts theme registration, which only ever runs once. On Safari
+this has been observed to occasionally resolve before the stylesheet is
+fully applied, so a chart registers with empty-string colours and renders
+grey until a full page reload. Root cause not confirmed (Safari's `<link
+rel=stylesheet>`/module-execution ordering is timing-dependent, not
+reliably reproducible locally). **Known and deliberately deferred** — fixing
+it means either polling for a non-empty token before registering the theme
+or moving the theme off `getComputedStyle` entirely, and neither is worth
+doing until it blocks something. Do not "fix" this opportunistically inside
+an unrelated change; it gets its own investigation and its own commit.
+
 ## Frontend depth — this is what separates the project
 
 ### 1. Make the data flow heavy, then prove it holds up
@@ -453,6 +581,7 @@ through other experience — the Figma-first build is the closest proxy here.
 | 2 | Frontend base, replay depth 1–2, demo mode, Docker, CI, README v1 → **deployable, apply now** | 45 |
 | 3 | Reconnect, interaction polish, Figma, design tokens, auth UI | 30 |
 | 4 | Ask the Model, README v2 with numbers, accessibility, Storybook | 21 |
+| 5 | Multi-page shell: routing, sidebar nav, design tokens v2, i18n, page placeholders | — |
 
 ## Style
 
