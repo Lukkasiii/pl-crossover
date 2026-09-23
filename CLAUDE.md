@@ -55,7 +55,8 @@ everything built from here on. The "depth beats breadth" rule still applies
 | React frontend — replay engine, standings, charts, tuner, auth UI, demo mode | done (Stages 1–4) |
 | Docker + CI + deploy (static demo on GitHub Pages) | done |
 | Multi-page shell: routing, sidebar nav, design tokens, i18n | **in progress (Stage 5)** |
-| Page contents beyond Overview/Season/Scenarios | not started — placeholders |
+| /season, /model content | done — the Stage 1–4 dashboard's panels split across the two |
+| Overview, Teams, Compare, Method page content | not started — placeholders |
 | Ask the Model panel | not started |
 
 Pushed to `github.com/Lukkasiii/pl-crossover`.
@@ -367,15 +368,55 @@ Verified by `e2e/production-base.spec.ts`, run via `npm run
 test:e2e:prod-base` (CI job `e2e-prod-base`, gating `deploy-demo`): it
 builds the real demo bundle and serves it through
 `e2e/ghPagesStaticServer.mjs`, which reproduces GitHub Pages' actual
-semantics (exact-file-or-404.html-with-404-status, no redirect) rather than
-trusting `vite preview`'s more permissive built-in SPA fallback — the two
-are not the same thing, and only one of them is what production does. It
-checks all seven sidebar routes both by clicking the nav link (does the URL
-still say what it should a couple of seconds later, once anything
-autoplay-triggered has had time to fire) and by hitting the URL directly
-(does the 404.html fallback actually recover it). This is the only place
-that runs the app under the real `/pl-crossover/` basename — see the
-`useUrlParamWriter` basename bug below, which was invisible everywhere else.
+semantics (exact-file-or-directory-index-or-404.html-with-404-status, no
+redirect — see "Deep links get a real 200" below) rather than trusting
+`vite preview`'s more permissive built-in SPA fallback — the two are not
+the same thing, and only one of them is what production does. It checks
+all seven sidebar routes both by clicking the nav link (does the URL still
+say what it should a couple of seconds later, once the replay has been
+started and its first `?week=` write has had time to fire) and by hitting
+the URL directly. This is the only place that runs the app under the real
+`/pl-crossover/` basename — see the `useUrlParamWriter` basename bug below,
+which was invisible everywhere else.
+
+**Deep links get a real 200, not just a recovered one.** The 404.html
+fallback above makes a direct hit on `/season` render the right page, but
+the HTTP status line still says 404 and the `<title>` is still the generic
+root one — a browser-driven human never notices (the SPA boots and fixes
+both), but a crawler or a link-unfurler (Slack, LinkedIn) reads the status
+and the as-delivered HTML, never runs the JS, and so never sees either
+correction. That defeats half the reason to have routes at all: nothing
+indexes them, and a pasted link never previews right.
+
+Weighed three ways: serve a real 200 for known routes via host rewrites
+(GitHub Pages has none); render nothing and accept the tradeoff (the
+status quo, and a bad one for a portfolio piece meant to be linked into);
+or pre-render each known route's `index.html` at build time so the file
+GitHub Pages finds *is* a genuine 200. Only the third keeps GitHub Pages,
+so `scripts/prerender-routes.mjs` (run from `postbuild:demo`, after the
+404.html copy) takes the built `dist/index.html` and writes
+`dist/<route>/index.html` for each of the seven known static routes, with
+the `<title>`, description, and OG/Twitter tags swapped to that route's own
+copy. It does not run React or fetch data — the JS bundle and its absolute
+`/pl-crossover/...` asset paths are identical in every copy, so the SPA
+boots and renders the real, live page exactly as before; only the
+crawler-visible `<head>` differs, in English regardless of `?lang=` (there
+is no static way to serve two languages from one path on GitHub Pages, and
+picking one deterministic default beats picking none). `/teams/:slug`
+still has no fixed list of slugs to enumerate at build time, so it keeps
+relying on the 404.html fallback alone.
+
+This also meant fixing `ghPagesStaticServer.mjs`: it only ever tried an
+exact file match, because until this point nothing but `dist/index.html`
+existed to find. Real GitHub Pages resolves a directory-style path against
+`<path>/index.html` when no exact file matches (ordinary static-host
+behaviour, the same "try `$uri`, then `$uri/index.html`" any `try_files`
+config uses) — the harness now does the same, or it would "reproduce GitHub
+Pages' actual semantics" for everything except the one behaviour this
+feature depends on. Confirmed by
+`e2e/production-base.spec.ts`'s direct-hit tests (now expecting 200 for all
+seven, not 404) and a new test that fetches each route's raw HTML with no
+browser JS involved and checks its `<title>` differs from the root's.
 
 ### Design system
 
@@ -456,20 +497,23 @@ hand-formatted.
   commit, with the suite green on English text only, specifically so the
   extraction commit couldn't hide a locator regression inside a string diff.
 
-### Known, deferred: Safari grey chart
+### Fixed: Safari grey chart
 
-`theme.ts` reads CSS custom properties once at module load
-(`getComputedStyle(document.documentElement)`) and bakes the resolved colours
-into the ECharts theme registration, which only ever runs once. On Safari
-this has been observed to occasionally resolve before the stylesheet is
-fully applied, so a chart registers with empty-string colours and renders
-grey until a full page reload. Root cause not confirmed (Safari's `<link
-rel=stylesheet>`/module-execution ordering is timing-dependent, not
-reliably reproducible locally). **Known and deliberately deferred** — fixing
-it means either polling for a non-empty token before registering the theme
-or moving the theme off `getComputedStyle` entirely, and neither is worth
-doing until it blocks something. Do not "fix" this opportunistically inside
-an unrelated change; it gets its own investigation and its own commit.
+`theme.ts` used to read CSS custom properties once at module load
+(`getComputedStyle(document.documentElement)`) and bake the resolved
+colours into a `colors`/`fonts` constant, imported frozen by every chart.
+On Safari this had been observed to occasionally resolve before the
+stylesheet was fully applied, so a chart built its option from
+empty-string colours and rendered grey until a full page reload. Root
+cause was never fully confirmed (Safari's `<link rel=stylesheet>`/
+module-execution ordering is timing-dependent, not reliably reproducible
+locally) — but freezing the read at the earliest possible point (module
+import, before React has even mounted anything) was certain to be wrong
+regardless of the exact timing gap. `getColors()`/`getFonts()` now
+re-resolve on every call; each chart calls them inside the `useMemo` that
+builds its option, and `EChart.tsx` calls `registerEchartsTheme()` right
+before `echarts.init()` — both meaningfully later than module evaluation.
+Unit-tested in `theme.test.ts` via an injectable root, without a DOM.
 
 ## Frontend depth — this is what separates the project
 
