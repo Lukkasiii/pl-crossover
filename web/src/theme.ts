@@ -14,6 +14,11 @@ export interface ColorTokens {
   orange: string;
   cyan: string;
   relegation: string;
+  series1: string;
+  series2: string;
+  series3: string;
+  series4: string;
+  series5: string;
 }
 
 export interface FontTokens {
@@ -36,6 +41,11 @@ const COLOR_TOKEN_NAMES: Record<keyof ColorTokens, string> = {
   orange: "--orange",
   cyan: "--cyan",
   relegation: "--relegation",
+  series1: "--series-1",
+  series2: "--series-2",
+  series3: "--series-3",
+  series4: "--series-4",
+  series5: "--series-5",
 };
 
 const FONT_TOKEN_NAMES: Record<keyof FontTokens, string> = {
@@ -89,7 +99,11 @@ export function registerEchartsTheme(): void {
   echarts.registerTheme(ECHARTS_THEME, {
     backgroundColor: "transparent",
     textStyle: { fontFamily: fonts.body, color: colors.text },
-    color: [colors.green, colors.red, colors.blue, colors.gold, colors.indigo, colors.orange, colors.cyan],
+    // The validated chart-series set, in its fixed order (see index.css's
+    // --series-* tokens) -- every chart in this app assigns its own colours
+    // explicitly (season/model semantics), so this is only the fallback for
+    // a series that doesn't.
+    color: [colors.series1, colors.series2, colors.series3, colors.series4, colors.series5],
     categoryAxis: {
       axisLine: { lineStyle: { color: colors.border } },
       axisLabel: { color: colors.textSecondary },

@@ -2,8 +2,8 @@
   display: none;
   align-items: center;
   padding: var(--space-3) var(--space-4);
-  background: var(--panel);
-  border-bottom: 1px solid var(--border);
+  background: var(--primary);
+  border-bottom: 1px solid var(--primary-border);
   position: sticky;
   top: 0;
   z-index: 20;
@@ -13,20 +13,31 @@
   font-family: var(--font-heading);
   font-weight: 500;
   font-size: var(--text-lg);
-  color: var(--text);
+  color: var(--primary-ink);
   text-decoration: none;
 }
 
 .sidebar-toggle {
   display: none;
+  background: transparent;
+  border-color: var(--primary-border);
+  color: var(--primary-ink);
 }
 
+.sidebar-toggle:hover:not(:disabled) {
+  border-color: var(--primary-ink);
+}
+
+/* The UI-anchor purple, as a solid block -- see CLAUDE.md "Design system".
+   Everything inside it (nav text, the locale switcher, the auth trigger)
+   needs its own on-primary treatment below rather than the default
+   card-surface colours, since it never sits on --panel/--bg. */
 .sidebar {
   width: 220px;
   flex: 0 0 220px;
   box-sizing: border-box;
-  background: var(--panel);
-  border-right: 1px solid var(--border);
+  background: var(--primary);
+  border-right: 1px solid var(--primary-border);
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
@@ -56,23 +67,23 @@
   padding: var(--space-2) var(--space-3);
   border-radius: 6px;
   border-left: 3px solid transparent;
-  color: var(--text-secondary);
+  color: var(--primary-ink-secondary);
   text-decoration: none;
   font-size: var(--text-sm);
 }
 
 .sidebar-link:hover {
-  color: var(--text);
+  color: var(--primary-ink);
 }
 
 .sidebar-link:focus-visible {
-  outline: 2px solid var(--secondary);
+  outline: 2px solid var(--primary-ink);
   outline-offset: 2px;
 }
 
 .sidebar-link-active {
-  color: var(--text);
-  background: var(--bg);
+  color: var(--primary-ink);
+  background: var(--primary-active-bg);
   border-left-color: var(--accent);
 }
 
@@ -88,14 +99,45 @@
   gap: var(--space-1);
 }
 
+.locale-switcher button {
+  background: transparent;
+  border-color: var(--primary-border);
+  color: var(--primary-ink-secondary);
+}
+
+.locale-switcher button:hover:not(:disabled) {
+  border-color: var(--primary-ink);
+  color: var(--primary-ink);
+}
+
 .locale-switcher button[aria-pressed="true"] {
-  border-color: var(--secondary);
-  color: var(--secondary);
+  border-color: var(--primary-ink);
+  color: var(--primary-ink);
+  background: var(--primary-active-bg);
+}
+
+/* The auth trigger ("Sign in" / the signed-in email + sign-out button) sits
+   directly on the purple sidebar like the locale switcher above -- but its
+   sign-in popover (auth-popover, AuthPanel.tsx) is its own floating white
+   card, so this only targets the *direct* children of that wrapper, never
+   anything inside the popover. */
+.sidebar-auth > button {
+  background: transparent;
+  border-color: var(--primary-border);
+  color: var(--primary-ink);
+}
+
+.sidebar-auth > button:hover:not(:disabled) {
+  border-color: var(--primary-ink);
+}
+
+.sidebar-auth > span {
+  color: var(--primary-ink-secondary);
 }
 
 .sidebar-repo-link {
   font-size: var(--text-sm);
-  color: var(--text-secondary);
+  color: var(--primary-ink-secondary);
   text-decoration: none;
 }
 

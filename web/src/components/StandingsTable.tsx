@@ -201,7 +201,11 @@ export function StandingsTable({ rows, currentSeasonLabel }: StandingsTableProps
                   onMouseEnter={() => setHoveredTeamId(row.team_id)}
                   onMouseLeave={() => setHoveredTeamId((id) => (id === row.team_id ? null : id))}
                 >
-                  <td>
+                  {/* The border lives on the first cell, not the <tr> -- a border set
+                      directly on a table row doesn't reliably paint in every engine
+                      under border-collapse: collapse (Safari in particular), while a
+                      cell border always does. */}
+                  <td style={band ? { borderLeft: `3px solid ${band.border}` } : undefined}>
                     {isChampion && (
                       <span className={styles.championMark} aria-hidden="true">
                         &#127942;
@@ -235,7 +239,7 @@ export function StandingsTable({ rows, currentSeasonLabel }: StandingsTableProps
       <ul className={styles.legend} aria-hidden="true">
         {bands.map((b) => (
           <li key={b.key}>
-            <span className={styles.swatch} style={{ background: b.color }} />
+            <span className={styles.swatch} style={{ background: b.border }} />
             {t(b.labelKey)}
           </li>
         ))}
@@ -249,13 +253,13 @@ export function StandingsTable({ rows, currentSeasonLabel }: StandingsTableProps
 }
 
 /**
- * A full-row tint, not the old 3px rail -- color-mix at 15% keeps every
- * band's contrast against both --text and --text-secondary (the excluded-row
- * colour) comfortably above the 4.5:1 AA minimum; verified against all four
- * band colours by hand (worst case, cyan/Conference League, still lands
- * ~4.7:1 for --text-secondary at this blend).
+ * The full-row tint -- an exact hex per band (see index.css's --zone-*-bg
+ * tokens), not colour-mixed, so ink primary's contrast against it is the
+ * designed >= 14:1 rather than whatever a runtime blend happens to land on.
+ * The border half of the band lives on the first cell (see the row map
+ * below), not here.
  */
 function bandStyle(band: ZoneBand | null): React.CSSProperties | undefined {
   if (!band) return undefined;
-  return { background: `color-mix(in srgb, ${band.color} 15%, var(--panel))` };
+  return { background: band.bg };
 }
