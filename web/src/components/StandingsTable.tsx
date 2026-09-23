@@ -9,6 +9,7 @@ import { useTweenedNumber } from "./useTweenedNumber";
 import { useLocale } from "../i18n/LocaleContext";
 import { useUrlParamWriter } from "../routing/useUrlParamWriter";
 import { Select } from "./ui/Select";
+import { SearchInput } from "./ui/SearchInput";
 import styles from "./StandingsTable.module.css";
 
 interface StandingsTableProps {
@@ -110,34 +111,17 @@ export function StandingsTable({ rows, currentSeasonLabel }: StandingsTableProps
   return (
     <Tooltip.Provider>
       <div className={styles.toolbar}>
-        <div className={styles.searchBox}>
-          <input
-            type="text"
-            className={styles.searchInput}
-            data-testid="standings-search"
-            aria-label={t("standings.searchLabel")}
-            placeholder={t("standings.searchPlaceholder")}
-            value={query}
-            onChange={(e) => {
-              setQuery(e.target.value);
-              setQueryUrl(e.target.value);
-            }}
-          />
-          {query && (
-            <button
-              type="button"
-              className={styles.searchClear}
-              aria-label={t("standings.searchClear")}
-              data-testid="standings-search-clear"
-              onClick={() => {
-                setQuery("");
-                setQueryUrl("");
-              }}
-            >
-              ✕
-            </button>
-          )}
-        </div>
+        <SearchInput
+          value={query}
+          onChange={(next) => {
+            setQuery(next);
+            setQueryUrl(next);
+          }}
+          placeholder={t("standings.searchPlaceholder")}
+          aria-label={t("standings.searchLabel")}
+          clearAriaLabel={t("standings.searchClear")}
+          data-testid="standings-search"
+        />
         <Select
           aria-label={t("standings.filterZoneLabel")}
           data-testid="standings-zone-filter"

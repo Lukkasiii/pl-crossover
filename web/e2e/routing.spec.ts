@@ -48,9 +48,16 @@ test.describe("sidebar navigation", () => {
     await expect(page.getByTestId("page-scenarios")).toBeVisible();
   });
 
-  test("/teams/:slug renders the slug in its placeholder", async ({ page }) => {
+  test("/teams/:slug renders that team's own page", async ({ page }) => {
     await page.goto("/teams/arsenal");
-    await expect(page.getByTestId("page-team-detail")).toContainText("arsenal");
+    await expect(page.getByTestId("page-team-detail")).toContainText("Arsenal");
+  });
+
+  test("/teams/:slug for an unknown slug renders a real not-found state, not a blank page", async ({ page }) => {
+    await page.goto("/teams/no-such-team");
+    await expect(page.getByTestId("page-team-detail-not-found")).toBeVisible();
+    await page.getByTestId("team-not-found-back-link").click();
+    await expect(page.getByTestId("page-teams")).toBeVisible();
   });
 });
 
