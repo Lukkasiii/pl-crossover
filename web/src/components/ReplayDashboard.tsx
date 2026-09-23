@@ -52,40 +52,20 @@ export function ReplayDashboard({
   const ready = replay.status === "open" && replay.totalFrames > 0;
   useUrlWeekSync(ready, replay.latestRound?.games, replay.seekToWeek);
 
-  // The demo must not open empty. Autoplay once the stream is ready, but:
-  // - if the URL already names a week (a shared link), resume playback from
-  //   there instead of restarting from zero. useUrlWeekSync's own seek can
-  //   still be in flight (a real network round trip over the socket), so
-  //   wait for the round panel to actually reach that week rather than
-  //   racing a `play` command against it.
-  // - under prefers-reduced-motion, don't auto-advance through the season at
-  //   all -- land on the *final* frame (unless a URL week already placed us
-  //   somewhere) so the page still opens on a settled, complete picture
-  //   (full standings, full RMSE curve, crossover marker) rather than an
-  //   empty one. In DEMO_MODE every frame is already local JSON, so this is
-  //   a synchronous index change, free. Over the live socket, `seek` still
-  //   asks for one frame per round trip (see useReplaySocket) -- 418 of
-  //   them, resolving in ~190ms measured against the local dev server. That
-  //   number is over loopback, though: this project's live/socket mode is
-  //   local-only (the deployed public demo always runs DEMO_MODE), so it's
-  //   left as-is here, but it does not generalize -- at a 30ms RTT the same
-  //   418 round trips is 12+ seconds of an apparently frozen page, for
-  //   exactly the users this branch is meant to serve. Whoever points this
-  //   at a real, non-local backend needs to revisit this before shipping it.
-  const autoplayedRef = useRef(false);
+  // The demo must not open on an empty page, but it must not move on its
+  // own either -- the replay starts on a click. Land on the very first
+  // frame (the full 20-row table, real chart axes) the moment the stream is
+  // ready, unless the URL already names a week (a shared link): seeking
+  // here too would race useUrlWeekSync's own seek under useReplaySocket's
+  // single-seek-at-a-time guard, so that case is left entirely to it.
+  const initializedRef = useRef(false);
   useEffect(() => {
-    if (autoplayedRef.current || !ready || replay.seeking) return;
+    if (initializedRef.current || !ready) return;
+    initializedRef.current = true;
 
     const weekParam = Number(searchParams.get("week"));
     const hasUrlWeek = Number.isInteger(weekParam) && weekParam >= 1 && weekParam <= 38;
-    if (hasUrlWeek && replay.latestRound?.games !== weekParam) return; // still catching up to it
-
-    autoplayedRef.current = true;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      if (!hasUrlWeek) replay.seek(replay.totalFrames - 1);
-    } else {
-      replay.play();
-    }
+    if (!hasUrlWeek) replay.seek(0);
   }, [ready, replay, searchParams]);
 
   useEffect(() => {

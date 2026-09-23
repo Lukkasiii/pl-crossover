@@ -29,14 +29,16 @@ test.describe("production base path", () => {
       await expect(page.getByTestId(route.page)).toBeVisible();
       expect(new URL(page.url()).pathname).toBe(route.path);
 
-      // /season is where the bug was actually observed: autoplay starts
-      // immediately and, once the first round frame arrives (a few
-      // hundred ms to a few seconds in, not immediate), useUrlWeekSync
-      // writes ?week= -- that write is what triggered the bounce, so wait
-      // for it to actually have happened rather than a fixed delay that
-      // could race ahead of it and pass on the broken build for the wrong
-      // reason.
+      // /season is where the bug was actually observed: once playing,
+      // and once the first round frame arrives (a few hundred ms to a few
+      // seconds in, not immediate), useUrlWeekSync writes ?week= -- that
+      // write is what triggered the bounce, so start the replay and wait
+      // for the write to actually have happened rather than a fixed delay
+      // that could race ahead of it and pass on the broken build for the
+      // wrong reason. The replay no longer starts on its own (see
+      // CLAUDE.md's autoplay-removal note), so this clicks Play first.
       if (route.nav === "nav-season") {
+        await page.getByTestId("player-toggle").click();
         await page.waitForURL(/week=/, { timeout: 10_000 });
       }
 
