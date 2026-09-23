@@ -155,9 +155,39 @@ export const en = {
   "placeholder.teamDetail.body": "One team's history across season pairs.",
   "placeholder.compare.title": "Compare",
   "placeholder.compare.body": "Two teams, or two season pairs, side by side.",
-  "placeholder.method.title": "Method",
-  "placeholder.method.body": "Pooled regression, per-season regression, and why a third method never ships.",
   "placeholder.comingSoon": "Coming soon.",
+
+  "method.intro":
+    "Three methodologies were tried against the original graduate workbook. Only two ship in this app -- the third was never exactly reproducible, and three methodologies in one dashboard would be indefensible in an interview.",
+  "method.methodologies.heading": "Three methods, two of them shipped",
+  "method.methodologies.pooled":
+    "Pooled regression (the original deck's slide 7) pools every observation -- the 17 teams common to both seasons, across all 8 season pairs, 136 rows -- into a single fit. It is what this app uses by default, and it reproduces the deck's figures exactly.",
+  "method.methodologies.perSeason":
+    "Per-season regression (slides 9 and 11) instead fits each of the 8 season pairs separately and averages the result across them -- offered here as a toggle, not the default. It reproduces the deck's per-season xG figures exactly too: 3.85, 4.42, 4.02, 3.69 and 3.41 RMSE at games 5, 10, 15, 20 and 38.",
+  "method.methodologies.rankBased":
+    "The deck's slide 11 also plots a third line: a rank-based method with no regression at all, taken straight from the original goal-difference workbook. It does not reproduce exactly from match-level data, and its quirks were not worth carrying forward, so this app never implements it.",
+  "method.methodologies.rule":
+    "The app's own rule follows from that: pooled regression is the default, per-season regression is a toggle, and the rank-based method never ships.",
+  "method.results.heading": "All ten published figures, reproduced exactly",
+  "method.results.intro":
+    "scripts/validate_checkpoints.py is a regression test against the original study: every one of its ten published figures reproduces from match-level data, for all four metrics the study compares.",
+  "method.results.note":
+    "The presentation itself said \"crossover ≈ 12 games\", interpolated from just four checkpoints. Match-level data puts it exactly where the crossover column below does -- that is this project's headline: answering, exactly, what the coursework could only bracket.",
+  "method.results.col.metric": "metric",
+  "method.results.col.priorRmse": "prior RMSE",
+  "method.results.col.crossover": "crossover",
+  "method.blend.heading": "The Bayesian blend",
+  "method.blend.intro":
+    "The replay's weight bars come from blending the two rank predictions by precision, not by a fixed ratio:",
+  "method.blend.priorWeight": "w_prior = 1 / sigma²_prior, fixed at 5 -- last season does not improve with time.",
+  "method.blend.dataWeight": "w_data = N / sigma²_obs, with sigma²_obs = 1.5, growing as more games are played.",
+  "method.blend.priorShare":
+    "That fixed prior against a growing data weight is why the prior's share of the blend falls on a curve as the season goes on: 60% at 5 games, 43% at 10, 33% at 15, and 27% at 20 -- matching the original study exactly.",
+  "method.constraints.heading": "Two constraints that shaped the app",
+  "method.constraints.gamesPlayed":
+    "Everything here is indexed by games played, never by calendar matchweek, because Premier League matchweeks are not aligned -- games get postponed. Standing in for a round with \"every 10th match\" fails as a uniform checkpoint in 35 of the 38 matchweeks in 2020/21 and 30 of 38 in 2022/23, with teams left up to six games apart by the time a \"round\" notionally ends.",
+  "method.constraints.twoCrossovers":
+    "The weight crossover and the RMSE crossover are two different events, and the replay plots both without conflating them: one is a property of the model -- the fixed prior weight and the growing data weight reaching parity -- and the other a property of the data itself -- the point where this season's own regression starts outperforming last season's.",
 } as const;
 
 export const zh = {
@@ -303,9 +333,38 @@ export const zh = {
   "placeholder.teamDetail.body": "单支球队跨赛季组合的历史表现。",
   "placeholder.compare.title": "对比",
   "placeholder.compare.body": "两支球队，或两组赛季组合，并列对比。",
-  "placeholder.method.title": "方法论",
-  "placeholder.method.body": "合并回归、逐赛季回归，以及为什么第三种方法从未上线。",
   "placeholder.comingSoon": "即将上线。",
+
+  "method.intro":
+    "这项研究曾尝试过三种方法论来对照原始的毕业设计工作表，但本应用只采用其中两种——第三种从未能精确复现，而在同一个仪表盘中呈现三种方法论，在面试中是站不住脚的。",
+  "method.methodologies.heading": "三种方法，两种上线",
+  "method.methodologies.pooled":
+    "合并回归（原始幻灯片第 7 页）把所有观测值——两个赛季共同拥有的 17 支球队，跨全部 8 组赛季组合，共 136 行——合并为一次拟合。本应用默认使用这一方法，它精确复现了原始幻灯片的数据。",
+  "method.methodologies.perSeason":
+    "逐赛季回归（幻灯片第 9、11 页）则对 8 组赛季组合分别拟合，再取平均——本应用将其作为一个可切换的选项，而非默认值。它同样精确复现了原始幻灯片中 xG 的逐赛季数据：在第 5、10、15、20 和 38 场时的 RMSE 分别为 3.85、4.42、4.02、3.69 和 3.41。",
+  "method.methodologies.rankBased":
+    "幻灯片第 11 页还画出了第三条线：一种完全不做回归、直接基于名次的方法，照搬自最初的净胜球工作表。它无法从逐场比赛数据中精确复现，其种种细节也不值得延续，因此本应用从未实现它。",
+  "method.methodologies.rule":
+    "由此得出本应用自身的规则：合并回归是默认方法，逐赛季回归是一个可切换选项，而基于名次的方法永远不会上线。",
+  "method.results.heading": "十项已发表结果，全部精确复现",
+  "method.results.intro":
+    "scripts/validate_checkpoints.py 是对照原始研究的回归测试：其发表的十项结果，针对研究比较的全部四个指标，均可从逐场比赛数据中精确复现。",
+  "method.results.note":
+    "报告本身只说「交叉点 ≈ 12 场」，这是仅从四个检查点插值得到的。逐场比赛的数据恰好把它精确定位在下方交叉点一列所示之处——这正是本项目的核心结论：精确回答了课程作业只能给出区间估计的问题。",
+  "method.results.col.metric": "指标",
+  "method.results.col.priorRmse": "prior RMSE",
+  "method.results.col.crossover": "crossover",
+  "method.blend.heading": "贝叶斯混合",
+  "method.blend.intro": "回放中的权重柱状图，来自按精度（而非固定比例）混合两个名次预测：",
+  "method.blend.priorWeight": "w_prior = 1 / sigma²_prior，固定为 5——上赛季的数据不会随时间变得更可靠。",
+  "method.blend.dataWeight": "w_data = N / sigma²_obs，其中 sigma²_obs = 1.5，随已赛场次增加而增大。",
+  "method.blend.priorShare":
+    "固定的先验权重对上不断增长的数据权重，正是先验占比随赛季推进而沿曲线下降的原因：在第 5、10、15、20 场时分别为 60%、43%、33% 和 27%——与原始研究完全一致。",
+  "method.constraints.heading": "塑造了这款应用的两个约束",
+  "method.constraints.gamesPlayed":
+    "本应用中的一切都按已赛场次索引，而非按日历意义上的比赛轮次，因为英超联赛的轮次并不对齐——比赛会延期。用「每第 10 场比赛」来代替一个轮次，在 2020/21 赛季的 38 轮中有 35 轮无法作为统一的检查点，在 2022/23 赛季中则有 30 轮如此，等到一个「轮次」名义上结束时，球队之间最多可相差六场比赛。",
+  "method.constraints.twoCrossovers":
+    "权重交叉点与 RMSE 交叉点是两个不同的事件，回放会将两者分别绘出，而不会混为一谈：一个是模型自身的属性——固定的先验权重与不断增长的数据权重达到相等的那一点；另一个是数据本身的属性——本赛季自己的回归开始超越上赛季的那一点。",
 } as const satisfies Record<keyof typeof en, string>;
 
 export type TranslationKey = keyof typeof en;
