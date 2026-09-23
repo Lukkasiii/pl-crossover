@@ -54,11 +54,15 @@ test("auth and saved scenarios round trip", async ({ page }) => {
   await page.goto("/season");
 
   // --- logged out: the dashboard itself has no login wall -----------------
-  // Autoplay (see ReplayDashboard) starts the stream without a click.
+  // The replay lands on frame 0 as soon as it's ready, without a click.
   await expect(page.locator("table tbody tr").first()).toBeVisible();
   await beat(page);
-  await page.getByTestId("player-toggle").click();
 
+  // --- the prior-weight tuner lives on /model, not /season (see CLAUDE.md's
+  // "v2 -- multi-page dashboard / Routes"), but reads and writes the same
+  // ReplayParamsContext either way -- the session (and the replay it's
+  // reading `games` from) doesn't reset crossing between the two routes. ---
+  await page.getByTestId("nav-model").click();
   const sigmaSlider = page.getByTestId("prior-weight-slider");
   await sigmaSlider.focus();
   for (let i = 0; i < 7; i++) await sigmaSlider.press("ArrowRight"); // default 5 -> 12
@@ -100,22 +104,19 @@ test("auth and saved scenarios round trip", async ({ page }) => {
 
   // ReplayParamsContext (not server state) resets on reload -- confirms the
   // "Load" below is what restores 12, not a value that never left the page.
+  // /season is where the replay actually lives; confirm it survived the
+  // reload before checking the tuner (on /model) that reads its games count.
   await page.getByTestId("nav-season").click();
   await expect(page.locator("table tbody tr").first()).toBeVisible();
+  await page.getByTestId("nav-model").click();
   await expect(page.getByText(/w_prior = 5\b/)).toBeVisible();
-  // The reload/nav re-mounts /season, so autoplay starts the replay running
-  // again -- pause it so the "clicking Play still works" check at the end
-  // of this test starts from a known, stopped state instead of a race with
-  // however far autoplay has gotten by then.
-  await expect(page.getByTestId("player-toggle")).toHaveAttribute("data-state", "playing");
-  await page.getByTestId("player-toggle").click();
   await beat(page);
 
   // --- load restores the tuned sigma, across the route split ---------------
   await page.getByTestId("nav-scenarios").click();
   const rowBeforeLoad = scenarioRow(page, "sigma twelve");
   await rowBeforeLoad.locator('[data-testid^="scenario-load-"]').click();
-  await page.getByTestId("nav-season").click();
+  await page.getByTestId("nav-model").click();
   await expect(page.getByText(/w_prior = 12\b/)).toBeVisible();
   await beat(page);
 
@@ -150,9 +151,11 @@ test("auth and saved scenarios round trip", async ({ page }) => {
   await beat(page);
 
   await page.getByTestId("nav-season").click();
-  // The route remount re-triggers autoplay -- confirm it's actually running,
-  // then confirm the toggle still works post-sign-out, not just that it's
-  // in some state or other.
+  // The replay starts on a click, sign-out or not -- confirm the toggle
+  // still works post-sign-out, from a known, stopped starting state.
+  await expect(page.locator("table tbody tr").first()).toBeVisible();
+  await expect(page.getByTestId("player-toggle")).toHaveAttribute("data-state", "paused");
+  await page.getByTestId("player-toggle").click();
   await expect(page.getByTestId("player-toggle")).toHaveAttribute("data-state", "playing");
   await page.getByTestId("player-toggle").click();
   await expect(page.getByTestId("player-toggle")).toHaveAttribute("data-state", "paused");

@@ -28,9 +28,25 @@ const easeOutCubic = (t: number) => 1 - (1 - t) ** 3;
  */
 export function useFlip<K>(keys: readonly K[], getRow: (key: K) => HTMLElement | null): void {
   const prevRects = useRef<Map<K, DOMRect>>(new Map());
+  const prevKeys = useRef<readonly K[]>([]);
   const activeRafs = useRef<Map<K, number>>(new Map());
 
   useLayoutEffect(() => {
+    // A re-render that doesn't actually reorder `keys` must be a no-op here,
+    // not just a no-animation case: getBoundingClientRect() is
+    // viewport-relative, so any render caused by something other than a
+    // reorder (hover state toggling as the pointer's target changes under a
+    // stationary cursor while the page scrolls, for instance) would measure
+    // rows at their scrolled position and read the scroll delta itself as a
+    // deltaY to "correct" -- animating every row as if it had just been
+    // reordered, when the page had simply scrolled. Comparing by value
+    // (not by array identity, which is a fresh literal every render
+    // regardless) is what makes this check mean anything.
+    const keysUnchanged =
+      keys.length === prevKeys.current.length && keys.every((k, i) => k === prevKeys.current[i]);
+    prevKeys.current = keys;
+    if (keysUnchanged) return;
+
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     // Two passes, not one interleaved loop: writing a row's transform and

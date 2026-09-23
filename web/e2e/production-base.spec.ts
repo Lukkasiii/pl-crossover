@@ -29,14 +29,16 @@ test.describe("production base path", () => {
       await expect(page.getByTestId(route.page)).toBeVisible();
       expect(new URL(page.url()).pathname).toBe(route.path);
 
-      // /season is where the bug was actually observed: autoplay starts
-      // immediately and, once the first round frame arrives (a few
-      // hundred ms to a few seconds in, not immediate), useUrlWeekSync
-      // writes ?week= -- that write is what triggered the bounce, so wait
-      // for it to actually have happened rather than a fixed delay that
-      // could race ahead of it and pass on the broken build for the wrong
-      // reason.
+      // /season is where the bug was actually observed: once playing,
+      // and once the first round frame arrives (a few hundred ms to a few
+      // seconds in, not immediate), useUrlWeekSync writes ?week= -- that
+      // write is what triggered the bounce, so start the replay and wait
+      // for the write to actually have happened rather than a fixed delay
+      // that could race ahead of it and pass on the broken build for the
+      // wrong reason. The replay no longer starts on its own (see
+      // CLAUDE.md's autoplay-removal note), so this clicks Play first.
       if (route.nav === "nav-season") {
+        await page.getByTestId("player-toggle").click();
         await page.waitForURL(/week=/, { timeout: 10_000 });
       }
 
@@ -54,19 +56,33 @@ test.describe("production base path", () => {
   for (const route of ROUTES) {
     test(`a direct hit on ${route.path} renders the right route`, async ({ page }) => {
       const response = await page.goto(route.path);
-      if (route.path === `${BASE}/`) {
-        // The one path that's a real file (dist/index.html) -- no fallback involved.
-        expect(response?.status()).toBe(200);
-      } else {
-        // Everything else only exists client-side: GitHub Pages (and this
-        // server, which reproduces it) has no matching file, so it falls
-        // back to serving 404.html's content under a 404 status without
-        // changing the URL. The SPA then boots and the router picks the
-        // real route up from window.location.
-        expect(response?.status()).toBe(404);
-      }
+      // Every route here is one of the seven scripts/prerender-routes.mjs
+      // covers (or the root, which is dist/index.html itself) -- a real
+      // dist/<route>/index.html file exists for each, so GitHub Pages'
+      // directory-index resolution serves it directly as a genuine 200,
+      // no 404.html fallback involved. /teams/:slug, which isn't in this
+      // list, is the one still relying on that fallback.
+      expect(response?.status()).toBe(200);
       await expect(page.getByTestId(route.page)).toBeVisible();
       expect(new URL(page.url()).pathname).toBe(route.path);
     });
   }
+
+  test("known routes carry their own <title> in the raw HTML, not just after the SPA boots", async ({ request }) => {
+    // A crawler or link-unfurler never runs the SPA's JS, which is what
+    // sets document.title per route (see each page's useEffect) -- the
+    // only title it will ever see is whatever prerender-routes.mjs already
+    // baked into the response body. Fetched directly (no browser, no JS),
+    // which is exactly what such a client does.
+    const rootBody = await (await request.get(`${BASE}/`)).text();
+    const rootTitle = rootBody.match(/<title>([^<]*)<\/title>/)?.[1];
+    expect(rootTitle).toBeTruthy();
+
+    for (const route of ROUTES.filter((r) => r.path !== `${BASE}/`)) {
+      const body = await (await request.get(route.path)).text();
+      const title = body.match(/<title>([^<]*)<\/title>/)?.[1];
+      expect(title, `${route.path} has no <title> in its raw response`).toBeTruthy();
+      expect(title, `${route.path}'s raw <title> should differ from the generic root title`).not.toBe(rootTitle);
+    }
+  });
 });

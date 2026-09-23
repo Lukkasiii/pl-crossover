@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import type { EChartsOption } from "echarts";
 import { EChart } from "./EChart";
-import { colors, fonts } from "../theme";
+import { getColors, getFonts } from "../theme";
 import { useLocale } from "../i18n/LocaleContext";
 import type { Metric, RoundFrame } from "../ws/types";
 
@@ -15,6 +15,8 @@ interface RmseChartProps {
 export function RmseChart({ metric, roundsSoFar }: RmseChartProps) {
   const { t } = useLocale();
   const option = useMemo<EChartsOption>(() => {
+    const colors = getColors();
+    const fonts = getFonts();
     const games = Array.from({ length: FULL_SEASON_GAMES }, (_, i) => i + 1);
     const current: (number | null)[] = games.map(() => null);
     let priorRmse: number | null = null;

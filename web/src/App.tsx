@@ -1,13 +1,15 @@
 import { Suspense, lazy } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { AppShell } from "./routes/AppShell";
+import { ReplaySessionLayout } from "./routes/ReplaySessionLayout";
 import { useLocale } from "./i18n/LocaleContext";
 import "./App.css";
 
 // Every route lazy-loads -- Overview needs no ECharts at all, and it was
 // the biggest chunk of the pre-v2 bundle sitting on the one route that
-// least needed it. Season and Scenarios carry the Stage 1-4 dashboard
-// unchanged; the rest are Stage 5 placeholders (see CLAUDE.md).
+// least needed it. Season and Model split the Stage 1-4 dashboard's four
+// panels between them (see CLAUDE.md); Scenarios carries the Stage 4 auth
+// panel unchanged; the rest are Stage 5 placeholders.
 const Overview = lazy(() => import("./pages/Overview"));
 const Season = lazy(() => import("./pages/Season"));
 const Model = lazy(() => import("./pages/Model"));
@@ -28,8 +30,10 @@ function App() {
       <Routes>
         <Route element={<AppShell />}>
           <Route index element={<Overview />} />
-          <Route path="season" element={<Season />} />
-          <Route path="model" element={<Model />} />
+          <Route element={<ReplaySessionLayout />}>
+            <Route path="season" element={<Season />} />
+            <Route path="model" element={<Model />} />
+          </Route>
           <Route path="teams" element={<Teams />} />
           <Route path="teams/:slug" element={<TeamDetail />} />
           <Route path="compare" element={<Compare />} />

@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import type { EChartsOption } from "echarts";
 import { EChart } from "./EChart";
-import { colors, fonts } from "../theme";
+import { getColors, getFonts } from "../theme";
 import { useLocale } from "../i18n/LocaleContext";
 
 interface WeightBarsProps {
@@ -19,6 +19,8 @@ interface WeightBarsProps {
 export function WeightBars({ weights }: WeightBarsProps) {
   const { t } = useLocale();
   const option = useMemo<EChartsOption>(() => {
+    const colors = getColors();
+    const fonts = getFonts();
     const w = weights;
     const total = w ? w.prior + w.data : 1;
     const priorShare = w ? w.prior / total : 1;

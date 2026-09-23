@@ -40,7 +40,10 @@ test("replay resumes after the connection drops mid-stream", async ({ page }) =>
   });
 
   await page.goto("/season");
-  // Autoplay (see ReplayDashboard) starts the stream without a click.
+  // The replay starts on a click -- land on frame 0 first (see
+  // ReplayDashboard's init effect), then start it playing.
+  await expect(page.locator("table tbody tr").first()).toBeVisible();
+  await page.getByTestId("player-toggle").click();
   await expect(page.getByTestId("player-toggle")).toHaveAttribute("data-state", "playing", { timeout: 10_000 });
   await expect(page.getByTitle("open")).toBeVisible({ timeout: 10_000 });
   // Wait for the standings table to actually have a row before touching the
