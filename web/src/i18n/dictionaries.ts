@@ -200,7 +200,6 @@ export const en = {
   "compare.table.heading": "Summary",
   "compare.table.stat": "Stat",
   "compare.table.delta": "Delta (A − B)",
-  "placeholder.comingSoon": "Coming soon.",
 
   "method.intro":
     "Three methodologies were tried against the original graduate workbook. Only two ship in this app -- the third was never exactly reproducible, and three methodologies in one dashboard would be indefensible in an interview.",
@@ -423,7 +422,6 @@ export const zh = {
   "compare.table.heading": "汇总",
   "compare.table.stat": "指标",
   "compare.table.delta": "差值（A − B）",
-  "placeholder.comingSoon": "即将上线。",
 
   "method.intro":
     "这项研究曾尝试过三种方法论来对照原始的毕业设计工作表，但本应用只采用其中两种——第三种从未能精确复现，而在同一个仪表盘中呈现三种方法论，在面试中是站不住脚的。",

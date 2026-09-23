@@ -54,9 +54,9 @@ everything built from here on. The "depth beats breadth" rule still applies
 | Auth + saved scenarios | done end to end — register/login/refresh, scenarios CRUD |
 | React frontend — replay engine, standings, charts, tuner, auth UI, demo mode | done (Stages 1–4) |
 | Docker + CI + deploy (static demo on GitHub Pages) | done |
-| Multi-page shell: routing, sidebar nav, design tokens, i18n | **in progress (Stage 5)** |
+| Multi-page shell: routing, sidebar nav, design tokens (light theme), i18n | done (Stage 5) |
 | /season, /model content | done — the Stage 1–4 dashboard's panels split across the two |
-| Overview, Teams, Compare, Method page content | not started — placeholders |
+| Overview, Teams, Compare, Method page content | done (Stage 6) |
 | Ask the Model panel | not started |
 
 Pushed to `github.com/Lukkasiii/pl-crossover`.
@@ -343,12 +343,11 @@ diluting the 30-second read — a wall of panels reads as *more*, not as
 | `/method` | The three methodologies (pooled / per-season / rank-based) and why only two ship — see "Results to preserve" above |
 | `/scenarios` | Saved scenarios — the Stage 4 auth + scenarios panel moved here unchanged. Auth-gated *for saving*, same rule as before: signed out shows a sign-in prompt inline, never a redirect wall |
 
-Stage 5 builds the shell and the navigation for all seven routes. `/season`
-and `/scenarios` carry real content (the existing components, relocated, not
-rewritten). The other five are placeholders — reachable, correctly routed,
-correct page title — until their own stage. Do not backfill their content
-early; do not skip building their nav entry because it's "just a
-placeholder."
+Stage 5 built the shell and the navigation for all seven routes; `/season`
+and `/scenarios` carried real content from the start (the existing
+components, relocated, not rewritten), and the other five were placeholders
+— reachable, correctly routed, correct page title — until Stage 6 filled
+them in. `PlaceholderPage.tsx` is now used by nothing and was deleted.
 
 Every route is lazy-loaded (`React.lazy` + `Suspense`). `/` needs no ECharts
 at all — it was the biggest chunk of the pre-v2 bundle sitting on the one
@@ -422,17 +421,32 @@ browser JS involved and checks its `<title>` differs from the root's.
 
 Locked at Stage 5; every later page is built on it, don't relitigate it.
 
-- **Palette** (colours only — never the lion mark or the "Premier League"
-  wordmark): primary `#37003C`, accent `#E90052`, secondary `#04F5FF`,
-  success `#00FF85`.
-- **Surfaces darken toward the primary purple**: `--bg: #1A0A22`,
-  `--panel: #241030`, borders tinted purple to match — replacing the
-  Stage 1–4 near-black tokens.
-- **Zone colours are re-derived from this palette**, not carried over from
-  Stage 4: Champions League → purple, Europa → orange, Conference → cyan,
-  relegation → red. Every foreground/background pairing must pass WCAG AA;
-  axe (`e2e/accessibility.spec.ts`) checks this on every PR, not just at
-  design time.
+- **Light surfaces, not dark** (colours only — never the lion mark or the
+  "Premier League" wordmark): page `#FFFFFF`, a slightly recessed app
+  backdrop behind the cards `#F7F7F9`, card `#FFFFFF` with a `#E4E4E7`
+  border, ink primary `#18181B` (17.7:1 on white), ink secondary `#52525B`
+  (7.7:1). `#37003C` is UI chrome only — the sidebar (a solid block, white
+  text), page headings, primary buttons, the Champions League accent — never
+  a data/chart-series colour: at L 0.24 it fails the chart palette's
+  lightness band and reads as black in a line.
+- **Chart series, one fixed set, five colours, assigned in order, never
+  cycled**: `#7C3AED` purple, `#E90052` Premier League pink, `#0D9488` teal,
+  `#D97706` amber, `#2563EB` blue. Validated through six checks — worst
+  adjacent CVD ΔE 9.5 (deuteranopia), 24.3 (normal vision), every one ≥ 3:1
+  on the white surface. Season/model semantics (current vs. prior vs.
+  blended) draw their `--green`/`--red`/`--blue`/`--gold` token values from
+  this same set rather than a literal green/red, so every colour in the app
+  traces back to one of these five plus the UI-chrome purple.
+- **Zone bands are exact tints from that palette**, not colour-mixed:
+  Champions League `#F3E8FF`, Europa `#FEF3C7`, Conference `#CCFBF1`,
+  relegation `#FFE4E6`, ink primary ≥ 14:1 on every one. Drawn as a full-row
+  tint plus a 3px saturated border — the border lives on the row's first
+  cell, not the `<tr>` itself, because a border set directly on a table row
+  does not reliably paint under `border-collapse: collapse` in every engine
+  (Safari in particular; verified with Playwright's WebKit browser, not just
+  Chromium). Every foreground/background pairing must pass WCAG AA; axe
+  (`e2e/accessibility.spec.ts`) checks this on every PR, not just at design
+  time.
 - **Type ramp, line heights, and a 4px spacing scale**, all as CSS custom
   properties. The Stage 1–4 CSS used one-off `px` values throughout
   (`gap: 16px`, `padding: 24px`, …); that inconsistency, not missing
@@ -541,10 +555,14 @@ actually wins or costs, so a glance reads as football rather than as data:
 - 6th — Conference League
 - 18th-20th — relegation
 
-Draw the bands as a coloured rail down the left edge of the row (a 3px bar,
-not a full-row tint, which fights the numbers), plus a legend under the table.
-Colour alone must not carry the meaning: the legend names each band, and each
-banded row gets an `aria-label` saying which one it is.
+Draw the bands as a full-row tint plus a 3px saturated border (see the
+Design system section's exact zone hex values) — not just a rail, which
+under-uses the row and reads as thin at a glance — plus a legend under the
+table. The border lives on the row's first cell rather than the `<tr>`
+itself: a border set directly on a table row does not reliably paint under
+`border-collapse: collapse` in every engine. Colour alone must not carry the
+meaning: the legend names each band, and each banded row gets an
+`aria-label` saying which one it is.
 
 These boundaries are a per-season fact, not a constant -- England's UEFA
 coefficient added a fifth Champions League place from 2024/25, and the Europa
