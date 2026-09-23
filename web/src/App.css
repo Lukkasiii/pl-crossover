@@ -193,3 +193,47 @@
   opacity: 0.5;
   transition: opacity 150ms ease;
 }
+
+/* Multi-paragraph panels (currently just /method): p has no margin by
+   default (index.css), which is right for a panel with one caption line
+   but reads as a wall of text once several paragraphs sit back to back. */
+.prose p + p {
+  margin-top: var(--space-2);
+}
+
+.method-formula {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: var(--space-3);
+  overflow-x: auto;
+  margin: var(--space-2) 0;
+}
+
+.method-results-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  margin: var(--space-3) 0;
+}
+
+.method-results-table th,
+.method-results-table td {
+  padding: 6px var(--space-3);
+  text-align: right;
+  border-bottom: 1px solid var(--border);
+}
+
+.method-results-table th[scope="row"] {
+  text-align: left;
+  font-weight: 600;
+}
+
+.method-results-table thead th {
+  color: var(--text-secondary);
+  font-weight: 500;
+  border-bottom: 2px solid var(--border);
+}

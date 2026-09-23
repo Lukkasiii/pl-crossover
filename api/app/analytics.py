@@ -78,7 +78,20 @@ def load_observations(con: sqlite3.Connection) -> list[Observation]:
     return observations
 
 
-def compute_curve(observations: list[Observation], metric: str, method: str) -> dict:
+def compute_curve(observations: list[Observation], metric: str, method: str, pair_id: int | None = None) -> dict:
+    """
+    `pair_id` scopes every fit below to that one season pair's own ~17
+    observations instead of all 136 -- the exact same `ols_fit` the pooled
+    curve already uses, just not pooled across pairs. Compare's "two season
+    pairs" mode is what this exists for: unlike the pooled/per-season
+    methods (both single curves shared by every pair, see CLAUDE.md "The
+    model"), this is a genuinely different RMSE curve and crossover per
+    pair. LOSO is undefined for a single group (there is nothing left to
+    hold out), so it is skipped whenever pair_id is given.
+    """
+    if pair_id is not None:
+        observations = [o for o in observations if o.pair_id == pair_id]
+
     y = np.array([o.final_rank for o in observations], dtype=float)
     groups = np.array([o.pair_id for o in observations])
     prior_x = np.array([o.prior[metric] for o in observations], dtype=float)
@@ -86,10 +99,10 @@ def compute_curve(observations: list[Observation], metric: str, method: str) -> 
 
     games = list(range(1, FULL_SEASON_GAMES + 1))
     current_fits: list[FitResult] = []
-    loso_fits: list[FitResult] | None = [] if method == "pooled" else None
+    loso_fits: list[FitResult] | None = [] if (method == "pooled" and pair_id is None) else None
     for g in games:
         x = np.array([o.current[g][metric] for o in observations], dtype=float)
-        current_fits.append(ols_fit(x, y) if method == "pooled" else ols_fit_per_group(x, y, groups))
+        current_fits.append(ols_fit(x, y) if (method == "pooled" or pair_id is not None) else ols_fit_per_group(x, y, groups))
         if loso_fits is not None:
             loso_fits.append(ols_fit_loso(x, y, groups))
 
@@ -140,7 +153,7 @@ def compute_predict(
 
 
 _obs_cache: dict[str, list[Observation]] = {}
-_curve_cache: dict[tuple[str, str, str], dict] = {}
+_curve_cache: dict[tuple[str, str, str, int | None], dict] = {}
 
 
 def get_observations(con: sqlite3.Connection, db_path: str) -> list[Observation]:
@@ -149,8 +162,8 @@ def get_observations(con: sqlite3.Connection, db_path: str) -> list[Observation]
     return _obs_cache[db_path]
 
 
-def get_curve(con: sqlite3.Connection, db_path: str, metric: str, method: str) -> dict:
-    key = (db_path, metric, method)
+def get_curve(con: sqlite3.Connection, db_path: str, metric: str, method: str, pair_id: int | None = None) -> dict:
+    key = (db_path, metric, method, pair_id)
     if key not in _curve_cache:
-        _curve_cache[key] = compute_curve(get_observations(con, db_path), metric, method)
+        _curve_cache[key] = compute_curve(get_observations(con, db_path), metric, method, pair_id)
     return _curve_cache[key]

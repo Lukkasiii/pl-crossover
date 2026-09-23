@@ -68,3 +68,19 @@ export async function lookupPredict(metric: Metric, games: number, priorWeight: 
     weight_data: grid.weightData[gi][pi],
   };
 }
+
+export interface PooledCurve {
+  games: number[];
+  currentRmse: number[];
+  priorRmse: number;
+}
+
+/** The pooled-regression RMSE curve for one metric, the same shape usePooledCurve's live branch gets from GET /api/curves. */
+export async function lookupPooledCurve(metric: Metric): Promise<PooledCurve> {
+  const grid = await loadGrid();
+  return {
+    games: grid.games,
+    currentRmse: grid.currentFit[metric].map((f) => f.rmse),
+    priorRmse: grid.priorFit[metric].rmse,
+  };
+}

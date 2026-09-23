@@ -96,7 +96,15 @@ export default function Season() {
           <div className="season-layout">
             <section className="panel standings-panel">
               <div className="panel-header">
-                <h2>{t("standings.heading")}</h2>
+                <div className="panel-title">
+                  <h2>{t("standings.heading")}</h2>
+                  <InfoTooltip
+                    aria-label={t("panelInfo.about", { panel: t("standings.heading") })}
+                    data-testid="standings-info"
+                  >
+                    {t("panelInfo.standings")}
+                  </InfoTooltip>
+                </div>
                 {replay.latestRound && (
                   <span
                     className="predict-value"

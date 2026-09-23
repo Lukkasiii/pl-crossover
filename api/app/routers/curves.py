@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import sqlite3
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from ..analytics import get_curve
 from ..config import Settings, get_settings
@@ -16,10 +16,16 @@ router = APIRouter(tags=["core"])
 def curves(
     metric: Metric,
     method: Method = "pooled",
+    # Scopes the curve to one season pair's own ~17 observations instead of
+    # all 136 -- see analytics.compute_curve's docstring. Used by /compare's
+    # "two season pairs" mode; every other caller leaves this unset.
+    pair_id: int | None = None,
     db: sqlite3.Connection = Depends(get_db),
     settings: Settings = Depends(get_settings),
 ) -> CurvesOut:
-    c = get_curve(db, settings.db_path, metric, method)
+    if pair_id is not None and db.execute("SELECT 1 FROM season_pairs WHERE id = ?", (pair_id,)).fetchone() is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, f"no season pair with id {pair_id}")
+    c = get_curve(db, settings.db_path, metric, method, pair_id)
     return CurvesOut(
         metric=metric,
         method=method,
