@@ -10,7 +10,7 @@ import {
 } from "echarts/components";
 import { CanvasRenderer } from "echarts/renderers";
 import type { EChartsOption } from "echarts";
-import { ECHARTS_THEME } from "../theme";
+import { ECHARTS_THEME, registerEchartsTheme } from "../theme";
 
 // Register only the pieces these three panels use, not the full echarts
 // bundle -- see README "Frontend decisions" for the before/after bundle size.
@@ -41,6 +41,7 @@ export function EChart({ option, className }: EChartProps) {
 
   useEffect(() => {
     if (!containerRef.current) return;
+    registerEchartsTheme();
     const chart = echarts.init(containerRef.current, ECHARTS_THEME);
     chartRef.current = chart;
 

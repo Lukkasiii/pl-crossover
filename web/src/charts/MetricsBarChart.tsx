@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import type { EChartsOption } from "echarts";
 import { EChart } from "./EChart";
-import { colors } from "../theme";
+import { getColors } from "../theme";
 import { useLocale } from "../i18n/LocaleContext";
 import { METRICS, type RoundFrame } from "../ws/types";
 import type { TranslationKey } from "../i18n/dictionaries";
@@ -30,7 +30,7 @@ export function MetricsBarChart({ latestRound }: MetricsBarChartProps) {
           name: t("chart.currentSeasonRmse"),
           type: "bar",
           data: METRICS.map((m) => latestRound?.metrics[m]?.rmse ?? 0),
-          itemStyle: { color: colors.green },
+          itemStyle: { color: getColors().green },
         },
       ],
     }),

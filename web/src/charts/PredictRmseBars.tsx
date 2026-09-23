@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import type { EChartsOption } from "echarts";
 import { EChart } from "./EChart";
-import { colors } from "../theme";
+import { getColors } from "../theme";
 import { useLocale } from "../i18n/LocaleContext";
 import type { PredictOut } from "../api/usePredict";
 
@@ -17,8 +17,9 @@ interface PredictRmseBarsProps {
  */
 export function PredictRmseBars({ predict, className }: PredictRmseBarsProps) {
   const { t } = useLocale();
-  const option = useMemo<EChartsOption>(
-    () => ({
+  const option = useMemo<EChartsOption>(() => {
+    const colors = getColors();
+    return {
       grid: { left: 48, right: 16, top: 16, bottom: 24 },
       tooltip: { trigger: "axis" },
       xAxis: { type: "category", data: [t("chart.lastSeason"), t("chart.thisSeason"), t("chart.blended")] },
@@ -33,9 +34,8 @@ export function PredictRmseBars({ predict, className }: PredictRmseBarsProps) {
           ],
         },
       ],
-    }),
-    [predict, t],
-  );
+    };
+  }, [predict, t]);
 
   return <EChart option={option} className={className} />;
 }
