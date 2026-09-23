@@ -8,7 +8,11 @@
   border: 1px solid var(--border);
   border-radius: 6px;
   padding: 8px 10px;
-  min-height: 36px;
+  /* The trigger is the chevron's whole interactive area (there's no
+     separate hit target just for the glyph) -- 44px is the touch-target
+     floor that has to clear on every select, not just this one's own
+     visual height. */
+  min-height: 44px;
   cursor: pointer;
 }
 
@@ -25,10 +29,6 @@
   color: var(--text-secondary);
 }
 
-/* A 10px glyph read as smaller than a comfortable touch target -- the icon
-   is decorative (the whole trigger is already the click target), but its
-   own box now meets the ~24px minimum so it doesn't look like a stray
-   afterthought next to the rest of the control. */
 .icon {
   display: inline-flex;
   align-items: center;
@@ -36,7 +36,11 @@
   width: 20px;
   height: 20px;
   color: var(--text-secondary);
-  font-size: 16px;
+}
+
+.icon svg {
+  width: 20px;
+  height: 20px;
 }
 
 .content {
@@ -44,7 +48,7 @@
   border: 1px solid var(--border);
   border-radius: 6px;
   padding: 4px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--shadow-elevated);
   z-index: 10;
 }
 

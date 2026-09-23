@@ -74,6 +74,10 @@ export function useDemoReplay(pairId: number) {
     setState((s) => ({ ...s, playing: false }));
   }, []);
 
+  const setSpeed = useCallback((speed: number) => {
+    setState((s) => ({ ...s, speed }));
+  }, []);
+
   const seek = useCallback(
     (targetSeq: number) => {
       const max = (frames?.length ?? 1) - 1;
@@ -133,6 +137,7 @@ export function useDemoReplay(pairId: number) {
     frameAt,
     play,
     pause,
+    setSpeed,
     seek,
     seekToWeek,
   };

@@ -48,6 +48,10 @@ export function RmseChart({ metric, roundsSoFar }: RmseChartProps) {
           data: current,
           showSymbol: false,
           connectNulls: false,
+          // itemStyle, not just lineStyle -- the legend's swatch icon draws
+          // from itemStyle.color, and without it falls back to the theme's
+          // default series-colour cycle instead of matching this line.
+          itemStyle: { color: colors.green },
           lineStyle: { width: 2, color: colors.green },
           markLine:
             crossoverGames === null
@@ -57,10 +61,13 @@ export function RmseChart({ metric, roundsSoFar }: RmseChartProps) {
                   symbol: ["none", "circle"],
                   symbolSize: 9,
                   lineStyle: { color: colors.gold, width: 2 },
+                  // 14px bold is the smallest size that counts as "large
+                  // text" under WCAG (>= 3:1, not 4.5:1) -- --gold clears
+                  // 3:1 on white but not 4.5:1, so this can't render smaller.
                   label: {
                     formatter: t("chart.crossoverMarker"),
                     fontWeight: "bold",
-                    fontSize: 13,
+                    fontSize: 14,
                     color: colors.gold,
                   },
                   emphasis: { lineStyle: { width: 3 } },
@@ -73,6 +80,7 @@ export function RmseChart({ metric, roundsSoFar }: RmseChartProps) {
           type: "line",
           data: prior,
           showSymbol: false,
+          itemStyle: { color: colors.red },
           lineStyle: { width: 1, color: colors.red, type: "dashed" },
         },
       ],

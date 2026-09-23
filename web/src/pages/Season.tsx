@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { PlayerControls } from "../components/PlayerControls";
 import { Select } from "../components/ui/Select";
+import { InfoTooltip } from "../components/ui/InfoTooltip";
 import { StandingsTable } from "../components/StandingsTable";
 import { RmseChart } from "../charts/RmseChart";
 import { METRIC_LABEL_KEYS } from "../metricLabels";
@@ -111,7 +112,15 @@ export default function Season() {
 
             <section className="panel">
               <div className="panel-header">
-                <h2>{t("replay.rmseCurve")}</h2>
+                <div className="panel-title">
+                  <h2>{t("replay.rmseCurve")}</h2>
+                  <InfoTooltip
+                    aria-label={t("panelInfo.about", { panel: t("replay.rmseCurve") })}
+                    data-testid="rmse-curve-info"
+                  >
+                    {t("panelInfo.rmseCurve")}
+                  </InfoTooltip>
+                </div>
                 <Select
                   aria-label={t("replay.metricLabel")}
                   data-testid="metric-select"
@@ -142,7 +151,7 @@ export default function Season() {
             frameAt={replay.frameAt}
             onPlay={replay.play}
             onPause={replay.pause}
-            onSpeedChange={() => {}}
+            onSpeedChange={replay.setSpeed}
             onSeek={replay.seek}
           />
         </>

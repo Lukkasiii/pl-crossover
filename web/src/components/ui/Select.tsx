@@ -24,7 +24,11 @@ export function Select({ value, onValueChange, options, disabled, ...aria }: Sel
         data-testid={aria["data-testid"]}
       >
         <RadixSelect.Value />
-        <RadixSelect.Icon className={styles.icon}>▾</RadixSelect.Icon>
+        <RadixSelect.Icon className={styles.icon}>
+          <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+            <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </RadixSelect.Icon>
       </RadixSelect.Trigger>
       <RadixSelect.Portal>
         {/* Radix's default "optimized" reposition strategy only reacts to

@@ -5,14 +5,17 @@ export interface ZoneBand {
   labelKey: TranslationKey;
   from: number;
   to: number;
-  color: string;
+  /** Full-row tint. */
+  bg: string;
+  /** 3px saturated left border, and what the legend swatch shows. */
+  border: string;
 }
 
 const CONVENTIONAL_BANDS: ZoneBand[] = [
-  { key: "cl", labelKey: "zone.cl", from: 1, to: 4, color: "var(--indigo)" },
-  { key: "el", labelKey: "zone.el", from: 5, to: 5, color: "var(--orange)" },
-  { key: "ecl", labelKey: "zone.ecl", from: 6, to: 6, color: "var(--cyan)" },
-  { key: "rel", labelKey: "zone.relegation", from: 18, to: 20, color: "var(--relegation)" },
+  { key: "cl", labelKey: "zone.cl", from: 1, to: 4, bg: "var(--zone-cl-bg)", border: "var(--indigo)" },
+  { key: "el", labelKey: "zone.el", from: 5, to: 5, bg: "var(--zone-el-bg)", border: "var(--orange)" },
+  { key: "ecl", labelKey: "zone.ecl", from: 6, to: 6, bg: "var(--zone-ecl-bg)", border: "var(--cyan)" },
+  { key: "rel", labelKey: "zone.relegation", from: 18, to: 20, bg: "var(--zone-rel-bg)", border: "var(--relegation)" },
 ];
 
 /**
@@ -25,10 +28,10 @@ const CONVENTIONAL_BANDS: ZoneBand[] = [
  */
 const SEASON_OVERRIDES: Record<string, ZoneBand[]> = {
   "2024/25": [
-    { key: "cl", labelKey: "zone.cl", from: 1, to: 5, color: "var(--indigo)" },
-    { key: "el", labelKey: "zone.el", from: 6, to: 6, color: "var(--orange)" },
-    { key: "ecl", labelKey: "zone.ecl", from: 7, to: 7, color: "var(--cyan)" },
-    { key: "rel", labelKey: "zone.relegation", from: 18, to: 20, color: "var(--relegation)" },
+    { key: "cl", labelKey: "zone.cl", from: 1, to: 5, bg: "var(--zone-cl-bg)", border: "var(--indigo)" },
+    { key: "el", labelKey: "zone.el", from: 6, to: 6, bg: "var(--zone-el-bg)", border: "var(--orange)" },
+    { key: "ecl", labelKey: "zone.ecl", from: 7, to: 7, bg: "var(--zone-ecl-bg)", border: "var(--cyan)" },
+    { key: "rel", labelKey: "zone.relegation", from: 18, to: 20, bg: "var(--zone-rel-bg)", border: "var(--relegation)" },
   ],
 };
 

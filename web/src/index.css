@@ -1,38 +1,60 @@
 :root {
   /* Premier League brand palette -- colours only, never the lion mark or
-     the "Premier League" wordmark. Surfaces darken toward --primary. */
+     the "Premier League" wordmark. #37003C is a UI anchor (sidebar, page
+     headings, primary buttons, the Champions League accent), not a data
+     colour: at L 0.24 it fails the chart-palette lightness band and reads
+     as black in a line, so it never appears in a chart series or table
+     tint below. */
   --primary: #37003c;
-  --accent: #e90052;
-  /* #e90052 on our dark surfaces is ~4.1:1 -- fine for large text/UI, not
-     for small body text (needs 4.5:1). Use --accent-text wherever the pink
-     carries small text. */
-  --accent-text: #ff4f8b;
-  --secondary: #04f5ff;
-  --success: #00ff85;
+  --primary-ink: #ffffff; /* text/icons on --primary -- 17.1:1 */
+  --primary-ink-secondary: rgba(255, 255, 255, 0.72); /* muted text on --primary -- ~9.3:1 */
+  --primary-active-bg: rgba(255, 255, 255, 0.12); /* active/hover fill on --primary */
+  --primary-border: rgba(255, 255, 255, 0.16); /* hairlines on --primary */
+  --accent: #e90052; /* Premier League pink -- sparing UI accent, e.g. the active-nav rail */
 
-  --bg: #1a0a22;
-  --panel: #241030;
-  --border: #3a2447;
-  --text: #f4ecf8;
-  --text-secondary: #a796b2;
+  /* Surfaces darken toward the page, not toward --primary: page canvas,
+     the slightly recessed app backdrop behind cards, and the card itself. */
+  --page: #ffffff;
+  --bg: #f7f7f9;
+  --panel: #ffffff;
+  --border: #e4e4e7;
+  --text: #18181b; /* ink primary -- 17.7:1 on white */
+  --text-secondary: #52525b; /* ink secondary -- 7.7:1 on white */
+  --shadow-elevated: 0 8px 24px rgba(24, 24, 27, 0.16);
 
-  /* season/model semantics: green = current season, red = last season
-     (prior), blue = current evidence (the Bayesian data weight). Re-derived
-     against the darker v2 background; every one of these is checked >= AA
-     (4.5:1) against both --bg and --panel -- see CLAUDE.md "Design system". */
-  --green: var(--success);
-  --red: #ff5c6c;
-  --blue: var(--secondary);
+  /* Chart series -- this exact set, validated through six checks (worst
+     adjacent CVD deltaE 9.5, normal-vision 24.3, all >= 3:1 on white).
+     Assigned in this fixed order, never cycled. */
+  --series-1: #7c3aed; /* purple */
+  --series-2: var(--accent); /* Premier League pink */
+  --series-3: #0d9488; /* teal */
+  --series-4: #d97706; /* amber */
+  --series-5: #2563eb; /* blue */
 
-  /* Zone bands (see src/components/zoneBands.ts), re-derived from the brand
-     palette: Champions League purple, Europa orange, Conference cyan,
-     relegation red. --gold is the odd one out -- not a zone colour, it
-     marks the champion row and the blended-prediction bar. */
-  --gold: #e8b93a;
-  --indigo: #b98bff;
-  --orange: #ffb066;
-  --cyan: var(--secondary);
-  --relegation: #ff7a85;
+  /* season/model semantics, drawn from the series set above so they clear
+     the same AA/CVD bar: green/red keep their names (the live badge and the
+     RMSE charts have always meant "current, in motion" vs "prior, stopped"
+     by them) but now point at the teal/rose hues from the validated set
+     rather than a literal green/red. blue is current-season *data* (the
+     Bayesian weight bars); gold is the blended/champion accent and
+     deliberately reuses --orange -- the two never appear in the same view. */
+  --green: var(--series-3);
+  --red: #e11d48;
+  --blue: var(--series-5);
+  --gold: var(--orange);
+
+  /* Zone bands (see src/components/zoneBands.ts): Champions League purple,
+     Europa amber, Conference teal, relegation rose -- full-row tint plus a
+     3px border, both exact, not colour-mixed. Ink primary clears >= 14:1 on
+     every one of these tints. */
+  --indigo: var(--series-1);
+  --orange: var(--series-4);
+  --cyan: var(--series-3);
+  --relegation: var(--red);
+  --zone-cl-bg: #f3e8ff;
+  --zone-el-bg: #fef3c7;
+  --zone-ecl-bg: #ccfbf1;
+  --zone-rel-bg: #ffe4e6;
 
   /* 4px spacing scale -- replaces the one-off px values Stage 1-4 CSS used
      throughout (gap: 16px, padding: 24px, ...). Use these tokens, not raw
@@ -67,9 +89,9 @@
 
   font: var(--text-base) / var(--leading-normal) var(--font-body);
   letter-spacing: 0.1px;
-  color-scheme: dark;
+  color-scheme: light;
   color: var(--text);
-  background: var(--bg);
+  background: var(--page);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -83,7 +105,7 @@
 
 body {
   margin: 0;
-  background: var(--bg);
+  background: var(--page);
 }
 
 h1,

@@ -26,7 +26,7 @@ export function AuthPanel() {
 
   if (user) {
     return (
-      <div className={styles.panel}>
+      <div className={`${styles.panel} sidebar-auth`}>
         <span className={styles.account} data-testid="account-email">
           {user.email}
         </span>
@@ -59,7 +59,7 @@ export function AuthPanel() {
   };
 
   return (
-    <div className={styles.panel}>
+    <div className={`${styles.panel} sidebar-auth`}>
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}

@@ -1,4 +1,5 @@
 import { Slider } from "./ui/Slider";
+import { InfoTooltip } from "./ui/InfoTooltip";
 import { WeightBars } from "../charts/WeightBars";
 import { PredictRmseBars } from "../charts/PredictRmseBars";
 import { usePredict, DEFAULT_OBS_VARIANCE } from "../api/usePredict";
@@ -44,7 +45,15 @@ export function PredictionTuner({
   return (
     <section className="panel">
       <div className="panel-header">
-        <h2>{t("replay.tunePrior")}</h2>
+        <div className="panel-title">
+          <h2>{t("replay.tunePrior")}</h2>
+          <InfoTooltip
+            aria-label={t("panelInfo.about", { panel: t("replay.tunePrior") })}
+            data-testid="tune-prior-info"
+          >
+            {t("panelInfo.tunePrior")}
+          </InfoTooltip>
+        </div>
         <span className="predict-value">
           w_prior = {priorWeight} (σ_prior ≈ {sigmaPrior.toFixed(2)})
         </span>

@@ -1,0 +1,45 @@
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--text-secondary);
+  border-radius: 50%;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.trigger:hover {
+  color: var(--text);
+}
+
+.trigger:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
+.icon {
+  width: 16px;
+  height: 16px;
+}
+
+.content {
+  max-width: 280px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: var(--space-3);
+  color: var(--text);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  box-shadow: var(--shadow-elevated);
+  z-index: 10;
+}
+
+.arrow {
+  fill: var(--panel);
+}

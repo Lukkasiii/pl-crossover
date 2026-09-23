@@ -127,7 +127,7 @@
   padding: 4px 8px;
   font-size: var(--text-xs);
   font-family: var(--font-body);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--shadow-elevated);
   z-index: 10;
 }
 
@@ -167,9 +167,11 @@
 
 /* brightness, not a background swap: every row's background is now
    meaningful (the zone tint), so hover has to layer on top of whatever
-   that is rather than replacing it. */
+   that is rather than replacing it. Darkens, not lightens -- on the light
+   surfaces below, brightness > 1 clips near-white/pastel backgrounds
+   straight to white and erases the zone tint instead of highlighting it. */
 .table tbody tr.hovered {
-  filter: brightness(1.15);
+  filter: brightness(0.97);
 }
 
 /* Not `opacity` -- at a low enough value to read as visibly "excluded" it

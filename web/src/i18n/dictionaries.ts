@@ -29,7 +29,6 @@ export const en = {
   "player.pause": "Pause",
   "player.replay": "Replay",
   "player.speedLabel": "replay speed",
-  "player.speedPausedHint": "Speed only changes while playing",
   "player.positionLabel": "replay position",
   "player.matchStatus": "Match {number} of {total} · {date} · {games} games played",
   "player.seeking": "(seeking…)",
@@ -46,6 +45,14 @@ export const en = {
   "replay.metricLabel": "metric",
   "replay.currentRmseByMetric": "Current RMSE by metric",
   "replay.tunePrior": "Tune the prior",
+
+  "panelInfo.about": "About: {panel}",
+  "panelInfo.rmseCurve":
+    "How far off, in table positions, the model's predicted final table is at this point in the season. The solid line uses only this season's data so far; the dashed line is the constant prediction you'd get from just replaying last season's final table. The crossover marks the first games count where the solid line drops below the dashed one.",
+  "panelInfo.tunePrior":
+    "Drag to change how much the blended prediction trusts last season's table (w_prior, fixed at 5 in the original study) against this season's own evidence so far. The top bar shows the resulting prior/data split; the bottom bar compares each source's own RMSE against the blend.",
+  "panelInfo.currentRmseByMetric":
+    "This season's prediction error, in table positions, for each of the four metrics the study compares -- xG, xGD, goal difference and points -- at however many games the replay has reached.",
   "replay.priorWeightLabel": "prior weight",
   "replay.failedPredict": "failed to recompute the posterior",
   "replay.loading": "loading…",
@@ -162,7 +169,6 @@ export const zh = {
   "player.pause": "暂停",
   "player.replay": "重播",
   "player.speedLabel": "回放速度",
-  "player.speedPausedHint": "仅在播放时可调整速度",
   "player.positionLabel": "回放进度",
   "player.matchStatus": "第 {number} / {total} 场 · {date} · 已赛 {games} 场",
   "player.seeking": "（跳转中…）",
@@ -179,6 +185,14 @@ export const zh = {
   "replay.metricLabel": "指标",
   "replay.currentRmseByMetric": "当前各指标 RMSE",
   "replay.tunePrior": "调整先验权重",
+
+  "panelInfo.about": "关于：{panel}",
+  "panelInfo.rmseCurve":
+    "本赛季进行到当前场次时，模型预测的最终排名与真实情况相差多少个名次。实线只使用本赛季已发生的数据；虚线是直接照搬上赛季最终积分榜作为预测得到的（恒定）误差。交叉点标记实线第一次低于虚线时的场次。",
+  "panelInfo.tunePrior":
+    "拖动滑块可以调整混合预测对上赛季积分榜（先验权重 w_prior，原始研究中固定为 5）与本赛季已有数据的信任程度。上方的柱状图展示由此得到的先验/数据权重比例；下方的柱状图对比先验、本赛季与混合结果各自的 RMSE。",
+  "panelInfo.currentRmseByMetric":
+    "本赛季进行到回放当前场次时，研究比较的四个指标——xG、xGD、净胜球和积分——各自的预测误差（以名次为单位）。",
   "replay.priorWeightLabel": "先验权重",
   "replay.failedPredict": "重新计算后验失败",
   "replay.loading": "加载中…",
