@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { ReplayFrame, RoundFrame, TableRow } from "../ws/types";
+import type { MatchFrame, ReplayFrame, RoundFrame } from "../ws/types";
 import type { ConnectionStatus } from "../ws/useReplaySocket";
 
 const BASE_FRAME_INTERVAL_MS = 200; // matches the live server's 1x pacing
@@ -92,20 +92,30 @@ export function useDemoReplay(pairId: number) {
     [frames, seek],
   );
 
-  const { table, roundsSoFar } = useMemo(() => {
-    if (frames === null) return { table: null as TableRow[] | null, roundsSoFar: [] as RoundFrame[] };
-    let table: TableRow[] | null = null;
+  const { match, roundsSoFar } = useMemo(() => {
+    if (frames === null) return { match: null as MatchFrame | null, roundsSoFar: [] as RoundFrame[] };
+    let match: MatchFrame | null = null;
     const roundsSoFar: RoundFrame[] = [];
     for (let i = 0; i <= state.viewSeq; i++) {
       const f = frames[i];
-      if (f.type === "match") table = f.table;
+      if (f.type === "match") match = f;
       else if (f.type === "round") roundsSoFar.push(f);
     }
-    return { table, roundsSoFar };
+    return { match, roundsSoFar };
   }, [frames, state.viewSeq]);
 
   const latestRound = roundsSoFar.length > 0 ? roundsSoFar[roundsSoFar.length - 1] : null;
   const finished = frames !== null && state.viewSeq >= frames.length - 1;
+
+  // The whole season is already in memory (see the class comment above) --
+  // no cache to consult, just index straight into it.
+  const frameAt = useCallback(
+    (seq: number) => {
+      const f = frames?.[seq];
+      return f?.type === "match" ? f : undefined;
+    },
+    [frames],
+  );
 
   return {
     status: state.status,
@@ -116,9 +126,11 @@ export function useDemoReplay(pairId: number) {
     finished,
     error: null as string | null,
     seeking: false,
-    table,
+    table: match?.table ?? null,
+    match,
     roundsSoFar,
     latestRound,
+    frameAt,
     play,
     pause,
     seek,

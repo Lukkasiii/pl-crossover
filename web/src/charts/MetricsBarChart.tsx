@@ -15,9 +15,9 @@ export function MetricsBarChart({ latestRound }: MetricsBarChartProps) {
   const option = useMemo<EChartsOption>(
     () => ({
       grid: { left: 48, right: 16, top: 32, bottom: 32 },
-      tooltip: { trigger: "axis" },
+      tooltip: { trigger: "axis", valueFormatter: (v) => (v as number).toFixed(2) },
       xAxis: { type: "category", data: METRICS.map((m) => t(METRIC_LABEL_KEYS[m])) },
-      yAxis: { type: "value", name: t("chart.currentRmse") },
+      yAxis: { type: "value", name: t("chart.currentRmse"), axisLabel: { formatter: (v: number) => v.toFixed(2) } },
       series: [
         {
           name: t("chart.currentSeasonRmse"),

@@ -16,3 +16,6 @@ dist/
 # scratch output from fetch/TLS debugging (scripts/diagnose_fetch.py, diagnose_tls.py)
 *.log
 page.html
+
+# Claude Code scratch: task files written by the planning session, not project history
+.claude/commands/next.md

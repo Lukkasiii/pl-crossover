@@ -21,9 +21,9 @@ export function PredictRmseBars({ predict, className }: PredictRmseBarsProps) {
     const colors = getColors();
     return {
       grid: { left: 48, right: 16, top: 16, bottom: 24 },
-      tooltip: { trigger: "axis" },
+      tooltip: { trigger: "axis", valueFormatter: (v) => (v as number).toFixed(2) },
       xAxis: { type: "category", data: [t("chart.lastSeason"), t("chart.thisSeason"), t("chart.blended")] },
-      yAxis: { type: "value", name: t("chart.rmsePositions") },
+      yAxis: { type: "value", name: t("chart.rmsePositions"), axisLabel: { formatter: (v: number) => v.toFixed(2) } },
       series: [
         {
           type: "bar",

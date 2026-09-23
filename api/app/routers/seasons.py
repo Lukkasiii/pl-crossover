@@ -14,10 +14,13 @@ router = APIRouter(tags=["core"])
 def list_seasons(db: sqlite3.Connection = Depends(get_db)) -> list[SeasonPairOut]:
     rows = db.execute(
         """SELECT sp.id, sp.label, sp.common_team_count,
-                  prior.label AS prior_label, cur.label AS current_label
+                  prior.label AS prior_label, cur.label AS current_label,
+                  MIN(m.played_at) AS season_start, MAX(m.played_at) AS season_end
            FROM season_pairs sp
            JOIN seasons prior ON prior.id = sp.prior_season_id
            JOIN seasons cur ON cur.id = sp.current_season_id
+           JOIN matches m ON m.season_id = cur.id
+           GROUP BY sp.id
            ORDER BY prior.start_year"""
     ).fetchall()
     return [
@@ -27,6 +30,8 @@ def list_seasons(db: sqlite3.Connection = Depends(get_db)) -> list[SeasonPairOut
             prior_season=r["prior_label"],
             current_season=r["current_label"],
             common_team_count=r["common_team_count"],
+            season_start=r["season_start"].replace(" ", "T"),
+            season_end=r["season_end"].replace(" ", "T"),
         )
         for r in rows
     ]

@@ -119,7 +119,7 @@ def build_frames(con: sqlite3.Connection, db_path: str, pair_id: int) -> list[di
         )
     }
     matches = con.execute(
-        "SELECT home_team_id, away_team_id FROM matches WHERE season_id = ? ORDER BY played_at, id",
+        "SELECT home_team_id, away_team_id, played_at FROM matches WHERE season_id = ? ORDER BY played_at, id",
         (current_season_id,),
     ).fetchall()
 
@@ -128,11 +128,17 @@ def build_frames(con: sqlite3.Connection, db_path: str, pair_id: int) -> list[di
     seq = 0
     last_round = 0
 
-    for m in matches:
+    for match_number, m in enumerate(matches, start=1):
         games_played[m["home_team_id"]] += 1
         games_played[m["away_team_id"]] += 1
         frames.append(
-            {"seq": seq, "type": "match", "table": _table_snapshot(games_played, team_state, roster, pair_teams)}
+            {
+                "seq": seq,
+                "type": "match",
+                "match_number": match_number,
+                "played_at": m["played_at"].replace(" ", "T"),
+                "table": _table_snapshot(games_played, team_state, roster, pair_teams),
+            }
         )
         seq += 1
 

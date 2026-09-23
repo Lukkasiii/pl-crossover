@@ -385,6 +385,10 @@ export interface components {
             current_season: string;
             /** Common Team Count */
             common_team_count: number;
+            /** Season Start */
+            season_start: string;
+            /** Season End */
+            season_end: string;
         };
         /** TableRow */
         TableRow: {

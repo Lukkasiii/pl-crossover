@@ -4,7 +4,13 @@ import type { MatchFrame, RoundFrame, TableRow } from "./types";
 
 const table = (seq: number): TableRow[] => [{ team_id: 1, name: "Team A", games_played: seq } as TableRow];
 
-const matchFrame = (seq: number): MatchFrame => ({ type: "match", seq, table: table(seq) });
+const matchFrame = (seq: number): MatchFrame => ({
+  type: "match",
+  seq,
+  match_number: seq + 1,
+  played_at: "2016-08-13T15:30:00",
+  table: table(seq),
+});
 
 const roundFrame = (seq: number, games: number): RoundFrame => ({
   type: "round",
@@ -26,9 +32,9 @@ describe("FrameCache", () => {
     cache.add(matchFrame(3));
     cache.add(matchFrame(7));
 
-    expect(cache.getSnapshot(0).table?.[0].games_played).toBe(0);
-    expect(cache.getSnapshot(5).table?.[0].games_played).toBe(3); // no frame at 5 -- nearest prior wins
-    expect(cache.getSnapshot(7).table?.[0].games_played).toBe(7);
+    expect(cache.getSnapshot(0).match?.table[0].games_played).toBe(0);
+    expect(cache.getSnapshot(5).match?.table[0].games_played).toBe(3); // no frame at 5 -- nearest prior wins
+    expect(cache.getSnapshot(7).match?.table[0].games_played).toBe(7);
   });
 
   it("hides round frames that are ahead of the view position", () => {
@@ -54,6 +60,17 @@ describe("FrameCache", () => {
     cache.add(matchFrame(4));
     cache.add(roundFrame(2, 1));
     expect(cache.cachedThrough).toBe(4);
+  });
+
+  it("looks up a cached match frame by seq for the timeline's hover preview, without touching the view position", () => {
+    const cache = new FrameCache();
+    cache.add(matchFrame(0));
+    cache.add(matchFrame(3));
+
+    expect(cache.matchAt(0)?.match_number).toBe(1);
+    expect(cache.matchAt(2)?.match_number).toBe(1); // no frame at 2 -- nearest prior wins, same rule as getSnapshot
+    expect(cache.matchAt(3)?.match_number).toBe(4);
+    expect(cache.matchAt(100)).toBeUndefined(); // never streamed that far
   });
 
   it("returns the same snapshot reference when nothing relevant has changed", () => {

@@ -1,7 +1,9 @@
 import { Timeline } from "./Timeline";
 import { Select } from "./ui/Select";
+import { gamesPlayedRange, TOTAL_MATCHES } from "./replayFormat";
 import { useLocale } from "../i18n/LocaleContext";
 import type { ConnectionStatus } from "../ws/useReplaySocket";
+import type { MatchFrame, TableRow } from "../ws/types";
 import type { TranslationKey } from "../i18n/dictionaries";
 
 const SPEEDS = [1, 5, 10, 25, 50];
@@ -14,6 +16,12 @@ interface PlayerControlsProps {
   totalFrames: number;
   finished: boolean;
   seeking: boolean;
+  match: MatchFrame | null;
+  table: TableRow[] | null;
+  seasonStart: string;
+  seasonEnd: string;
+  crossoverSeq: number | null;
+  frameAt: (seq: number) => MatchFrame | undefined;
   onPlay: (speed?: number) => void;
   onPause: () => void;
   onSpeedChange: (speed: number) => void;
@@ -28,12 +36,18 @@ export function PlayerControls({
   totalFrames,
   finished,
   seeking,
+  match,
+  table,
+  seasonStart,
+  seasonEnd,
+  crossoverSeq,
+  frameAt,
   onPlay,
   onPause,
   onSpeedChange,
   onSeek,
 }: PlayerControlsProps) {
-  const { t } = useLocale();
+  const { t, formatNumber, formatDate } = useLocale();
   const canPlay = status === "open";
   const playState = playing ? "playing" : finished ? "finished" : "paused";
 
@@ -48,11 +62,26 @@ export function PlayerControls({
     }
   };
 
+  const range = gamesPlayedRange(table);
+  const gamesLabel = range
+    ? range[0] === range[1]
+      ? formatNumber(range[0])
+      : `${formatNumber(range[0])}–${formatNumber(range[1])}`
+    : formatNumber(0);
+  const matchStatus = match
+    ? t("player.matchStatus", {
+        number: formatNumber(match.match_number),
+        total: formatNumber(TOTAL_MATCHES),
+        date: formatDate(match.played_at),
+        games: gamesLabel,
+      })
+    : "";
+
   return (
     <div className="player-controls">
       <div className="player-controls-row">
-        <span title={status} role="status">
-          <span aria-hidden="true">{statusEmoji(status)}</span> {t(statusLabelKey(status))}
+        <span title={status} role="status" data-live-state={canPlay ? (playing ? "playing" : "paused") : status}>
+          <span aria-hidden="true">{statusEmoji(status, playing)}</span> {t(statusLabelKey(status))}
         </span>
         <button onClick={togglePlay} disabled={!canPlay} data-testid="player-toggle" data-state={playState}>
           {playing ? `⏸ ${t("player.pause")}` : finished ? `↻ ${t("player.replay")}` : `▶ ${t("player.play")}`}
@@ -61,6 +90,7 @@ export function PlayerControls({
           aria-label={t("player.speedLabel")}
           data-testid="speed-select"
           value={String(speed)}
+          disabled={!playing}
           onValueChange={(v) => {
             const next = Number(v);
             onSpeedChange(next);
@@ -68,20 +98,30 @@ export function PlayerControls({
           }}
           options={SPEEDS.map((s) => ({ value: String(s), label: `${s}x` }))}
         />
+        {!playing && <span className="player-speed-hint">{t("player.speedPausedHint")}</span>}
         <span className="frame-count" data-testid="frame-counter" data-seq={Math.max(seq, 0)} data-total={totalFrames}>
-          {t("player.frameCount", { seq: Math.max(seq, 0), total: totalFrames || "?" })}
+          {matchStatus}
           {seeking && ` ${t("player.seeking")}`}
         </span>
       </div>
-      <Timeline seq={seq} totalFrames={totalFrames} disabled={!canPlay || seeking} onSeek={onSeek} />
+      <Timeline
+        seq={seq}
+        totalFrames={totalFrames}
+        disabled={!canPlay || seeking}
+        onSeek={onSeek}
+        seasonStart={seasonStart}
+        seasonEnd={seasonEnd}
+        crossoverSeq={crossoverSeq}
+        frameAt={frameAt}
+      />
     </div>
   );
 }
 
-function statusEmoji(status: ConnectionStatus): string {
+function statusEmoji(status: ConnectionStatus, playing: boolean): string {
   switch (status) {
     case "open":
-      return "🟢";
+      return playing ? "🟢" : "🔴";
     case "connecting":
     case "reconnecting":
       return "🟡";

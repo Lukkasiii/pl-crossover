@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { PlayerControls } from "../components/PlayerControls";
 import { Select } from "../components/ui/Select";
@@ -28,6 +28,14 @@ export default function Season() {
 
   const ready = replay !== null && replay.status === "open" && replay.totalFrames > 0;
   useUrlWeekSync(ready, replay?.latestRound?.games, replay?.seekToWeek ?? (() => {}));
+
+  // Only known once the replay has actually streamed the round where it
+  // first turns true for the active metric -- same source as RmseChart's
+  // own marker (roundsSoFar), so the two markers can never disagree.
+  const crossoverSeq = useMemo(() => {
+    const round = replay?.roundsSoFar.find((r) => r.metrics[metric].crossover_passed);
+    return round?.seq ?? null;
+  }, [replay?.roundsSoFar, metric]);
 
   // The demo must not open on an empty page, but it must not move on its
   // own either -- the replay starts on a click. Land on the very first
@@ -64,7 +72,7 @@ export default function Season() {
   }, [replay]);
 
   return (
-    <div data-testid="page-season">
+    <div data-testid="page-season" className="season-page">
       <header className="app-header">
         <h1>{t("nav.season")}</h1>
         <p className="subtitle">{t("app.subtitle")}</p>
@@ -126,6 +134,12 @@ export default function Season() {
             totalFrames={replay.totalFrames}
             finished={replay.finished}
             seeking={replay.seeking}
+            match={replay.match}
+            table={replay.table}
+            seasonStart={activePair.season_start}
+            seasonEnd={activePair.season_end}
+            crossoverSeq={crossoverSeq}
+            frameAt={replay.frameAt}
             onPlay={replay.play}
             onPause={replay.pause}
             onSpeedChange={() => {}}

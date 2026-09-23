@@ -26,6 +26,8 @@ class SeasonPairOut(BaseModel):
     prior_season: str
     current_season: str
     common_team_count: int
+    season_start: str
+    season_end: str
 
 
 class TableRow(BaseModel):
