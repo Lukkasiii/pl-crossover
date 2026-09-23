@@ -47,6 +47,8 @@ export const en = {
   "replay.tunePrior": "Tune the prior",
 
   "panelInfo.about": "About: {panel}",
+  "panelInfo.standings":
+    "The league table exactly as it stood at that moment. Each team is shown at its own games-played count, not at a shared matchweek -- postponements leave teams up to six games apart. Rows are tinted by what the position wins or costs; greyed teams were not in the previous season's Premier League, so they are outside the 17-team regression sample.",
   "panelInfo.rmseCurve":
     "How far off, in table positions, the model's predicted final table is at this point in the season. The solid line uses only this season's data so far; the dashed line is the constant prediction you'd get from just replaying last season's final table. The crossover marks the first games count where the solid line drops below the dashed one.",
   "panelInfo.tunePrior":
@@ -187,6 +189,8 @@ export const zh = {
   "replay.tunePrior": "调整先验权重",
 
   "panelInfo.about": "关于：{panel}",
+  "panelInfo.standings":
+    "积分榜精确还原了那一时刻的排名。每支球队按其自身已赛场次显示，而非统一的比赛轮次——赛程延期可能让球队之间相差多达六场比赛。各行按名次所带来的收益或代价着色；灰色球队未曾出现在上赛季的英超联赛中，因此不在17支球队的回归样本之内。",
   "panelInfo.rmseCurve":
     "本赛季进行到当前场次时，模型预测的最终排名与真实情况相差多少个名次。实线只使用本赛季已发生的数据；虚线是直接照搬上赛季最终积分榜作为预测得到的（恒定）误差。交叉点标记实线第一次低于虚线时的场次。",
   "panelInfo.tunePrior":
