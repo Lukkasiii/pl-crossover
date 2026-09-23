@@ -588,6 +588,7 @@ export interface operations {
             query: {
                 metric: "xg" | "xgd" | "gd" | "points";
                 method?: "pooled" | "per_season";
+                pair_id?: number | null;
             };
             header?: never;
             path?: never;

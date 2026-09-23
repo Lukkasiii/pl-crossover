@@ -19,12 +19,6 @@ export default function TeamDetail() {
     document.title = `${title} — ${t("nav.siteTitle")}`;
   }, [team, t]);
 
-  // Defaults to the most recent season once the team's data has loaded --
-  // not on every render, so picking an earlier season from the Select below sticks.
-  useEffect(() => {
-    if (team && selectedPairId === null) setSelectedPairId(team.seasons[team.seasons.length - 1].pairId);
-  }, [team, selectedPairId]);
-
   if (error) return <p className="placeholder-note">{t("teams.failedToLoad")}</p>;
   if (!teams) return <p className="placeholder-note">{t("app.loadingPage")}</p>;
 
@@ -66,7 +60,7 @@ export default function TeamDetail() {
           <div className="chart-box">
             <RankLineChart
               categories={team.seasons.map((s) => s.season)}
-              ranks={team.seasons.map((s) => s.finalRank)}
+              series={[{ ranks: team.seasons.map((s) => s.finalRank) }]}
               xAxisName={t("teamDetail.seasonSelectLabel")}
             />
           </div>
@@ -86,7 +80,7 @@ export default function TeamDetail() {
           <div className="chart-box">
             <RankLineChart
               categories={selectedSeason.rankByGame.map((_, i) => i + 1)}
-              ranks={selectedSeason.rankByGame}
+              series={[{ ranks: selectedSeason.rankByGame }]}
               xAxisName={t("chart.gamesPlayed")}
             />
           </div>
