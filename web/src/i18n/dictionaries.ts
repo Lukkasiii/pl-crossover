@@ -136,9 +136,19 @@ export const en = {
   "scenarios.method.pooled": "pooled",
   "scenarios.method.per_season": "per-season",
 
-  "placeholder.overview.title": "Overview",
-  "placeholder.overview.body":
-    "The 30-second pitch lands here: what this project answers, the headline number, and links into the rest of the dashboard.",
+  "overview.headlineUnit": "games",
+  "overview.headlineSub": "the point where this season's xG starts predicting the final table better than last season's did.",
+  "overview.headlineNote":
+    "A four-checkpoint graduate workbook interpolated \"about 12\"; match-level data puts it at 11.8 -- exactly, not bracketed.",
+  "overview.stat.crossover": "crossover (xG)",
+  "overview.stat.observations": "observations",
+  "overview.stat.pairs": "season pairs",
+  "overview.stat.frames": "replay frames",
+  "overview.nav.season.body": "Play the season back match by match and watch the model's prediction sharpen in real time.",
+  "overview.nav.model.body":
+    "The Bayesian blend behind the replay: how much of the prediction comes from last season versus this one.",
+  "overview.nav.teams.body": "Every team in the sample, with its own history across season pairs.",
+
   "placeholder.teams.title": "Teams",
   "placeholder.teams.body": "Every team that has played in the sampled seasons, one list.",
   "placeholder.teamDetail.title": "Team: {slug}",
@@ -276,8 +286,17 @@ export const zh = {
   "scenarios.method.pooled": "合并回归",
   "scenarios.method.per_season": "逐赛季回归",
 
-  "placeholder.overview.title": "概览",
-  "placeholder.overview.body": "30秒读懂本项目：核心结论、关键数字，以及通向其余页面的入口，即将上线。",
+  "overview.headlineUnit": "场",
+  "overview.headlineSub": "本赛季的 xG 从这一场开始，比上赛季的最终积分榜更能预测本赛季的最终排名。",
+  "overview.headlineNote": "一份仅有四个检查点的毕业作业插值得到「约 12 场」；逐场比赛的数据把它精确到了 11.8 场，而不只是一个区间。",
+  "overview.stat.crossover": "交叉点（xG）",
+  "overview.stat.observations": "观测样本",
+  "overview.stat.pairs": "赛季组合",
+  "overview.stat.frames": "回放帧数",
+  "overview.nav.season.body": "逐场回放整个赛季，实时观察模型预测逐渐变准的过程。",
+  "overview.nav.model.body": "回放背后的贝叶斯混合模型：预测结果中来自上赛季与本赛季数据的比例。",
+  "overview.nav.teams.body": "样本中的每一支球队，及其跨赛季组合的历史表现。",
+
   "placeholder.teams.title": "球队",
   "placeholder.teams.body": "样本赛季中出现过的所有球队，一份列表。",
   "placeholder.teamDetail.title": "球队：{slug}",
