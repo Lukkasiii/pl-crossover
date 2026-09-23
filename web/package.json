@@ -17,6 +17,7 @@
     "generate:types": "cd .. && python3 scripts/export_openapi.py web/openapi.json && cd web && openapi-typescript openapi.json -o src/api/schema.ts"
   },
   "dependencies": {
+    "@radix-ui/react-popover": "^1.1.23",
     "@radix-ui/react-select": "^2.3.7",
     "@radix-ui/react-slider": "^1.4.7",
     "@radix-ui/react-tooltip": "^1.2.16",

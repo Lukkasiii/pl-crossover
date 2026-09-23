@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { MetricsBarChart } from "../charts/MetricsBarChart";
+import { InfoTooltip } from "../components/ui/InfoTooltip";
 import { PredictionTuner } from "../components/PredictionTuner";
 import { useLocale } from "../i18n/LocaleContext";
 import { useReplayParams } from "../state/ReplayParamsContext";
@@ -39,7 +40,17 @@ export default function Model() {
           <div>
             <p className="panel-framing">{t("model.currentRmseFraming")}</p>
             <section className="panel">
-              <h2>{t("replay.currentRmseByMetric")}</h2>
+              <div className="panel-header">
+                <div className="panel-title">
+                  <h2>{t("replay.currentRmseByMetric")}</h2>
+                  <InfoTooltip
+                    aria-label={t("panelInfo.about", { panel: t("replay.currentRmseByMetric") })}
+                    data-testid="current-rmse-info"
+                  >
+                    {t("panelInfo.currentRmseByMetric")}
+                  </InfoTooltip>
+                </div>
+              </div>
               <div className="chart-box">
                 <MetricsBarChart latestRound={replay.latestRound} />
               </div>
