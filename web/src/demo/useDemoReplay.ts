@@ -12,14 +12,14 @@ interface DemoState {
 }
 
 /**
- * Same return shape as useReplaySocket, so ReplayDashboard doesn't need to
- * know which one it's using. Every frame for the pair is fetched once as a
- * flat JSON array (frozen by scripts/export_demo_frames.py) instead of
+ * Same return shape as useReplaySocket, so useReplay's callers don't need
+ * to know which one they're using. Every frame for the pair is fetched once
+ * as a flat JSON array (frozen by scripts/export_demo_frames.py) instead of
  * streamed -- with the whole season already in memory, "seeking" is just
  * indexing the array, and there's no cache/catch-up machinery to write.
  * This is what lets the frontend deploy as a static site with no backend.
  *
- * Mounted with key={pairId} by the parent (see ReplayDashboard), so a
+ * Mounted with key={pairId} by the parent (see ReplaySessionContext), so a
  * pair switch remounts this hook from scratch rather than needing an
  * imperative reset effect.
  */

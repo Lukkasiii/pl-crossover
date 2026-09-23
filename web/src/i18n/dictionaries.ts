@@ -49,6 +49,13 @@ export const en = {
   "replay.metric.gd": "GD",
   "replay.metric.points": "Points",
 
+  "model.subtitle":
+    "The Bayesian blend behind the replay: how much of the prediction comes from last season versus this one, and which metric gets there first.",
+  "model.tunePriorFraming":
+    "Drag this to ask: if the model trusted last season more, or less, would the crossover move? The original study fixed this weight at 5 -- here you set it.",
+  "model.currentRmseFraming":
+    "Which of xG, xGD, goal difference and points becomes reliable earliest -- the study's real question, one bar per metric at however many games the replay has reached.",
+
   "chart.currentSeason": "Current season",
   "chart.priorSeason": "Last season (prior)",
   "chart.gamesPlayed": "games played",
@@ -108,8 +115,6 @@ export const en = {
   "placeholder.overview.title": "Overview",
   "placeholder.overview.body":
     "The 30-second pitch lands here: what this project answers, the headline number, and links into the rest of the dashboard.",
-  "placeholder.model.title": "The model",
-  "placeholder.model.body": "The Bayesian blend explained: the formula, and the prior-share-by-checkpoint table.",
   "placeholder.teams.title": "Teams",
   "placeholder.teams.body": "Every team that has played in the sampled seasons, one list.",
   "placeholder.teamDetail.title": "Team: {slug}",
@@ -161,6 +166,11 @@ export const zh = {
   "replay.metric.xgd": "xGD",
   "replay.metric.gd": "GD",
   "replay.metric.points": "积分",
+
+  "model.subtitle": "回放背后的贝叶斯混合模型:预测结果中来自上赛季与本赛季数据的比例,以及哪个指标最早变得可靠。",
+  "model.tunePriorFraming":
+    "拖动这个滑块来回答:如果模型更信任(或更不信任)上赛季的数据,交叉点会移动吗?原始研究把这个权重固定为 5——这里由你来设定。",
+  "model.currentRmseFraming": "xG、xGD、净胜球和积分中,哪一个最早变得可靠——这是本研究真正要回答的问题,按回放当前场次逐项对比。",
 
   "chart.currentSeason": "本赛季",
   "chart.priorSeason": "上赛季（先验）",
@@ -220,8 +230,6 @@ export const zh = {
 
   "placeholder.overview.title": "概览",
   "placeholder.overview.body": "30秒读懂本项目：核心结论、关键数字，以及通向其余页面的入口，即将上线。",
-  "placeholder.model.title": "模型",
-  "placeholder.model.body": "贝叶斯混合模型详解：公式，以及各检查点的先验占比表。",
   "placeholder.teams.title": "球队",
   "placeholder.teams.body": "样本赛季中出现过的所有球队，一份列表。",
   "placeholder.teamDetail.title": "球队：{slug}",

@@ -1,22 +1,67 @@
-import { useEffect, useState } from "react";
-import { useSeasons } from "../api/useSeasons";
-import { ReplayDashboard } from "../components/ReplayDashboard";
+import { useEffect, useRef } from "react";
+import { useSearchParams } from "react-router-dom";
+import { PlayerControls } from "../components/PlayerControls";
 import { Select } from "../components/ui/Select";
+import { StandingsTable } from "../components/StandingsTable";
+import { RmseChart } from "../charts/RmseChart";
+import { METRIC_LABEL_KEYS } from "../metricLabels";
 import { useLocale } from "../i18n/LocaleContext";
 import { useReplayParams } from "../state/ReplayParamsContext";
+import { useReplaySession } from "../state/ReplaySessionContext";
+import { useUrlWeekSync } from "../ws/useUrlWeekSync";
+import { METRICS, type Metric } from "../ws/types";
+
+// Native form tags plus the interactive roles Radix's Select trigger
+// (a <button>) and Slider thumb (a <span role="slider">) render as --
+// their own key handling should win over the page-level shortcuts below.
+const EDITABLE_SELECTOR = 'input, select, textarea, button, [role="slider"], [role="combobox"]';
 
 export default function Season() {
   const { t } = useLocale();
-  const { pairs, error: seasonsError } = useSeasons();
-  const { metric, setMetric, priorWeight, setPriorWeight, obsVariance } = useReplayParams();
-  const [pairId, setPairId] = useState<number | null>(null);
+  const { metric, setMetric } = useReplayParams();
+  const { pairs, seasonsError, activePairId, activePair, setPairId, replay } = useReplaySession();
+  const [searchParams] = useSearchParams();
 
   useEffect(() => {
     document.title = `${t("nav.season")} — ${t("nav.siteTitle")}`;
   }, [t]);
 
-  const activePairId = pairId ?? pairs?.[0]?.id ?? null;
-  const activePair = pairs?.find((p) => p.id === activePairId) ?? null;
+  const ready = replay !== null && replay.status === "open" && replay.totalFrames > 0;
+  useUrlWeekSync(ready, replay?.latestRound?.games, replay?.seekToWeek ?? (() => {}));
+
+  // The demo must not open on an empty page, but it must not move on its
+  // own either -- the replay starts on a click. Land on the very first
+  // frame (the full 20-row table, real chart axes) the moment the stream is
+  // ready, unless the URL already names a week (a shared link): seeking
+  // here too would race useUrlWeekSync's own seek under useReplaySocket's
+  // single-seek-at-a-time guard, so that case is left entirely to it.
+  const initializedRef = useRef(false);
+  useEffect(() => {
+    if (initializedRef.current || !ready || !replay) return;
+    initializedRef.current = true;
+
+    const weekParam = Number(searchParams.get("week"));
+    const hasUrlWeek = Number.isInteger(weekParam) && weekParam >= 1 && weekParam <= 38;
+    if (!hasUrlWeek) replay.seek(0);
+  }, [ready, replay, searchParams]);
+
+  useEffect(() => {
+    if (!replay) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLElement && e.target.closest(EDITABLE_SELECTOR)) return;
+      if (e.code === "Space") {
+        e.preventDefault();
+        if (replay.playing) replay.pause();
+        else replay.play();
+      } else if (e.code === "ArrowRight") {
+        replay.seek(replay.seq + 1);
+      } else if (e.code === "ArrowLeft") {
+        replay.seek(replay.seq - 1);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [replay]);
 
   return (
     <div data-testid="page-season">
@@ -37,17 +82,56 @@ export default function Season() {
         </div>
       </header>
 
-      {activePairId !== null && activePair !== null && (
-        <ReplayDashboard
-          key={activePairId}
-          pairId={activePairId}
-          currentSeasonLabel={activePair.current_season}
-          metric={metric}
-          onMetricChange={setMetric}
-          priorWeight={priorWeight}
-          onPriorWeightChange={setPriorWeight}
-          obsVariance={obsVariance}
-        />
+      {replay && activePair && (
+        <>
+          <div className="season-layout">
+            <section className="panel standings-panel">
+              <div className="panel-header">
+                <h2>{t("standings.heading")}</h2>
+                {replay.latestRound && (
+                  <span
+                    className="predict-value"
+                    data-testid="current-round"
+                    data-games={replay.latestRound.games}
+                  >
+                    {t("standings.roundLabel", { games: replay.latestRound.games })}
+                  </span>
+                )}
+              </div>
+              <StandingsTable rows={replay.table} currentSeasonLabel={activePair.current_season} />
+            </section>
+
+            <section className="panel">
+              <div className="panel-header">
+                <h2>{t("replay.rmseCurve")}</h2>
+                <Select
+                  aria-label={t("replay.metricLabel")}
+                  data-testid="metric-select"
+                  value={metric}
+                  onValueChange={(v) => setMetric(v as Metric)}
+                  options={METRICS.map((m) => ({ value: m, label: t(METRIC_LABEL_KEYS[m]) }))}
+                />
+              </div>
+              <div className="chart-box">
+                <RmseChart metric={metric} roundsSoFar={replay.roundsSoFar} />
+              </div>
+            </section>
+          </div>
+
+          <PlayerControls
+            status={replay.status}
+            playing={replay.playing}
+            speed={replay.speed}
+            seq={replay.seq}
+            totalFrames={replay.totalFrames}
+            finished={replay.finished}
+            seeking={replay.seeking}
+            onPlay={replay.play}
+            onPause={replay.pause}
+            onSpeedChange={() => {}}
+            onSeek={replay.seek}
+          />
+        </>
       )}
     </div>
   );

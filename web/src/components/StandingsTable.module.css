@@ -1,8 +1,11 @@
 .tableWrap {
   /* table-layout: auto never shrinks a table below its content's width, so
      without this the table pushes its panel -- and the whole page -- wider
-     instead of scrolling on narrow viewports. */
-  overflow-x: auto;
+     instead of scrolling on narrow viewports. overflow-y (not just -x) plus
+     a max-height turns this into its own scroll container with a fixed
+     header, so scrolling the table never scrolls the page around it. */
+  overflow: auto;
+  max-height: 560px;
 }
 
 .table {
@@ -17,6 +20,13 @@
   padding: 4px 8px;
   text-align: right;
   border-bottom: 1px solid var(--border);
+}
+
+.table thead th {
+  position: sticky;
+  top: 0;
+  background: var(--panel);
+  z-index: 1;
 }
 
 .table th:nth-child(2),
