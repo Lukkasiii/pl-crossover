@@ -68,8 +68,14 @@ export function StandingsTable({ rows, currentSeasonLabel }: StandingsTableProps
   const sampleFilter = (searchParams.get("sample") ?? "") as SampleFilter;
 
   const setQueryUrl = (next: string) => writeUrlParam((p) => (next ? p.set("q", next) : p.delete("q")));
-  const setZoneUrl = (next: string) => writeUrlParam((p) => (next ? p.set("zone", next) : p.delete("zone")));
-  const setSampleUrl = (next: string) => writeUrlParam((p) => (next ? p.set("sample", next) : p.delete("sample")));
+  // Radix Select reserves the empty string to mean "nothing selected" -- handing
+  // it "" for the "all" option makes <Select.Value /> render its (absent)
+  // placeholder instead of the option's own label, so the trigger looks empty.
+  // "all" is the Select-facing sentinel; the URL and internal filter state keep
+  // their own "" (or absent-param)-means-no-filter shape on either side of it.
+  const setZoneUrl = (next: string) => writeUrlParam((p) => (next === "all" ? p.delete("zone") : p.set("zone", next)));
+  const setSampleUrl = (next: string) =>
+    writeUrlParam((p) => (next === "all" ? p.delete("sample") : p.set("sample", next)));
 
   const visibleRows = useMemo(() => {
     if (rows === null) return null;
@@ -92,11 +98,11 @@ export function StandingsTable({ rows, currentSeasonLabel }: StandingsTableProps
   }
 
   const zoneOptions = [
-    { value: "", label: t("standings.filterZoneAll") },
+    { value: "all", label: t("standings.filterZoneAll") },
     ...bands.map((b) => ({ value: b.key, label: t(b.labelKey) })),
   ];
   const sampleOptions = [
-    { value: "", label: t("standings.filterSampleAll") },
+    { value: "all", label: t("standings.filterSampleAll") },
     { value: "in", label: t("standings.filterSampleIn") },
     { value: "out", label: t("standings.filterSampleOut") },
   ];
@@ -135,14 +141,14 @@ export function StandingsTable({ rows, currentSeasonLabel }: StandingsTableProps
         <Select
           aria-label={t("standings.filterZoneLabel")}
           data-testid="standings-zone-filter"
-          value={zoneFilter}
+          value={zoneFilter || "all"}
           onValueChange={setZoneUrl}
           options={zoneOptions}
         />
         <Select
           aria-label={t("standings.filterSampleLabel")}
           data-testid="standings-sample-filter"
-          value={sampleFilter}
+          value={sampleFilter || "all"}
           onValueChange={setSampleUrl}
           options={sampleOptions}
         />
