@@ -21,6 +21,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/team-seasons": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Team Seasons */
+        get: operations["team_seasons_api_team_seasons_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/pairs/{pair_id}/table": {
         parameters: {
             query?: never;
@@ -425,6 +442,45 @@ export interface components {
             /** Final Rank */
             final_rank: number | null;
         };
+        /** TeamOut */
+        TeamOut: {
+            /** Id */
+            id: number;
+            /** Slug */
+            slug: string;
+            /** Name */
+            name: string;
+            /** Seasons */
+            seasons: components["schemas"]["TeamSeasonOut"][];
+        };
+        /** TeamSeasonOut */
+        TeamSeasonOut: {
+            /** Pairid */
+            pairId: number;
+            /** Season */
+            season: string;
+            /** Finalrank */
+            finalRank: number;
+            /** Points */
+            points: number;
+            /** Gd */
+            gd: number;
+            /** Xg */
+            xg: number;
+            /** Xga */
+            xga: number;
+            /** Xgd */
+            xgd: number;
+            /** Inpair */
+            inPair: boolean;
+            /** Rankbygame */
+            rankByGame: number[];
+        };
+        /** TeamSeasonsOut */
+        TeamSeasonsOut: {
+            /** Teams */
+            teams: components["schemas"]["TeamOut"][];
+        };
         /** UserOut */
         UserOut: {
             /** Id */
@@ -470,6 +526,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SeasonPairOut"][];
+                };
+            };
+        };
+    };
+    team_seasons_api_team_seasons_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeamSeasonsOut"];
                 };
             };
         };

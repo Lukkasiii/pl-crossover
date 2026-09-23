@@ -55,6 +55,33 @@ class PairTableOut(BaseModel):
     rows: list[TableRow]
 
 
+# --- team seasons ------------------------------------------------------
+
+
+class TeamSeasonOut(BaseModel):
+    pairId: int
+    season: str
+    finalRank: int
+    points: int
+    gd: int
+    xg: float
+    xga: float
+    xgd: float
+    inPair: bool
+    rankByGame: list[int]
+
+
+class TeamOut(BaseModel):
+    id: int
+    slug: str
+    name: str
+    seasons: list[TeamSeasonOut]
+
+
+class TeamSeasonsOut(BaseModel):
+    teams: list[TeamOut]
+
+
 # --- curves / predict --------------------------------------------------------
 
 

@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .config import settings
-from .routers import auth, curves, pairs, predict, replay, scenarios, seasons
+from .routers import auth, curves, pairs, predict, replay, scenarios, seasons, teams
 
 app = FastAPI(title="PL Crossover API")
 
@@ -17,6 +17,7 @@ app.add_middleware(
 )
 
 app.include_router(seasons.router)
+app.include_router(teams.router)
 app.include_router(pairs.router)
 app.include_router(curves.router)
 app.include_router(predict.router)
