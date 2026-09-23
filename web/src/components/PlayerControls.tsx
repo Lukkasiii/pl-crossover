@@ -90,15 +90,17 @@ export function PlayerControls({
           aria-label={t("player.speedLabel")}
           data-testid="speed-select"
           value={String(speed)}
-          disabled={!playing}
           onValueChange={(v) => {
             const next = Number(v);
+            // Always remember the new speed; only actually resend it to the
+            // server (restarting the stream at that rate) if playback is
+            // already running -- changing your mind while paused shouldn't
+            // start it.
             onSpeedChange(next);
             if (playing) onPlay(next);
           }}
           options={SPEEDS.map((s) => ({ value: String(s), label: `${s}x` }))}
         />
-        {!playing && <span className="player-speed-hint">{t("player.speedPausedHint")}</span>}
         <span className="frame-count" data-testid="frame-counter" data-seq={Math.max(seq, 0)} data-total={totalFrames}>
           {matchStatus}
           {seeking && ` ${t("player.seeking")}`}

@@ -142,7 +142,7 @@ export default function Season() {
             frameAt={replay.frameAt}
             onPlay={replay.play}
             onPause={replay.pause}
-            onSpeedChange={() => {}}
+            onSpeedChange={replay.setSpeed}
             onSeek={replay.seek}
           />
         </>

@@ -198,6 +198,15 @@ export function useReplaySocket(pairId: number) {
     setState((s) => ({ ...s, playing: false }));
   }, [send]);
 
+  /**
+   * Changing your mind about speed while paused is reasonable and should
+   * not itself start playback -- unlike play(speed), this never sends a
+   * "play" command, it just remembers the value for the next play().
+   */
+  const setSpeed = useCallback((speed: number) => {
+    setState((s) => ({ ...s, speed }));
+  }, []);
+
   const seek = useCallback(
     async (targetSeq: number) => {
       if (isSeekingRef.current) return;
@@ -261,6 +270,7 @@ export function useReplaySocket(pairId: number) {
     frameAt,
     play,
     pause,
+    setSpeed,
     seek,
     seekToWeek,
   };
