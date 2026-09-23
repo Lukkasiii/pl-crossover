@@ -57,4 +57,34 @@ test.describe("layout", () => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await expect.poll(() => overflow(page)).toBeLessThanOrEqual(0);
   });
+
+  // Regression test for a real defect (see CLAUDE.md's /next notes): the
+  // player bar used to sit in normal document flow below the season/RMSE
+  // panels, so the standings table swapping its short placeholder for
+  // twenty real rows pushed it -- and an already-open speed-select popper
+  // -- down by ~600px with no reposition (Radix's default "optimized"
+  // strategy only reacts to scroll/resize events, and a sibling growing via
+  // plain reflow fires neither). Fixing the player bar to the bottom of the
+  // viewport (see .player-controls in App.css) removes it from that flow
+  // entirely, so this can no longer happen structurally; this test locks
+  // that in rather than the specific old mechanism.
+  test("the player bar and its open speed dropdown stay put while the standings table grows", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/season");
+
+    const barBefore = await page.getByTestId("player-toggle").boundingBox();
+    await page.getByTestId("player-toggle").click(); // enables speed-select
+    await page.getByTestId("speed-select").click();
+    await expect(page.getByRole("listbox")).toBeVisible();
+    const contentBefore = await page.getByRole("listbox").boundingBox();
+
+    // Let the table grow from its placeholder to twenty real rows underneath.
+    await expect(page.locator("table tbody tr").first()).toBeVisible();
+    await page.waitForTimeout(200);
+
+    const barAfter = await page.getByTestId("player-toggle").boundingBox();
+    const contentAfter = await page.getByRole("listbox").boundingBox();
+    expect(barAfter!.y).toBe(barBefore!.y);
+    expect(contentAfter!.y).toBe(contentBefore!.y);
+  });
 });

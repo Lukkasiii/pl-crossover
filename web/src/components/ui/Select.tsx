@@ -27,7 +27,23 @@ export function Select({ value, onValueChange, options, disabled, ...aria }: Sel
         <RadixSelect.Icon className={styles.icon}>▾</RadixSelect.Icon>
       </RadixSelect.Trigger>
       <RadixSelect.Portal>
-        <RadixSelect.Content className={styles.content} position="popper" sideOffset={4}>
+        {/* Radix's default "optimized" reposition strategy only reacts to
+            scroll/resize events on the trigger's own box, not to a trigger
+            simply moving because a sibling reflowed (no such event fires
+            for that) -- the standings table swapping its short placeholder
+            for twenty real rows used to push the player bar's speed-select
+            down by ~600px while it could be open, and the popper never
+            noticed. Fixing the player bar to the viewport bottom (App.css)
+            removes that specific path, but the underlying Radix gap is
+            general -- any Select below content that can resize while open
+            would hit it -- so "always" (floating-ui's per-frame recompute
+            while open) stays on as the defensive fix. */}
+        <RadixSelect.Content
+          className={styles.content}
+          position="popper"
+          sideOffset={4}
+          updatePositionStrategy="always"
+        >
           <RadixSelect.Viewport>
             {options.map((o) => (
               <RadixSelect.Item key={o.value} value={o.value} className={styles.item}>

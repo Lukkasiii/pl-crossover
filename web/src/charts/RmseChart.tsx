@@ -33,10 +33,14 @@ export function RmseChart({ metric, roundsSoFar }: RmseChartProps) {
 
     return {
       grid: { left: 48, right: 16, top: 32, bottom: 32 },
-      tooltip: { trigger: "axis" },
+      tooltip: { trigger: "axis", valueFormatter: (v) => (v as number).toFixed(2) },
       legend: { top: 0, data: [t("chart.currentSeason"), t("chart.priorSeason")] },
       xAxis: { type: "category", name: t("chart.gamesPlayed"), data: games, axisLabel: { fontFamily: fonts.mono } },
-      yAxis: { type: "value", name: t("chart.rmsePositions") },
+      yAxis: {
+        type: "value",
+        name: t("chart.rmsePositions"),
+        axisLabel: { formatter: (v: number) => v.toFixed(2) },
+      },
       series: [
         {
           name: t("chart.currentSeason"),
@@ -49,9 +53,18 @@ export function RmseChart({ metric, roundsSoFar }: RmseChartProps) {
             crossoverGames === null
               ? undefined
               : {
-                  symbol: "none",
-                  label: { formatter: t("chart.crossoverMarker") },
-                  lineStyle: { color: colors.gold },
+                  silent: false,
+                  symbol: ["none", "circle"],
+                  symbolSize: 9,
+                  lineStyle: { color: colors.gold, width: 2 },
+                  label: {
+                    formatter: t("chart.crossoverMarker"),
+                    fontWeight: "bold",
+                    fontSize: 13,
+                    color: colors.gold,
+                  },
+                  emphasis: { lineStyle: { width: 3 } },
+                  tooltip: { show: true, trigger: "item", formatter: () => t("player.crossoverHint") },
                   data: [{ xAxis: crossoverGames - 1 }],
                 },
         },
