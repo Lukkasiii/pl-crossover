@@ -1,7 +1,7 @@
-import type { ReplayFrame, RoundFrame, TableRow } from "./types";
+import type { MatchFrame, ReplayFrame, RoundFrame } from "./types";
 
 export interface FrameSnapshot {
-  table: TableRow[] | null;
+  match: MatchFrame | null;
   roundsSoFar: RoundFrame[];
 }
 
@@ -17,7 +17,7 @@ export interface FrameSnapshot {
  * useSyncExternalStore requires to avoid re-rendering forever.
  */
 export class FrameCache {
-  private matchTables: (TableRow[] | undefined)[] = [];
+  private matches: (MatchFrame | undefined)[] = [];
   private rounds: (RoundFrame | undefined)[] = [];
   private version = 0;
   private lastSnapshot: { version: number; viewSeq: number; snapshot: FrameSnapshot } | null = null;
@@ -25,7 +25,7 @@ export class FrameCache {
   cachedThrough = -1;
 
   add(frame: ReplayFrame): void {
-    if (frame.type === "match") this.matchTables[frame.seq] = frame.table;
+    if (frame.type === "match") this.matches[frame.seq] = frame;
     else if (frame.type === "round") this.rounds[frame.games - 1] = frame;
     else return;
     if (frame.seq > this.cachedThrough) this.cachedThrough = frame.seq;
@@ -37,6 +37,16 @@ export class FrameCache {
     return this.rounds[week - 1];
   }
 
+  /** Most recent cached match frame at or before `seq`; undefined if that far hasn't streamed in yet. */
+  matchAt(seq: number): MatchFrame | undefined {
+    if (seq > this.cachedThrough) return undefined;
+    for (let i = seq; i >= 0; i--) {
+      const m = this.matches[i];
+      if (m) return m;
+    }
+    return undefined;
+  }
+
   subscribe = (onStoreChange: () => void): (() => void) => {
     this.listeners.add(onStoreChange);
     return () => this.listeners.delete(onStoreChange);
@@ -46,17 +56,17 @@ export class FrameCache {
     const cached = this.lastSnapshot;
     if (cached && cached.version === this.version && cached.viewSeq === viewSeq) return cached.snapshot;
 
-    let table: TableRow[] | null = null;
+    let match: MatchFrame | null = null;
     for (let i = viewSeq; i >= 0; i--) {
-      const t = this.matchTables[i];
-      if (t) {
-        table = t;
+      const m = this.matches[i];
+      if (m) {
+        match = m;
         break;
       }
     }
     const roundsSoFar = this.rounds.filter((r): r is RoundFrame => r !== undefined && r.seq <= viewSeq);
 
-    const snapshot: FrameSnapshot = { table, roundsSoFar };
+    const snapshot: FrameSnapshot = { match, roundsSoFar };
     this.lastSnapshot = { version: this.version, viewSeq, snapshot };
     return snapshot;
   };

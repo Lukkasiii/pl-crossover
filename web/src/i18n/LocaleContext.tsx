@@ -12,6 +12,7 @@ interface LocaleContextValue {
   setLocale: (locale: Locale) => void;
   t: (key: TranslationKey, params?: Record<string, string | number>) => string;
   formatNumber: (n: number) => string;
+  formatDate: (iso: string) => string;
 }
 
 const LocaleContext = createContext<LocaleContextValue | null>(null);
@@ -42,13 +43,15 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
       return raw.replace(/\{(\w+)\}/g, (_match, name: string) => String(params[name] ?? ""));
     };
     const formatNumber = (n: number) => new Intl.NumberFormat(locale === "zh" ? "zh-CN" : "en-US").format(n);
+    const formatDate = (iso: string) =>
+      new Intl.DateTimeFormat(locale === "zh" ? "zh-CN" : "en-US", { dateStyle: "medium" }).format(new Date(iso));
     const setLocale = (next: Locale) => {
       writeUrlParam((params) => {
         if (next === DEFAULT_LOCALE) params.delete("lang");
         else params.set("lang", next);
       });
     };
-    return { locale, setLocale, t, formatNumber };
+    return { locale, setLocale, t, formatNumber, formatDate };
   }, [locale, writeUrlParam]);
 
   return <LocaleContext.Provider value={value}>{children}</LocaleContext.Provider>;

@@ -27,15 +27,35 @@
   margin-top: var(--space-4);
 }
 
+/* Fixed to the bottom of the viewport (not just of its scroll position) so
+   it stays reachable however far the standings/chart panels above have
+   scrolled. left matches the sidebar's width -- 0 once the sidebar becomes
+   an overlay drawer at the same breakpoint it collapses at (Sidebar.css). */
 .player-controls {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
-  margin-top: var(--space-4);
   background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: var(--space-4);
+  border-top: 1px solid var(--border);
+  padding: var(--space-3) var(--space-4);
+  position: fixed;
+  left: 220px;
+  right: 0;
+  bottom: 0;
+  z-index: 15;
+}
+
+@media (max-width: 720px) {
+  .player-controls {
+    left: 0;
+  }
+}
+
+/* The season page's own content, so the fixed bar above never covers its
+   last row -- not a global .shell-main rule, since only /season has a
+   player bar to clear. */
+.season-page {
+  padding-bottom: 132px;
 }
 
 .player-controls-row {
@@ -45,8 +65,32 @@
   flex-wrap: wrap;
 }
 
+.player-speed-hint {
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
 .frame-count {
   font-family: var(--font-mono);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+/* Live badge: colour follows connection status first, then play state once
+   actually connected -- green while playing, red while paused, matching
+   the same semantics the season/model RMSE charts already use for green
+   (current season, in motion) vs red (not). */
+[data-live-state="playing"] {
+  color: var(--green);
+}
+
+[data-live-state="paused"],
+[data-live-state="offline"] {
+  color: var(--red);
+}
+
+[data-live-state="connecting"],
+[data-live-state="reconnecting"] {
   color: var(--text-secondary);
 }
 

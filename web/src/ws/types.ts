@@ -22,6 +22,8 @@ export interface InitFrame {
 export interface MatchFrame {
   type: "match";
   seq: number;
+  match_number: number;
+  played_at: string;
   table: TableRow[];
 }
 

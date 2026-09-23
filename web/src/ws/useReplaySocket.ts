@@ -247,15 +247,18 @@ export function useReplaySocket(pairId: number) {
   );
 
   const getSnapshot = useCallback(() => cache.getSnapshot(state.viewSeq), [cache, state.viewSeq]);
-  const { table, roundsSoFar } = useSyncExternalStore(cache.subscribe, getSnapshot);
+  const { match, roundsSoFar } = useSyncExternalStore(cache.subscribe, getSnapshot);
   const latestRound = roundsSoFar.length > 0 ? roundsSoFar[roundsSoFar.length - 1] : null;
+  const frameAt = useCallback((seq: number) => cache.matchAt(seq), [cache]);
 
   return {
     ...state,
     seq: state.viewSeq,
-    table,
+    table: match?.table ?? null,
+    match,
     roundsSoFar,
     latestRound,
+    frameAt,
     play,
     pause,
     seek,
