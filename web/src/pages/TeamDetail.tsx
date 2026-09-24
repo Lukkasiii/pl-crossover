@@ -115,41 +115,47 @@ export default function TeamDetail() {
 
         <section className="panel">
           <h2>{t("teamDetail.table.heading")}</h2>
-          <table className="method-results-table" data-testid="team-seasons-table">
-            <thead>
-              <tr>
-                <th scope="col">{t("teamDetail.table.season")}</th>
-                <th scope="col">{t("teamDetail.table.finalRank")}</th>
-                <th scope="col">{t("teamDetail.table.points")}</th>
-                <th scope="col">{t("teamDetail.table.gd")}</th>
-                <th scope="col">{t("teamDetail.table.xg")}</th>
-                <th scope="col">{t("teamDetail.table.xga")}</th>
-                <th scope="col">{t("teamDetail.table.xgd")}</th>
-                <th scope="col" style={{ textAlign: "left" }}>
-                  {t("teamDetail.table.sample")}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {team.seasons.map((s) => (
-                <tr key={s.pairId}>
-                  <th scope="row">{s.season}</th>
-                  <td>#{s.finalRank}</td>
-                  <td>{s.points}</td>
-                  <td>{s.gd}</td>
-                  <td>{s.xg.toFixed(2)}</td>
-                  <td>{s.xga.toFixed(2)}</td>
-                  <td>{s.xgd.toFixed(2)}</td>
-                  {/* Text, not colour alone -- see CLAUDE.md "Promoted teams have no
-                      prior-season record" and "3c. /teams": outside-sample rows are
-                      explained in words here, the same rule the standings table follows. */}
-                  <td style={{ textAlign: "left" }}>
-                    {s.inPair ? t("teamDetail.table.inSample") : t("teamDetail.table.outsideSample")}
-                  </td>
+          {/* tabIndex + role/aria-label make the scrollable region itself reachable
+              and named for keyboard users -- axe's scrollable-region-focusable
+              (serious, wcag2a/2.1.1/2.1.3) flags a scrolling div with neither. Same
+              pattern as StandingsTable.tsx's .tableWrap. */}
+          <div className="table-scroll-wrap" tabIndex={0} role="region" aria-label={t("teamDetail.table.scrollableRegion")}>
+            <table className="method-results-table" data-testid="team-seasons-table">
+              <thead>
+                <tr>
+                  <th scope="col">{t("teamDetail.table.season")}</th>
+                  <th scope="col">{t("teamDetail.table.finalRank")}</th>
+                  <th scope="col">{t("teamDetail.table.points")}</th>
+                  <th scope="col">{t("teamDetail.table.gd")}</th>
+                  <th scope="col">{t("teamDetail.table.xg")}</th>
+                  <th scope="col">{t("teamDetail.table.xga")}</th>
+                  <th scope="col">{t("teamDetail.table.xgd")}</th>
+                  <th scope="col" style={{ textAlign: "left" }}>
+                    {t("teamDetail.table.sample")}
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {team.seasons.map((s) => (
+                  <tr key={s.pairId}>
+                    <th scope="row">{s.season}</th>
+                    <td>#{s.finalRank}</td>
+                    <td>{s.points}</td>
+                    <td>{s.gd}</td>
+                    <td>{s.xg.toFixed(2)}</td>
+                    <td>{s.xga.toFixed(2)}</td>
+                    <td>{s.xgd.toFixed(2)}</td>
+                    {/* Text, not colour alone -- see CLAUDE.md "Promoted teams have no
+                        prior-season record" and "3c. /teams": outside-sample rows are
+                        explained in words here, the same rule the standings table follows. */}
+                    <td style={{ textAlign: "left" }}>
+                      {s.inPair ? t("teamDetail.table.inSample") : t("teamDetail.table.outsideSample")}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </section>
 
         <section className="panel">
@@ -175,62 +181,64 @@ export default function TeamDetail() {
               {t("teamDetail.players.empty")}
             </p>
           ) : (
-            <table className="method-results-table" data-testid="team-players-table">
-              <thead>
-                <tr>
-                  <th scope="col" style={{ textAlign: "left" }}>
-                    {t("teamDetail.players.col.player")}
-                  </th>
-                  <th scope="col" style={{ textAlign: "left" }}>
-                    {t("teamDetail.players.col.position")}
-                  </th>
-                  <th scope="col">{t("teamDetail.players.col.minutes")}</th>
-                  <th scope="col">{t("teamDetail.players.col.goals")}</th>
-                  <th scope="col">{t("teamDetail.players.col.xg")}</th>
-                  <th scope="col">{t("teamDetail.players.col.assists")}</th>
-                  <th scope="col">{t("teamDetail.players.col.xa")}</th>
-                  <th scope="col">
-                    <span style={{ display: "inline-flex", alignItems: "center", gap: 2 }}>
-                      {t("teamDetail.players.col.xgChain")}
-                      <InfoTooltip
-                        aria-label={t("panelInfo.about", { panel: t("teamDetail.players.col.xgChain") })}
-                        data-testid="xg-chain-info"
-                      >
-                        {t("panelInfo.xgChain")}
-                      </InfoTooltip>
-                    </span>
-                  </th>
-                  <th scope="col">
-                    <span style={{ display: "inline-flex", alignItems: "center", gap: 2 }}>
-                      {t("teamDetail.players.col.xgBuildup")}
-                      <InfoTooltip
-                        aria-label={t("panelInfo.about", { panel: t("teamDetail.players.col.xgBuildup") })}
-                        data-testid="xg-buildup-info"
-                      >
-                        {t("panelInfo.xgBuildup")}
-                      </InfoTooltip>
-                    </span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {sortedPlayers.map((p: PlayerOut) => (
-                  <tr key={`${p.name}-${p.position}`}>
-                    <th scope="row" style={{ textAlign: "left" }}>
-                      {p.name}
+            <div className="table-scroll-wrap" tabIndex={0} role="region" aria-label={t("teamDetail.players.scrollableRegion")}>
+              <table className="method-results-table" data-testid="team-players-table">
+                <thead>
+                  <tr>
+                    <th scope="col" style={{ textAlign: "left" }}>
+                      {t("teamDetail.players.col.player")}
                     </th>
-                    <td style={{ textAlign: "left" }}>{p.position}</td>
-                    <td>{p.minutes}</td>
-                    <td>{p.goals}</td>
-                    <td>{p.xg.toFixed(2)}</td>
-                    <td>{p.assists}</td>
-                    <td>{p.xa.toFixed(2)}</td>
-                    <td>{p.xgChain.toFixed(2)}</td>
-                    <td>{p.xgBuildup.toFixed(2)}</td>
+                    <th scope="col" style={{ textAlign: "left" }}>
+                      {t("teamDetail.players.col.position")}
+                    </th>
+                    <th scope="col">{t("teamDetail.players.col.minutes")}</th>
+                    <th scope="col">{t("teamDetail.players.col.goals")}</th>
+                    <th scope="col">{t("teamDetail.players.col.xg")}</th>
+                    <th scope="col">{t("teamDetail.players.col.assists")}</th>
+                    <th scope="col">{t("teamDetail.players.col.xa")}</th>
+                    <th scope="col">
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 2 }}>
+                        {t("teamDetail.players.col.xgChain")}
+                        <InfoTooltip
+                          aria-label={t("panelInfo.about", { panel: t("teamDetail.players.col.xgChain") })}
+                          data-testid="xg-chain-info"
+                        >
+                          {t("panelInfo.xgChain")}
+                        </InfoTooltip>
+                      </span>
+                    </th>
+                    <th scope="col">
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 2 }}>
+                        {t("teamDetail.players.col.xgBuildup")}
+                        <InfoTooltip
+                          aria-label={t("panelInfo.about", { panel: t("teamDetail.players.col.xgBuildup") })}
+                          data-testid="xg-buildup-info"
+                        >
+                          {t("panelInfo.xgBuildup")}
+                        </InfoTooltip>
+                      </span>
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {sortedPlayers.map((p: PlayerOut) => (
+                    <tr key={`${p.name}-${p.position}`}>
+                      <th scope="row" style={{ textAlign: "left" }}>
+                        {p.name}
+                      </th>
+                      <td style={{ textAlign: "left" }}>{p.position}</td>
+                      <td>{p.minutes}</td>
+                      <td>{p.goals}</td>
+                      <td>{p.xg.toFixed(2)}</td>
+                      <td>{p.assists}</td>
+                      <td>{p.xa.toFixed(2)}</td>
+                      <td>{p.xgChain.toFixed(2)}</td>
+                      <td>{p.xgBuildup.toFixed(2)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </section>
       </div>

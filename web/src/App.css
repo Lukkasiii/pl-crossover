@@ -237,3 +237,11 @@
   font-weight: 500;
   border-bottom: 2px solid var(--border);
 }
+
+/* Same fix StandingsTable.module.css's .tableWrap uses: table-layout: auto
+   never shrinks a table below its content's width, so a wide table pushes
+   its panel -- and the whole page -- wider instead of scrolling, at any
+   viewport where the panel is narrower than the table's natural width. */
+.table-scroll-wrap {
+  overflow-x: auto;
+}

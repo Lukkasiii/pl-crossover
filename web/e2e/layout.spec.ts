@@ -9,35 +9,59 @@ const ROUTES = ["/", "/season", "/model", "/teams", "/teams/arsenal", "/compare"
  * against innerWidth does. Checked on every route: the sidebar-to-drawer
  * collapse at phone width is exactly the kind of change that silently
  * introduces overflow on routes nobody happened to look at.
+ *
+ * Widths swept: 1440 (desktop) and 390 (phone) alone missed a real overflow
+ * bug on /teams/arsenal. The sidebar collapses to a drawer at phone width,
+ * removing its track from the grid entirely, and the grid still has slack
+ * at 1440; the failure sits in the band between, where the sidebar is still
+ * a grid column but the column it leaves for content is already narrower
+ * than a wide table's natural width. Measured on the deployed pre-fix site
+ * (scrollWidth - innerWidth, /teams/arsenal): 1440px -> 0, 1024px -> 39,
+ * 803px -> 260. 1024 and 900 both sit in that band and are swept on every
+ * route, not just the one where the bug was found.
+ *
+ * Widths alone were not the whole gap, though: this route's table renders
+ * behind an async fetch (TeamDetail.tsx returns a loading placeholder until
+ * useTeamSeasons resolves), and the old test measured right after goto(),
+ * before that fetch settled -- so it was checking the loading placeholder's
+ * width, not the table's, at *any* width. Confirmed by instrumenting this
+ * spec: without a settle wait, /teams/arsenal read 0 overflow at all four
+ * of 1440/1024/900/390; with one, it read 0/39/163/445 -- the real bug was
+ * present even at 390, just never measured. So every route below now waits
+ * for its network activity to settle before measuring, not only /season
+ * (which already had its own wait, via the visible-table assertion below --
+ * not reused here because /season holds an open replay WebSocket that never
+ * goes idle, so "networkidle" would hang on that route specifically).
  */
+const WIDTHS = [1440, 1024, 900, 390] as const;
+
 async function overflow(page: import("@playwright/test").Page): Promise<number> {
   return page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
 }
 
 test.describe("layout", () => {
   for (const route of ROUTES) {
-    test(`no horizontal overflow at desktop width (${route})`, async ({ page }) => {
-      await page.setViewportSize({ width: 1440, height: 900 });
-      await page.goto(route);
-      await expect(page.getByTestId("sidebar-nav")).toBeVisible();
-      if (route === "/season") {
-        await expect(page.locator("table tbody tr").first()).toBeVisible();
-        await page.getByTestId("player-toggle").click();
-      }
+    for (const width of WIDTHS) {
+      test(`no horizontal overflow at ${width}px (${route})`, async ({ page }) => {
+        await page.setViewportSize({ width, height: 900 });
+        await page.goto(route);
+        // The sidebar collapses to a drawer at max-width: 720px (Sidebar.css);
+        // above that it's a normal visible column at every width swept here.
+        if (width > 720) {
+          await expect(page.getByTestId("sidebar-nav")).toBeVisible();
+        }
+        if (route === "/season") {
+          await expect(page.locator("table tbody tr").first()).toBeVisible();
+          await page.getByTestId("player-toggle").click();
+        } else {
+          // See the WIDTHS comment above: every other route needs its async
+          // fetch to have actually settled before scrollWidth means anything.
+          await page.waitForLoadState("networkidle");
+        }
 
-      expect(await overflow(page)).toBeLessThanOrEqual(0);
-    });
-
-    test(`no horizontal overflow at phone width (${route})`, async ({ page }) => {
-      await page.setViewportSize({ width: 390, height: 844 });
-      await page.goto(route);
-      if (route === "/season") {
-        await expect(page.locator("table tbody tr").first()).toBeVisible();
-        await page.getByTestId("player-toggle").click();
-      }
-
-      expect(await overflow(page)).toBeLessThanOrEqual(0);
-    });
+        expect(await overflow(page)).toBeLessThanOrEqual(0);
+      });
+    }
   }
 
   // Covers the resize path, not just load-at-size: an ECharts canvas gets an
