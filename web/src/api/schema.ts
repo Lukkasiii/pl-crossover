@@ -38,6 +38,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/team-players": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Team Players */
+        get: operations["team_players_api_team_players_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/pairs/{pair_id}/table": {
         parameters: {
             query?: never;
@@ -291,6 +308,41 @@ export interface components {
             /** Rows */
             rows: components["schemas"]["TableRow"][];
         };
+        /** PlayerOut */
+        PlayerOut: {
+            /** Name */
+            name: string;
+            /** Position */
+            position: string;
+            /** Games */
+            games: number;
+            /** Minutes */
+            minutes: number;
+            /** Goals */
+            goals: number;
+            /** Xg */
+            xg: number;
+            /** Assists */
+            assists: number;
+            /** Xa */
+            xa: number;
+            /** Shots */
+            shots: number;
+            /** Keypasses */
+            keyPasses: number;
+            /** Npg */
+            npg: number;
+            /** Npxg */
+            npxg: number;
+            /** Xgchain */
+            xgChain: number;
+            /** Xgbuildup */
+            xgBuildup: number;
+            /** Yellowcards */
+            yellowCards: number;
+            /** Redcards */
+            redCards: number;
+        };
         /** PredictOut */
         PredictOut: {
             /**
@@ -453,6 +505,13 @@ export interface components {
             /** Seasons */
             seasons: components["schemas"]["TeamSeasonOut"][];
         };
+        /** TeamPlayersOut */
+        TeamPlayersOut: {
+            /** Players */
+            players: components["schemas"]["PlayerOut"][];
+            /** Excludedmidseasontransfers */
+            excludedMidSeasonTransfers: number;
+        };
         /** TeamSeasonOut */
         TeamSeasonOut: {
             /** Pairid */
@@ -546,6 +605,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TeamSeasonsOut"];
+                };
+            };
+        };
+    };
+    team_players_api_team_players_get: {
+        parameters: {
+            query: {
+                pair_id: number;
+                team_id: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeamPlayersOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

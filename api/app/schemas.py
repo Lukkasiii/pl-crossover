@@ -82,6 +82,38 @@ class TeamSeasonsOut(BaseModel):
     teams: list[TeamOut]
 
 
+# --- players -------------------------------------------------------------
+
+
+class PlayerOut(BaseModel):
+    name: str
+    position: str
+    games: int
+    minutes: int
+    goals: int
+    xg: float
+    assists: int
+    xa: float
+    shots: int
+    keyPasses: int
+    npg: int
+    npxg: float
+    xgChain: float
+    xgBuildup: float
+    yellowCards: int
+    redCards: int
+
+
+class TeamPlayersOut(BaseModel):
+    players: list[PlayerOut]
+    # Mid-season transfers can't be attributed to any single club (see
+    # CLAUDE.md "Things that will bite you") -- this is how many of them
+    # existed for the pair's current season, across the whole league, so the
+    # squad table can say outright that a name is missing rather than just
+    # silently coming up one short.
+    excludedMidSeasonTransfers: int
+
+
 # --- curves / predict --------------------------------------------------------
 
 

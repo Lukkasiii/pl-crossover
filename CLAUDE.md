@@ -57,6 +57,7 @@ everything built from here on. The "depth beats breadth" rule still applies
 | Multi-page shell: routing, sidebar nav, design tokens (light theme), i18n | done (Stage 5) |
 | /season, /model content | done — the Stage 1–4 dashboard's panels split across the two |
 | Overview, Teams, Compare, Method page content | done (Stage 6) |
+| Player layer: `players` table, `/teams/:slug` Key players section | done (Stage 7) |
 | Ask the Model panel | not started |
 
 Pushed to `github.com/Lukkasiii/pl-crossover`.
@@ -126,6 +127,27 @@ rather than hiding; a plain `WHERE team_id = ?` already excludes them from
 every per-club roster/aggregate for free, so there is no separate filter a
 caller could forget.
 
+**xGChain and xGBuildup, sourced before writing a word of copy about them.**
+Understat's own site publishes no glossary for either field (checked
+directly: understat.com has no about/FAQ/definitions page). Both metrics
+originate with StatsBomb's Thom Lawrence ("Introducing xGChain and
+xGBuildup", hudl.com/blog/introducing-xgchain-and-xgbuildup) and are
+independently confirmed, in full agreement, by American Soccer Analysis
+("Expected goal chains are back!",
+americansocceranalysis.com/home/2018/9/4/expected-goal-chains-are-back):
+
+- **xGChain** — the total xG of every shot from a possession a player took
+  part in *at any point* -- a pass, a dribble, a drawn foul, a key pass, or
+  the shot itself. Everyone who touched the move gets full credit for the
+  eventual shot's xG.
+- **xGBuildup** — the same, minus the player's *own* key passes and shots.
+  Both sources agree this is exactly two actions excluded (the assist and
+  the shot), not one -- xGBuildup credits the earlier build-up
+  specifically, never the pass or shot that finished the move.
+
+Understat implements this definition (not a variant); the two sources agree
+with each other, so there is no disagreement to present both sides of.
+
 ## Data model (`data/pl.db`, SQLite)
 
 ```
@@ -178,6 +200,20 @@ matches the original study exactly.
 
 **The weight crossover and the RMSE crossover are different events.** One is a
 property of the model, the other of the data. Plot both; do not conflate them.
+
+**A single season pair's own regression has no held-out check, and the app
+says so.** `compute_curve` (and `GET /api/curves`) can be scoped to one pair's
+own ~17 observations via `pair_id`, reusing the same `ols_fit` the pooled
+curve uses -- real numbers, not invented ones. But 17 observations and two
+parameters is a small in-sample fit, and LOSO needs more than one group to
+leave one out of, so it cannot be computed at that size. Across the eight
+pairs those in-sample crossovers range from about 1 to about 37 games
+(pair 6 crosses at ~1, pair 8 at ~36.6) -- mostly estimation noise, not eight
+different football facts. `/compare`'s "season pairs" mode is the only place
+this fit is shown, and it says exactly that in its own caption, with the
+pooled fit's crossover (the 11.8 the rest of the site quotes, the one with a
+held-out check behind it) drawn alongside as a reference line. Do not surface
+a per-pair crossover anywhere else without the same caveat.
 
 ## Results to preserve
 
@@ -297,9 +333,15 @@ server should not be needed for the suite.
 ```
 GET  /api/seasons                      season pairs, team counts
 GET  /api/pairs/{id}/table?games=N     league table at N games, with live_rank
-GET  /api/curves?metric=xg&method=pooled
+GET  /api/team-seasons                 every team's history across season pairs
+GET  /api/team-players?pair_id&team_id squad for one team's season in a pair,
+                                       plus the season's excluded-transfer count
+GET  /api/curves?metric=xg&method=pooled&pair_id=
                                        RMSE/MAE/R² per matchweek, prior baseline,
-                                       crossover, LOSO series
+                                       crossover, LOSO series -- pair_id scopes
+                                       the same fit to just that pair's ~17
+                                       observations (no LOSO at that size); see
+                                       "The model" section below
 POST /api/predict                      {metric, games, prior_weight, obs_variance}
 POST /api/ask                          preset question id -> cached answer + tool trace
 WS   /ws/replay?pair={id}            two-way: client sends play/pause/seek,
@@ -362,7 +404,7 @@ diluting the 30-second read — a wall of panels reads as *more*, not as
 | `/season` | Season Replay Engine — the Stage 1–4 dashboard (replay, RMSE curve, prediction tuner, standings) moved here unchanged |
 | `/model` | The Bayesian model explained: the blend formula, prior-share-by-checkpoint table |
 | `/teams` | All teams, one list |
-| `/teams/:slug` | One team's history across season pairs |
+| `/teams/:slug` | One team's history across season pairs, plus a Key players table for the selected season |
 | `/compare` | Side-by-side: two teams, or two season pairs |
 | `/method` | The three methodologies (pooled / per-season / rank-based) and why only two ship — see "Results to preserve" above |
 | `/scenarios` | Saved scenarios — the Stage 4 auth + scenarios panel moved here unchanged. Auth-gated *for saving*, same rule as before: signed out shows a sign-in prompt inline, never a redirect wall |
