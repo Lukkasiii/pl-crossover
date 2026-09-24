@@ -64,7 +64,15 @@ export function CompareCurveChart({ curveA, curveB, labelA, labelB }: CompareCur
         data: curveA.games,
         axisLabel: { fontFamily: fonts.mono },
       },
-      yAxis: { type: "value", name: t("chart.rmsePositions"), axisLabel: { formatter: (v: number) => v.toFixed(2) } },
+      yAxis: {
+        type: "value",
+        name: t("chart.rmsePositions"),
+        // See RmseChart.tsx's identical comment: zero is not a meaningful
+        // RMSE here, and anchoring the axis there squashes every real value
+        // into a shallow band at the top of the chart.
+        scale: true,
+        axisLabel: { formatter: (v: number) => v.toFixed(2) },
+      },
       series: [
         seriesFor(curveA, colors.series1, labelA, "insideEndTop"),
         seriesFor(curveB, colors.series5, labelB, "insideEndBottom"),
