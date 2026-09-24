@@ -47,7 +47,7 @@ everything built from here on. The "depth beats breadth" rule still applies
 | Layer | Status |
 |---|---|
 | Understat fetcher | done, tested |
-| ETL → SQLite | done, 14 tests passing |
+| ETL → SQLite, players table | done, 18 tests passing |
 | Model engine (OLS, LOSO, Bayesian, crossover) | done, reproduces the original study |
 | 38-matchweek curves | done, `data/curves.json` |
 | REST + WebSocket API | done, `api/tests` passing |
@@ -107,6 +107,25 @@ common teams out of 20. They are excluded from the regression but kept in
 `pair_teams` with `in_pair = 0`, so the UI greys them out rather than dropping
 three clubs from the table with no explanation.
 
+**A mid-season transfer's row cannot be split back apart.** Understat's raw
+player payload (`data/raw/understat_EPL_<year>.json`'s `players` array, 17
+fields, 4,806 player-seasons across nine seasons) reports one row per player
+per season, not per club -- a player who changed clubs mid-season gets a
+single row with `team_title` comma-separated ("Aston Villa,Manchester
+United", 97 rows / 2.0% of the total) and every stat on it (minutes, goals,
+xG, ...) summed across both clubs. There is no per-club breakdown anywhere
+in the payload to split it back apart with.
+
+**Decision: attribute that row to no club, not to the first one listed.**
+`players.team_id` is `NULL` for these 97 rows rather than a guess. The
+alternative -- attributing to `team_title.split(",")[0]` -- would silently
+put some fraction of a player's goals-for-a-different-club onto a roster
+that never had them, a wrong number presented as a real one. `NULL` costs a
+squad list one row it can't otherwise place, which the UI states outright
+rather than hiding; a plain `WHERE team_id = ?` already excludes them from
+every per-club roster/aggregate for free, so there is no separate filter a
+caller could forget.
+
 ## Data model (`data/pl.db`, SQLite)
 
 ```
@@ -120,6 +139,11 @@ team_state(season_id, team_id, games_played,       <- the core table
            points, xg, xga, xgd, live_rank)        6,840 rows
 season_pairs(id, prior_season_id, current_season_id, label, common_team_count)
 pair_teams(pair_id, team_id, in_pair, final_rank)
+players(season_id, player_id, name, team_id,       <- team_id NULL for a
+        position, games, minutes, goals, xg,          mid-season transfer,
+        assists, xa, shots, key_passes, npg, npxg,     see above -- 4,806 rows,
+        xg_chain, xg_buildup,                          97 with team_id NULL
+        yellow_cards, red_cards)
 users(id, email, password_hash, created_at)
 saved_scenarios(id, user_id, name, params, created_at, updated_at)
 ```
