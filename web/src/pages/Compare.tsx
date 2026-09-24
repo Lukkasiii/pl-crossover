@@ -72,7 +72,7 @@ function TeamsCompare({ teams }: { teams: TeamOut[] }) {
       <div className="page-stack">
         <section className="panel">
           <h2>{t("compare.chart.rankBySeason.heading")}</h2>
-          <div className="chart-box">
+          <div className="chart-box rank">
             <RankLineChart
               categories={categories}
               series={[

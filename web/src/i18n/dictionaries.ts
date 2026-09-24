@@ -175,6 +175,7 @@ export const en = {
   "teamDetail.chart.rankAxis": "rank",
   "teamDetail.seasonSelectLabel": "season",
   "teamDetail.table.heading": "Season history",
+  "teamDetail.table.scrollableRegion": "Season history table, scrollable",
   "teamDetail.table.season": "Season",
   "teamDetail.table.finalRank": "Final rank",
   "teamDetail.table.points": "Points",
@@ -186,6 +187,7 @@ export const en = {
   "teamDetail.table.inSample": "In sample",
   "teamDetail.table.outsideSample": "Outside sample (no prior-season data)",
   "teamDetail.players.heading": "Key players",
+  "teamDetail.players.scrollableRegion": "Key players table, scrollable",
   "teamDetail.players.sortLabel": "sort by",
   "teamDetail.players.sort.minutes": "Minutes",
   "teamDetail.players.sort.goals": "Goals",
@@ -225,6 +227,7 @@ export const en = {
   "compare.chart.pooledCrossoverLabel": "pooled crossover ({games})",
   "compare.chart.pairLabelWithN": "{label} (n={n})",
   "compare.table.heading": "Summary",
+  "compare.table.scrollableRegion": "Summary table, scrollable",
   "compare.table.stat": "Stat",
   "compare.table.delta": "Delta (A − B)",
 
@@ -244,6 +247,7 @@ export const en = {
     "scripts/validate_checkpoints.py is a regression test against the original study: every one of its ten published figures reproduces from match-level data, for all four metrics the study compares.",
   "method.results.note":
     "The presentation itself said \"crossover ≈ 12 games\", interpolated from just four checkpoints. Match-level data puts it exactly where the crossover column below does -- that is this project's headline: answering, exactly, what the coursework could only bracket.",
+  "method.results.scrollableRegion": "Published-figures table, scrollable",
   "method.results.col.metric": "metric",
   "method.results.col.priorRmse": "prior RMSE",
   "method.results.col.crossover": "crossover",
@@ -424,6 +428,7 @@ export const zh = {
   "teamDetail.chart.rankAxis": "名次",
   "teamDetail.seasonSelectLabel": "赛季",
   "teamDetail.table.heading": "赛季历史",
+  "teamDetail.table.scrollableRegion": "赛季历史表格，可滚动",
   "teamDetail.table.season": "赛季",
   "teamDetail.table.finalRank": "最终名次",
   "teamDetail.table.points": "积分",
@@ -435,6 +440,7 @@ export const zh = {
   "teamDetail.table.inSample": "样本内",
   "teamDetail.table.outsideSample": "样本外（无上赛季数据）",
   "teamDetail.players.heading": "核心球员",
+  "teamDetail.players.scrollableRegion": "核心球员表格，可滚动",
   "teamDetail.players.sortLabel": "排序方式",
   "teamDetail.players.sort.minutes": "出场时间",
   "teamDetail.players.sort.goals": "进球",
@@ -474,6 +480,7 @@ export const zh = {
   "compare.chart.pooledCrossoverLabel": "合并交叉点（{games}）",
   "compare.chart.pairLabelWithN": "{label}（n={n}）",
   "compare.table.heading": "汇总",
+  "compare.table.scrollableRegion": "汇总表格，可滚动",
   "compare.table.stat": "指标",
   "compare.table.delta": "差值（A − B）",
 
@@ -493,6 +500,7 @@ export const zh = {
     "scripts/validate_checkpoints.py 是对照原始研究的回归测试：其发表的十项结果，针对研究比较的全部四个指标，均可从逐场比赛数据中精确复现。",
   "method.results.note":
     "报告本身只说「交叉点 ≈ 12 场」，这是仅从四个检查点插值得到的。逐场比赛的数据恰好把它精确定位在下方交叉点一列所示之处——这正是本项目的核心结论：精确回答了课程作业只能给出区间估计的问题。",
+  "method.results.scrollableRegion": "已发表结果表格，可滚动",
   "method.results.col.metric": "指标",
   "method.results.col.priorRmse": "prior RMSE",
   "method.results.col.crossover": "crossover",

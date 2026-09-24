@@ -36,34 +36,41 @@ export default function Method() {
         <section className="panel prose">
           <h2>{t("method.results.heading")}</h2>
           <p>{t("method.results.intro")}</p>
-          <table className="method-results-table" data-testid="method-results-table">
-            <thead>
-              <tr>
-                <th scope="col">{t("method.results.col.metric")}</th>
-                <th scope="col">{t("method.results.col.priorRmse")}</th>
-                <th scope="col">{t("method.results.col.crossover")}</th>
-                <th scope="col">@5</th>
-                <th scope="col">@10</th>
-                <th scope="col">@15</th>
-                <th scope="col">@20</th>
-                <th scope="col">@38</th>
-              </tr>
-            </thead>
-            <tbody>
-              {RESULTS.map((row) => (
-                <tr key={row.metric}>
-                  <th scope="row">{row.metric}</th>
-                  <td>{row.priorRmse.toFixed(3)}</td>
-                  <td>{row.crossover.toFixed(1)}</td>
-                  <td>{row.at5.toFixed(3)}</td>
-                  <td>{row.at10.toFixed(3)}</td>
-                  <td>{row.at15.toFixed(3)}</td>
-                  <td>{row.at20.toFixed(3)}</td>
-                  <td>{row.at38.toFixed(3)}</td>
+          {/* Same fix TeamDetail.tsx's tables use -- see CLAUDE.md "v2 --
+              multi-page dashboard": overflow-x: auto on the wrapper, plus
+              tabIndex + role/aria-label so axe's scrollable-region-focusable
+              is satisfied. An 8-column table is exactly the shape that pushes
+              the page wider than the viewport at narrow widths. */}
+          <div className="table-scroll-wrap" tabIndex={0} role="region" aria-label={t("method.results.scrollableRegion")}>
+            <table className="method-results-table" data-testid="method-results-table">
+              <thead>
+                <tr>
+                  <th scope="col">{t("method.results.col.metric")}</th>
+                  <th scope="col">{t("method.results.col.priorRmse")}</th>
+                  <th scope="col">{t("method.results.col.crossover")}</th>
+                  <th scope="col">@5</th>
+                  <th scope="col">@10</th>
+                  <th scope="col">@15</th>
+                  <th scope="col">@20</th>
+                  <th scope="col">@38</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {RESULTS.map((row) => (
+                  <tr key={row.metric}>
+                    <th scope="row">{row.metric}</th>
+                    <td>{row.priorRmse.toFixed(3)}</td>
+                    <td>{row.crossover.toFixed(1)}</td>
+                    <td>{row.at5.toFixed(3)}</td>
+                    <td>{row.at10.toFixed(3)}</td>
+                    <td>{row.at15.toFixed(3)}</td>
+                    <td>{row.at20.toFixed(3)}</td>
+                    <td>{row.at38.toFixed(3)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
           <p>{t("method.results.note")}</p>
         </section>
 

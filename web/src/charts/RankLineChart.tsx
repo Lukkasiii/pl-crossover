@@ -47,20 +47,40 @@ export function RankLineChart({ categories, series, xAxisName }: RankLineChartPr
     });
 
     return {
-      grid: { left: 48, right: 16, top: series.some((s) => s.name) ? 32 : 24, bottom: 40 },
+      grid: { left: 60, right: 16, top: series.some((s) => s.name) ? 32 : 24, bottom: 48 },
       tooltip: { trigger: "axis", valueFormatter: (v) => `#${v}` },
       legend: series.some((s) => s.name) ? { top: 0, data: series.map((s) => s.name ?? "") } : undefined,
-      xAxis: { type: "category", name: xAxisName, data: categories, axisLabel: { fontFamily: fonts.mono } },
+      xAxis: {
+        type: "category",
+        name: xAxisName,
+        nameLocation: "middle",
+        nameGap: 28,
+        data: categories,
+        axisLabel: { fontFamily: fonts.mono },
+      },
       yAxis: {
         type: "value",
         name: t("teamDetail.chart.rankAxis"),
-        nameGap: 28,
+        // "end" (the default) puts the name above the axis line -- with
+        // inverse:true that flips to *below* it, reading as a detached
+        // caption instead of an axis title. "middle" + a rotated name
+        // (nameRotate) is what actually centers "rank" alongside the tick
+        // labels the way an axis title should read.
+        nameLocation: "middle",
+        nameGap: 40,
+        nameRotate: 90,
         inverse: true,
         min: 1,
         max: 20,
-        interval: 1,
+        // Ticks at every integer (1-20) in ~140px of height rendered as an
+        // unreadable smear of overlapping labels. interval: 5 -- 1, 6, 11,
+        // 16 -- was chosen over 4 (1, 5, 9, 13, 17) because it lines up
+        // with the gridlines at even multiples of 5 a reader already scans
+        // a league table by (5th, 10th, 15th, ...). hideOverlap stays on
+        // as a backstop at narrow widths where even 4 labels can crowd.
+        interval: 5,
         axisTick: { show: false },
-        axisLabel: { formatter: (v: number) => String(v), fontFamily: fonts.mono },
+        axisLabel: { formatter: (v: number) => String(v), fontFamily: fonts.mono, hideOverlap: true },
       },
       series: echartsSeries,
     };
