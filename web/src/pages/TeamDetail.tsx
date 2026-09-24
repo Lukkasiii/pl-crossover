@@ -84,7 +84,7 @@ export default function TeamDetail() {
       <div className="page-stack">
         <section className="panel">
           <h2>{t("teamDetail.chart.bySeason.heading")}</h2>
-          <div className="chart-box">
+          <div className="chart-box rank">
             <RankLineChart
               categories={team.seasons.map((s) => s.season)}
               series={[{ ranks: team.seasons.map((s) => s.finalRank) }]}
@@ -104,7 +104,7 @@ export default function TeamDetail() {
               options={team.seasons.map((s) => ({ value: String(s.pairId), label: s.season }))}
             />
           </div>
-          <div className="chart-box">
+          <div className="chart-box rank">
             <RankLineChart
               categories={selectedSeason.rankByGame.map((_, i) => i + 1)}
               series={[{ ranks: selectedSeason.rankByGame }]}
