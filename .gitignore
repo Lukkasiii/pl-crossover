@@ -19,3 +19,6 @@ page.html
 
 # Claude Code scratch: task files written by the planning session, not project history
 .claude/commands/next.md
+
+# Private interview prep, not part of the portfolio the repo presents
+docs/interview-notes.md
