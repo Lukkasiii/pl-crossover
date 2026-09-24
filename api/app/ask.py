@@ -226,6 +226,33 @@ def _render_fastest_metric(results: list[dict]) -> tuple[str, str]:
     return en, zh
 
 
+def _render_pooled_vs_per_season(results: list[dict]) -> tuple[str, str]:
+    pooled, per_season = results
+    gap = pooled["crossover"] - per_season["crossover"]
+    en = (
+        f"Both reproduce the original deck's xG figures exactly, but they cross the prior-season "
+        f"baseline ({_fmt(pooled['prior_rmse'])} positions) at different points: pooled at "
+        f"{_fmt(pooled['crossover'], 1)} games, per-season at {_fmt(per_season['crossover'], 1)} -- "
+        f"{_fmt(gap, 1)} games earlier. That gap is a property of the fitting method, not a second "
+        f"football fact: per-season averages eight separate fits of only ~17 observations each, "
+        f"scored in-sample with no group left over to hold out and check against, so it always reads "
+        f"a little more confident than the pooled fit's 136-observation regression. That is why this "
+        f"app defaults to pooled -- it is the one with a held-out (leave-one-season-out) score behind "
+        f"it -- and offers per-season only as a toggle, never as the default."
+    )
+    zh = (
+        f"两种方法都精确复现了原始幻灯片的 xG 数据，但二者跌破上赛季基线"
+        f"（{_fmt(pooled['prior_rmse'])} 个名次）的时间点并不相同：合并回归在 "
+        f"{_fmt(pooled['crossover'], 1)} 场，逐赛季回归在 {_fmt(per_season['crossover'], 1)} 场——"
+        f"提前了 {_fmt(gap, 1)} 场。这个差距是拟合方法本身的特性，而不是又一条独立的足球事实："
+        f"逐赛季方法是对 8 组、每组仅约 17 个观测值分别拟合后取平均，全部在样本内打分，"
+        f"没有多余的分组可以留出来做校验，因此它的结果总是比合并回归（136 个观测值）看起来更「自信」一些。"
+        f"这正是本应用默认使用合并回归——它背后有留一法（leave-one-season-out）的样本外校验——"
+        f"而逐赛季回归只作为一个可切换选项、从不作为默认值的原因。"
+    )
+    return en, zh
+
+
 def _render_prior_share(results: list[dict]) -> tuple[str, str]:
     shares = [(r["games"], r["weight_prior"] / (r["weight_prior"] + r["weight_data"]) * 100) for r in results]
     shares_en = ", ".join(f"{_fmt(pct, 0)}% at {g} games" for g, pct in shares)
@@ -299,6 +326,26 @@ PRESET_QUESTIONS: list[PresetQuestion] = [
             for m in ("xg", "xgd", "gd", "points")
         ],
         render=_render_fastest_metric,
+    ),
+    PresetQuestion(
+        id="pooled-vs-per-season",
+        question_en="Does the per-season method agree with the pooled regression?",
+        question_zh="逐赛季方法和合并回归的结果一致吗？",
+        calls=[
+            ToolCallSpec(
+                tool="get_rmse_curve",
+                args={"metric": "xg", "method": "pooled"},
+                label="get_rmse_curve(metric=xg, method=pooled)",
+                relates_to="current-rmse-metrics",
+            ),
+            ToolCallSpec(
+                tool="get_rmse_curve",
+                args={"metric": "xg", "method": "per_season"},
+                label="get_rmse_curve(metric=xg, method=per_season)",
+                relates_to="current-rmse-metrics",
+            ),
+        ],
+        render=_render_pooled_vs_per_season,
     ),
     PresetQuestion(
         id="prior-share-by-checkpoint",

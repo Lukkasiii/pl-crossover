@@ -11,6 +11,7 @@ const PRESET_QUESTIONS: { id: string; labelKey: TranslationKey }[] = [
   { id: "crossover-round-12", labelKey: "askPanel.question.crossoverRound12" },
   { id: "sigma-prior-10", labelKey: "askPanel.question.sigmaPrior10" },
   { id: "fastest-metric", labelKey: "askPanel.question.fastestMetric" },
+  { id: "pooled-vs-per-season", labelKey: "askPanel.question.pooledVsPerSeason" },
   { id: "prior-share-by-checkpoint", labelKey: "askPanel.question.priorShare" },
 ];
 
