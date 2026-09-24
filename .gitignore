@@ -8,6 +8,8 @@ data/raw/
 # .e2e-pl.db is a disposable copy of it (web/playwright.config.ts) so the
 # auth e2e spec's writes never touch the tracked file.
 data/.e2e-pl.db
+data/.e2e-perf-pl.db
+web/e2e-perf/raf-coalescing-results.json
 node_modules/
 dist/
 .env

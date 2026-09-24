@@ -418,12 +418,67 @@ and unexecuted, before anything paints, on both arms, every run); the fix is
 code-splitting (starting with the Ask panel once it exists), not touching
 autoplay.
 
-**Sustained frame rate at 50x**, measured with Playwright driving the same
-deployed demo (10 `requestAnimationFrame` samples over 3s while the replay
-streams at 50x, so ~250 socket-equivalent messages/sec): **60fps sustained**,
-the same as idle — the rAF-buffered render path never drops below the
-display's own refresh rate even at the fastest speed, which is the thing the
-buffering exists to guarantee.
+**Problem: does the rAF-batched `viewSeq` commit in `useReplaySocket` actually
+cut render cost at 50x, or is that just asserted?** An earlier version of this
+README answered with "60fps sustained," measured by driving the *deployed
+demo* — but `useDemoReplay.ts` (what the deployed demo runs) commits state
+straight from a `setTimeout`, per tick, with no rAF batching at all; that
+number couldn't have been testing this mechanism. Corrected below, against
+the thing that actually has the batching: `useReplaySocket.ts`, the live
+WebSocket path.
+
+`useReplaySocket.ts` gained a dev-only escape hatch, `?coalesce=off` (gated
+on `import.meta.env.DEV`, so it's dead code in a production build), that
+commits `viewSeq` to React state on every message instead of batching to one
+commit per animation frame — everything else about the two runs is
+identical. Measured against the real API + WebSocket at 50x, interleaved
+coalesced/bypassed/coalesced/… ×8 each rather than block-measured (see the
+autoplay/Lighthouse entry above for why interleaving matters here — this
+repo has already been burned once by the alternative). Primary metric: DOM
+commits to the standings table body, via `MutationObserver` — a
+`requestAnimationFrame`-tick count was tried first and rejected, because
+headless Chromium's synthetic frame source doesn't run rAF at a real vsync
+cadence, so both arms came back at an identical, meaningless ~8 ticks/sec
+regardless of actual work. Long Tasks (main thread blocked ≥50ms) is the
+second, corroborating metric; both are compositor-independent.
+
+| | duration (ms) | DOM commits | long tasks (count) | long tasks (total ms) |
+|---|---|---|---|---|
+| coalesced (rAF-batched), median (spread), n=8 | 12224 (1769) | 648 (47) | 49.5 (17) | 3712 (1611) |
+| bypassed (`?coalesce=off`), median (spread), n=8 | 12028 (6015) | 598 (134) | 49.5 (56) | 3730 (4178) |
+
+Statistically indistinguishable — every coalesced median sits inside the
+bypassed arm's own spread and vice versa. Both process the same ~324–337
+messages per run (the full 418-frame season, minus the frames already
+consumed getting to "playing"), confirming this is an apples-to-apples
+comparison, not one arm doing less work.
+
+Two things explain why, both read from the code rather than guessed. First,
+delivery on this machine runs far slower than the server's intended pacing
+(`BASE_FRAME_INTERVAL / speed` = 0.2s / 50 = 4ms): a bare WebSocket client
+with no rendering at all still takes 2.1s to receive all 418 frames (~5ms
+apart, confirming the server side is fine); the browser run takes ~12s for
+the same 418 frames (~36ms apart) — the bottleneck is client-side
+processing, not network or server pacing. Second, and this is what actually
+neutralizes the coalescing: `FrameCache.add()` (`frameCache.ts`) calls
+`this.listeners.forEach(l => l())` unconditionally on every message,
+regardless of whether `viewSeq` is about to change. Every
+`useSyncExternalStore` subscriber re-runs `getSnapshot()` on every message
+either way — rAF only throttles how often the *`viewSeq` state* commits, not
+how often the *cache* notifies, so the two modes end up paying nearly the
+same cost per message.
+
+**Verdict: as built, the rAF batching does not measurably help at 50x on
+this machine, and the reason lives in a different line than the one the
+pitch describes.** A small, honest number instead of the large one "decouple
+the arrival rate from the render rate" implied — see CLAUDE.md's working
+style on exactly this: a properly-measured small effect is a better answer
+than an invented large one. Gating `FrameCache`'s own notification on
+whether the snapshot the current `viewSeq` resolves to actually changed is
+the real next step; not done here — this task was to measure the existing
+mechanism, not to change it out from under the measurement. Reproduce with
+`npx playwright test --config=playwright.perf.config.ts` (see
+`e2e-perf/README.md`).
 
 **Parse time of the 2MB demo frames JSON**, measured in-page (`fetch` +
 `JSON.parse` on `frames-1.json`, 2,051,789 bytes, median of 10 runs in headless

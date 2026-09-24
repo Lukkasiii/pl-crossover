@@ -6,6 +6,17 @@ import type { ReplayCommand, ReplayFrame } from "./types";
 
 export type ConnectionStatus = SocketStatus;
 
+/**
+ * Dev-only escape hatch for measuring what the rAF coalescing below (see
+ * `scheduleFlush`) actually buys: `?coalesce=off` commits `viewSeq` on every
+ * message instead of batching to one commit per animation frame. Gated on
+ * `import.meta.env.DEV` so the check -- and the naive per-message setState
+ * path it guards -- is dead code, not just unreachable, in a production
+ * build. Never flip this to measure the deployed demo; it's demo-mode-only
+ * data anyway (see useDemoReplay.ts, which never went through this hook).
+ */
+const RAF_BYPASS = import.meta.env.DEV && new URLSearchParams(window.location.search).get("coalesce") === "off";
+
 interface ReplayState {
   status: ConnectionStatus;
   totalFrames: number;
@@ -172,8 +183,12 @@ export function useReplaySocket(pairId: number) {
           case "match":
           case "round":
             cache.add(frame);
-            pendingSeqRef.current = frame.seq;
-            scheduleFlush();
+            if (RAF_BYPASS) {
+              setState((s) => (s.viewSeq === frame.seq ? s : { ...s, viewSeq: frame.seq }));
+            } else {
+              pendingSeqRef.current = frame.seq;
+              scheduleFlush();
+            }
             break;
           case "done":
             setState((s) => ({ ...s, playing: false, finished: true }));
