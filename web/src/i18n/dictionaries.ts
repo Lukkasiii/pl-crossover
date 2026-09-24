@@ -252,7 +252,7 @@ export const en = {
   "method.methodologies.pooled":
     "Pooled regression (the original deck's slide 7) pools every observation -- the 17 teams common to both seasons, across all 8 season pairs, 136 rows -- into a single fit. It is what this app uses by default, and it reproduces the deck's figures exactly.",
   "method.methodologies.perSeason":
-    "Per-season regression (slides 9 and 11) instead fits each of the 8 season pairs separately and averages the result across them -- offered here as a toggle, not the default. It reproduces the deck's per-season xG figures exactly too: 3.85, 4.42, 4.02, 3.69 and 3.41 RMSE at games 5, 10, 15, 20 and 38.",
+    "Per-season regression (slides 9 and 11) instead fits each of the 8 season pairs separately and averages the result across them -- offered here as a toggle, not the default. It reproduces the deck's per-season xG figures exactly too: 4.42, 4.02, 3.69 and 3.41 RMSE at games 5, 10, 15 and 20. The deck stops at 20; carried through to a full season this method reaches 3.16 at game 38.",
   "method.methodologies.rankBased":
     "The deck's slide 11 also plots a third line: a rank-based method with no regression at all, taken straight from the original goal-difference workbook. It does not reproduce exactly from match-level data, and its quirks were not worth carrying forward, so this app never implements it.",
   "method.methodologies.rule":
@@ -519,7 +519,7 @@ export const zh = {
   "method.methodologies.pooled":
     "合并回归（原始幻灯片第 7 页）把所有观测值——两个赛季共同拥有的 17 支球队，跨全部 8 组赛季组合，共 136 行——合并为一次拟合。本应用默认使用这一方法，它精确复现了原始幻灯片的数据。",
   "method.methodologies.perSeason":
-    "逐赛季回归（幻灯片第 9、11 页）则对 8 组赛季组合分别拟合，再取平均——本应用将其作为一个可切换的选项，而非默认值。它同样精确复现了原始幻灯片中 xG 的逐赛季数据：在第 5、10、15、20 和 38 场时的 RMSE 分别为 3.85、4.42、4.02、3.69 和 3.41。",
+    "逐赛季回归（幻灯片第 9、11 页）则对 8 组赛季组合分别拟合，再取平均——本应用将其作为一个可切换的选项，而非默认值。它同样精确复现了原始幻灯片中 xG 的逐赛季数据：在第 5、10、15、20 场时的 RMSE 分别为 4.42、4.02、3.69、3.41。原始幻灯片止步于第 20 场；本应用把这一方法延伸到整个赛季，第 38 场为 3.16。",
   "method.methodologies.rankBased":
     "幻灯片第 11 页还画出了第三条线：一种完全不做回归、直接基于名次的方法，照搬自最初的净胜球工作表。它无法从逐场比赛数据中精确复现，其种种细节也不值得延续，因此本应用从未实现它。",
   "method.methodologies.rule":

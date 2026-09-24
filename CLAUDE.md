@@ -250,7 +250,9 @@ answers, exactly, what the coursework could only bracket.
 **The original deck mixes three methods.** Do not mix them in the app:
 
 1. *Pooled regression* (deck slide 7) — 136 observations in one fit. Reproduced exactly.
-2. *Per-season regression, averaged over 8 pairs* (slides 9, 11) — 3.85 / 4.42 / 4.02 / 3.69 / 3.41 for xG. Also reproduced exactly.
+2. *Per-season regression, averaged over 8 pairs* (slides 9, 11) — 4.42 / 4.02 / 3.69 / 3.41 for xG at games **5 / 10 / 15 / 20**. Also reproduced exactly (computed: 4.4191 / 4.0235 / 3.6916 / 3.4065). The deck's series stops at game 20; this method carried to a full season gives 3.1594 at 38, which has no published counterpart.
+
+   **These labels were wrong once — do not "correct" them back.** They were recorded as `3.85 / 4.42 / 4.02 / 3.69 / 3.41 at 5 / 10 / 15 / 20 / 38`, one checkpoint late with a spurious leading value, and `/method` printed that mislabelling to visitors. Checked against the original deck by the author: the series starts at 4.42 @5. The stray 3.85 belongs to neither this series nor the per-season prior baseline (4.0875) and is unaccounted for.
 3. *Rank-based, no regression* (the goal-difference workbook, slide 11's GD line) — not exactly reproducible, quirks not worth carrying forward.
 
 **Use method 1 as the default, offer method 2 as a toggle, never implement
