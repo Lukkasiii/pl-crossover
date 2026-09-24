@@ -18,6 +18,13 @@ see [Frontend decisions](#frontend-decisions) for what that means in practice.
 
 ![The replay running: standings updating round by round and the crossover marker landing on the RMSE curve around game 12](design/replay-crossover.gif)
 
+Lighthouse Performance **72** (Accessibility/Best Practices/SEO/Agentic
+Browsing all 100) against the real deployed demo; **1,069.67 KB / 358.32 KB
+gzip** total JS across every route, of which 553.48 KB / 186.44 KB gzip is
+ECharts, tree-shaken down from 1,118.52 KB / 371.16 KB gzip for the naive
+`import * as echarts from "echarts"` — full method and per-route numbers in
+[Frontend decisions](#frontend-decisions).
+
 **Demo account** (only needed to save named parameter sets — see
 [Auth and saved scenarios](#auth-and-saved-scenarios)):
 
@@ -361,25 +368,59 @@ teams, not per-team series. Only the standings table is per-team. Building the
 hover-link would mean adding a team dimension to charts that are aggregate by
 design, so it's skipped rather than built and left dangling.
 
-**Bundle size:** 1044KB JS / 347KB gzip total across every chunk
-(`npm run build:demo`, the exact build GitHub Pages serves) after
-tree-shaking ECharts to just the line/bar charts this app uses
-(`echarts/core` + named imports, not `import * as echarts from "echarts"`).
-Every route is its own lazy chunk (`React.lazy` + `Suspense`), and the Ask
-panel is a second lazy boundary inside `/model` alone: `AskPanel-*.js` is
-4.9KB / 1.9KB gzip, and nothing outside `/model` ever fetches it — `/`, the
-30-second pitch, loads neither ECharts nor the agent panel's code.
+**Bundle size**, real per-chunk numbers from `npm run build:demo` (the exact
+build GitHub Pages serves), not estimated:
 
-**Lighthouse Performance is 55, measured once, against the real deployed
+| route chunk | size | gzip |
+|---|---|---|
+| `/` (Overview) | 2.98 KB | 1.13 KB |
+| `/season` | 23.05 KB | 7.75 KB |
+| `/model` | 5.51 KB | 1.90 KB |
+| `/model`'s Ask panel (second lazy boundary, loads only if opened) | 4.98 KB | 1.91 KB |
+| `/teams` | 3.86 KB | 1.46 KB |
+| `/teams/:slug` | 8.26 KB | 2.11 KB |
+| `/compare` | 7.81 KB | 2.60 KB |
+| `/method` | 3.36 KB | 0.93 KB |
+| `/scenarios` | 6.55 KB | 2.42 KB |
+| shared (react/router entry, i18n dictionaries, API client, ECharts core, small chart/UI chunks) | 1003.31 KB | 336.11 KB |
+| **total** | **1069.67 KB** | **358.32 KB** |
+
+Every route is its own lazy chunk (`React.lazy` + `Suspense`); the Ask panel
+is a second lazy boundary inside `/model` alone, so nothing outside `/model`
+ever fetches it — `/`, the 30-second pitch, loads neither ECharts nor the
+agent panel's code. The "shared" row is unavoidable per-visit cost
+(react-router, `LocaleContext`'s dictionaries, the openapi-fetch client, and
+— by far the largest single piece — ECharts itself, `EChart-*.js` at 553.48
+KB / 186.44 KB gzip) rather than per-route weight, which is why it's one row
+instead of attributed to whichever route happens to load first.
+
+That 553.48 KB ECharts chunk is after tree-shaking to just the pieces this
+app actually uses (`echarts/core` + named imports registering only
+`LineChart`, `BarChart` and five components, `src/charts/EChart.tsx`) rather
+than `import * as echarts from "echarts"`, which registers every chart type
+and component ECharts ships. Measured directly, not estimated: swapping
+`EChart.tsx` to the full import and rebuilding (same commit, same data,
+reverted immediately after) puts that one chunk at **1,118.52 KB / 371.16 KB
+gzip** — almost exactly double. Tree-shaking this one file is worth about
+565 KB raw / 185 KB gzip, more than every route chunk in the table above
+combined.
+
+**Lighthouse Performance is 72, measured once, against the real deployed
 site** (`npx lighthouse https://lukkasiii.github.io/pl-crossover/`, default
 mobile-simulated throttling: 4x CPU, 150ms RTT, ~1.6Mbps): Accessibility 100,
-Best Practices 100, SEO 100, and on that one run — First Contentful Paint
-4.2s, Largest Contentful Paint 5.0s, Total Blocking Time 640ms, Time to
-Interactive 5.2s. Everything below this paragraph is a **separate, local**
-experiment run to attribute that number, and its absolute scores are not
-comparable to the 55 above — different machine, no real network hop to
-GitHub Pages, and (in the final round) two Chrome instances sharing one CPU.
-Only the *relative* comparison between arms is meaningful.
+Best Practices 100, SEO 100, Agentic Browsing 100, and on that one run —
+First Contentful Paint 3.8s, Largest Contentful Paint 4.5s, Total Blocking
+Time 110ms, Time to Interactive 4.5s, Speed Index 5.0s. (An earlier version
+of this README quoted 55 from a run against an earlier build, before Stages
+5–7 added the multi-page shell, i18n, team/compare/method pages and the Ask
+panel; re-measured here rather than left stale.) Everything below this
+paragraph is a **separate, local** experiment run to attribute that earlier
+number, and its absolute scores are not comparable to the 72 above —
+different machine, no real network hop to GitHub Pages, and (in the final
+round) two Chrome instances sharing one CPU. Only the *relative* comparison
+between arms is meaningful, and the conclusion it reaches (bundle size, not
+autoplay, is the cause) isn't tied to which exact build produced the
+headline number above.
 
 Attributing the 55: is it the 932KB unsplit bundle, or autoplay — the season
 playing itself the instant the page loads, with a `requestAnimationFrame`
