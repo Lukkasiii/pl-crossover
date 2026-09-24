@@ -227,6 +227,7 @@ export const en = {
   "compare.chart.pooledCrossoverLabel": "pooled crossover ({games})",
   "compare.chart.pairLabelWithN": "{label} (n={n})",
   "compare.table.heading": "Summary",
+  "compare.table.scrollableRegion": "Summary table, scrollable",
   "compare.table.stat": "Stat",
   "compare.table.delta": "Delta (A − B)",
 
@@ -479,6 +480,7 @@ export const zh = {
   "compare.chart.pooledCrossoverLabel": "合并交叉点（{games}）",
   "compare.chart.pairLabelWithN": "{label}（n={n}）",
   "compare.table.heading": "汇总",
+  "compare.table.scrollableRegion": "汇总表格，可滚动",
   "compare.table.stat": "指标",
   "compare.table.delta": "差值（A − B）",
 
