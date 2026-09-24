@@ -106,6 +106,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/ask": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Ask */
+        post: operations["ask_api_ask_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/register": {
         parameters: {
             query?: never;
@@ -243,6 +260,51 @@ export interface components {
             token_type: "bearer";
             /** Expires In */
             expires_in: number;
+        };
+        /** AskOut */
+        AskOut: {
+            /** Id */
+            id: string;
+            /** Question */
+            question: string;
+            /** Answer */
+            answer: string;
+            /** Toolcalls */
+            toolCalls: components["schemas"]["AskToolCallOut"][];
+        };
+        /** AskRequest */
+        AskRequest: {
+            /** Question Id */
+            question_id: string;
+            /**
+             * Lang
+             * @default en
+             * @enum {string}
+             */
+            lang: "en" | "zh";
+        };
+        /** AskToolCallOut */
+        AskToolCallOut: {
+            /**
+             * Tool
+             * @enum {string}
+             */
+            tool: "get_posterior" | "get_rmse_curve";
+            /** Args */
+            args: {
+                [key: string]: unknown;
+            };
+            /** Label */
+            label: string;
+            /**
+             * Relatesto
+             * @enum {string}
+             */
+            relatesTo: "weight-bars" | "current-rmse-metrics";
+            /** Result */
+            result: {
+                [key: string]: unknown;
+            };
         };
         /** CurvesOut */
         CurvesOut: {
@@ -727,6 +789,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PredictOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    ask_api_ask_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AskRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AskOut"];
                 };
             };
             /** @description Validation Error */

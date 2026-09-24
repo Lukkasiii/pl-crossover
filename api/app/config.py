@@ -22,6 +22,11 @@ class Settings:
             o.strip() for o in os.environ.get("PL_CORS_ORIGINS", "http://localhost:5173").split(",") if o.strip()
         )
     )
+    # Unset in every deployment of this demo -- see CLAUDE.md "Feature 3": no
+    # LLM API key, no budget for one. Setting it is the one-line change that
+    # swaps /api/ask from the committed fixtures to a real model call; see
+    # ask.get_ask_source().
+    anthropic_api_key: str | None = field(default_factory=lambda: os.environ.get("ANTHROPIC_API_KEY") or None)
 
 
 def _generate_dev_secret() -> str:

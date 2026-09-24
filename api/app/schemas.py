@@ -159,6 +159,29 @@ class PredictOut(BaseModel):
     weight_data: float
 
 
+# --- ask the model -------------------------------------------------------
+
+
+class AskRequest(BaseModel):
+    question_id: str
+    lang: Literal["en", "zh"] = "en"
+
+
+class AskToolCallOut(BaseModel):
+    tool: Literal["get_posterior", "get_rmse_curve"]
+    args: dict
+    label: str
+    relatesTo: Literal["weight-bars", "current-rmse-metrics"]
+    result: dict
+
+
+class AskOut(BaseModel):
+    id: str
+    question: str
+    answer: str
+    toolCalls: list[AskToolCallOut]
+
+
 # --- auth ---------------------------------------------------------------
 
 

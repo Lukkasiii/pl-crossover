@@ -70,6 +70,21 @@ export const en = {
   "model.currentRmseFraming":
     "Which of xG, xGD, goal difference and points becomes reliable earliest -- the study's real question, one bar per metric at however many games the replay has reached.",
 
+  "askPanel.heading": "Ask the Model",
+  "askPanel.framing":
+    "Preset questions about the Bayesian blend above -- each answer cites the real tool calls that produced it.",
+  "askPanel.presetsLabel": "preset questions",
+  "askPanel.question.crossoverRound12": "Why did predictions get more accurate after round 12?",
+  "askPanel.question.sigmaPrior10": "What happens if σ_prior is set to 10?",
+  "askPanel.question.fastestMetric": "Which metric becomes reliable earliest?",
+  "askPanel.question.priorShare": "How much does the prior matter early versus late in the season?",
+  "askPanel.askAnother": "Ask another question",
+  "askPanel.stop": "Stop",
+  "askPanel.loading": "thinking…",
+  "askPanel.failedToLoad": "failed to load the answer",
+  "askPanel.toolCallsHeading": "Tool calls",
+  "askPanel.streamingStatus": "Answer streaming",
+
   "chart.currentSeason": "Current season",
   "chart.priorSeason": "Last season (prior)",
   "chart.gamesPlayed": "games played",
@@ -324,6 +339,20 @@ export const zh = {
   "model.tunePriorFraming":
     "拖动这个滑块来回答:如果模型更信任(或更不信任)上赛季的数据,交叉点会移动吗?原始研究把这个权重固定为 5——这里由你来设定。",
   "model.currentRmseFraming": "xG、xGD、净胜球和积分中,哪一个最早变得可靠——这是本研究真正要回答的问题,按回放当前场次逐项对比。",
+
+  "askPanel.heading": "问问模型",
+  "askPanel.framing": "关于上方贝叶斯混合模型的预设问题——每个回答都会引用生成它的真实工具调用。",
+  "askPanel.presetsLabel": "预设问题",
+  "askPanel.question.crossoverRound12": "为什么第 12 轮之后预测会变得更准确？",
+  "askPanel.question.sigmaPrior10": "如果把 σ_prior 设为 10 会发生什么？",
+  "askPanel.question.fastestMetric": "哪个指标最早变得可靠？",
+  "askPanel.question.priorShare": "先验在赛季初和赛季后期的重要性有何不同？",
+  "askPanel.askAnother": "换一个问题",
+  "askPanel.stop": "停止",
+  "askPanel.loading": "思考中…",
+  "askPanel.failedToLoad": "回答加载失败",
+  "askPanel.toolCallsHeading": "工具调用",
+  "askPanel.streamingStatus": "回答生成中",
 
   "chart.currentSeason": "本赛季",
   "chart.priorSeason": "上赛季（先验）",
