@@ -18,6 +18,7 @@ interface PredictGrid {
   weightData: number[][];
   blendedRmse: Record<Metric, number[][]>;
   blendedMae: Record<Metric, number[][]>;
+  crossover: Record<Metric, number | null>;
 }
 
 /**
@@ -73,6 +74,10 @@ export interface PooledCurve {
   games: number[];
   currentRmse: number[];
   priorRmse: number;
+  /** The fractional games count where this curve first drops below its own prior RMSE, or null if it never does. */
+  crossover: number | null;
+  /** Observation count this fit was scored on -- 136 for the pooled curve, ~17 for one season pair's own (see usePairCurve). */
+  n: number;
 }
 
 /** The pooled-regression RMSE curve for one metric, the same shape usePooledCurve's live branch gets from GET /api/curves. */
@@ -82,5 +87,7 @@ export async function lookupPooledCurve(metric: Metric): Promise<PooledCurve> {
     games: grid.games,
     currentRmse: grid.currentFit[metric].map((f) => f.rmse),
     priorRmse: grid.priorFit[metric].rmse,
+    crossover: grid.crossover[metric],
+    n: grid.currentFit[metric][0].n,
   };
 }

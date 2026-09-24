@@ -3,20 +3,28 @@ import { useLocale } from "../i18n/LocaleContext";
 import { useTeamSeasons, type TeamOut } from "../api/useTeamSeasons";
 import { useSeasons } from "../api/useSeasons";
 import { usePairCurve } from "../api/usePairCurve";
+import { usePooledCurve } from "../api/usePooledCurve";
 import { Select } from "../components/ui/Select";
 import { RankLineChart } from "../charts/RankLineChart";
 import { CompareCurveChart } from "../charts/CompareCurveChart";
 import { broadcastName } from "../teamNames";
-import { summarize, type TeamStats } from "./Teams";
+import { MEAN_POINTS_FORMAT, summarize, type TeamStats } from "./Teams";
 import styles from "./Compare.module.css";
 
 type Mode = "teams" | "pairs";
 
-const STAT_ROWS: { key: keyof TeamStats; labelKey: "teams.card.seasons" | "teams.card.bestRank" | "teams.card.worstRank" | "teams.card.meanPoints" }[] = [
+const STAT_ROWS: {
+  key: keyof TeamStats;
+  labelKey: "teams.card.seasons" | "teams.card.bestRank" | "teams.card.worstRank" | "teams.card.meanPoints";
+  // Only meanPoints is a genuine mean (can be a non-integer); the other
+  // three are plain counts/ranks that are always whole, so forcing a
+  // decimal on them would claim a precision the stat doesn't have.
+  format?: Intl.NumberFormatOptions;
+}[] = [
   { key: "seasonsPlayed", labelKey: "teams.card.seasons" },
   { key: "bestRank", labelKey: "teams.card.bestRank" },
   { key: "worstRank", labelKey: "teams.card.worstRank" },
-  { key: "meanPoints", labelKey: "teams.card.meanPoints" },
+  { key: "meanPoints", labelKey: "teams.card.meanPoints", format: MEAN_POINTS_FORMAT },
 ];
 
 function TeamsCompare({ teams }: { teams: TeamOut[] }) {
@@ -95,9 +103,9 @@ function TeamsCompare({ teams }: { teams: TeamOut[] }) {
                   <th scope="row" style={{ textAlign: "left" }}>
                     {t(row.labelKey)}
                   </th>
-                  <td>{formatNumber(statsA[row.key])}</td>
-                  <td>{formatNumber(statsB[row.key])}</td>
-                  <td>{formatNumber(Math.round((statsA[row.key] - statsB[row.key]) * 10) / 10)}</td>
+                  <td>{formatNumber(statsA[row.key], row.format)}</td>
+                  <td>{formatNumber(statsB[row.key], row.format)}</td>
+                  <td>{formatNumber(Math.round((statsA[row.key] - statsB[row.key]) * 10) / 10, row.format)}</td>
                 </tr>
               ))}
             </tbody>
@@ -122,6 +130,10 @@ function PairsCompare() {
 
   const { curve: curveA } = usePairCurve("xg", effectiveAId);
   const { curve: curveB } = usePairCurve("xg", effectiveBId);
+  // The held-out-checked reference the two in-sample pair curves are drawn
+  // against -- see the caption below and CLAUDE.md's "in-sample and
+  // held-out scores are always reported together".
+  const { curve: pooledCurve } = usePooledCurve("xg");
 
   if (!pairs) return <p className="placeholder-note">{t("app.loadingPage")}</p>;
 
@@ -158,7 +170,13 @@ function PairsCompare() {
         <p className="panel-framing">{t("compare.chart.rmseCurves.caption")}</p>
         {curveA && curveB ? (
           <div className="chart-box">
-            <CompareCurveChart curveA={curveA} curveB={curveB} labelA={pairA.label} labelB={pairB.label} />
+            <CompareCurveChart
+              curveA={curveA}
+              curveB={curveB}
+              labelA={t("compare.chart.pairLabelWithN", { label: pairA.label, n: curveA.n })}
+              labelB={t("compare.chart.pairLabelWithN", { label: pairB.label, n: curveB.n })}
+              pooledCrossover={pooledCurve?.crossover ?? null}
+            />
           </div>
         ) : (
           <p className="placeholder-note">{t("app.loadingPage")}</p>

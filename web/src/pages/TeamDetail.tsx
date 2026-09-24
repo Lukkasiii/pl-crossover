@@ -2,10 +2,25 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useLocale } from "../i18n/LocaleContext";
 import { useTeamSeasons } from "../api/useTeamSeasons";
+import { useTeamPlayers, type PlayerOut } from "../api/useTeamPlayers";
 import { Select } from "../components/ui/Select";
+import { InfoTooltip } from "../components/ui/InfoTooltip";
 import { RankLineChart } from "../charts/RankLineChart";
 import { broadcastName } from "../teamNames";
 import { summarize } from "./Teams";
+import type { TranslationKey } from "../i18n/dictionaries";
+
+type PlayerSortKey = "minutes" | "goals" | "xg" | "assists" | "xa" | "xgChain" | "xgBuildup";
+
+const PLAYER_SORT_OPTIONS: { value: PlayerSortKey; labelKey: TranslationKey }[] = [
+  { value: "minutes", labelKey: "teamDetail.players.sort.minutes" },
+  { value: "goals", labelKey: "teamDetail.players.sort.goals" },
+  { value: "xg", labelKey: "teamDetail.players.sort.xg" },
+  { value: "assists", labelKey: "teamDetail.players.sort.assists" },
+  { value: "xa", labelKey: "teamDetail.players.sort.xa" },
+  { value: "xgChain", labelKey: "teamDetail.players.sort.xgChain" },
+  { value: "xgBuildup", labelKey: "teamDetail.players.sort.xgBuildup" },
+];
 
 export default function TeamDetail() {
   const { slug } = useParams<{ slug: string }>();
@@ -13,6 +28,18 @@ export default function TeamDetail() {
   const { teams, error } = useTeamSeasons();
   const team = useMemo(() => teams?.find((tm) => tm.slug === slug) ?? null, [teams, slug]);
   const [selectedPairId, setSelectedPairId] = useState<number | null>(null);
+  const [playerSort, setPlayerSort] = useState<PlayerSortKey>("minutes");
+
+  // Falls back to the most recent season once team data has loaded -- derived
+  // here (not in an effect) and called unconditionally, before the
+  // not-found return below, because it feeds useTeamPlayers and hooks can't
+  // be conditional.
+  const effectivePairId = selectedPairId ?? (team && team.seasons.length > 0 ? team.seasons[team.seasons.length - 1].pairId : null);
+  const { data: playersData } = useTeamPlayers(effectivePairId, team?.id ?? null);
+  const sortedPlayers = useMemo(() => {
+    if (!playersData) return [];
+    return [...playersData.players].sort((a, b) => b[playerSort] - a[playerSort]);
+  }, [playersData, playerSort]);
 
   useEffect(() => {
     const title = team ? broadcastName(team.name) : t("teamDetail.notFound.title");
@@ -37,7 +64,7 @@ export default function TeamDetail() {
   }
 
   const stats = summarize(team);
-  const selectedSeason = team.seasons.find((s) => s.pairId === selectedPairId) ?? team.seasons[team.seasons.length - 1];
+  const selectedSeason = team.seasons.find((s) => s.pairId === effectivePairId) ?? team.seasons[team.seasons.length - 1];
 
   return (
     <div data-testid="page-team-detail">
@@ -123,6 +150,88 @@ export default function TeamDetail() {
               ))}
             </tbody>
           </table>
+        </section>
+
+        <section className="panel">
+          <div className="panel-header">
+            <h2>{t("teamDetail.players.heading")}</h2>
+            <Select
+              aria-label={t("teamDetail.players.sortLabel")}
+              data-testid="team-players-sort"
+              value={playerSort}
+              onValueChange={(v) => setPlayerSort(v as PlayerSortKey)}
+              options={PLAYER_SORT_OPTIONS.map((o) => ({ value: o.value, label: t(o.labelKey) }))}
+            />
+          </div>
+          {playersData && playersData.excludedMidSeasonTransfers > 0 && (
+            <p className="panel-framing">
+              {t("teamDetail.players.excludedNote", { count: playersData.excludedMidSeasonTransfers })}
+            </p>
+          )}
+          {!playersData ? (
+            <p className="placeholder-note">{t("app.loadingPage")}</p>
+          ) : sortedPlayers.length === 0 ? (
+            <p className="placeholder-note" data-testid="team-players-empty">
+              {t("teamDetail.players.empty")}
+            </p>
+          ) : (
+            <table className="method-results-table" data-testid="team-players-table">
+              <thead>
+                <tr>
+                  <th scope="col" style={{ textAlign: "left" }}>
+                    {t("teamDetail.players.col.player")}
+                  </th>
+                  <th scope="col" style={{ textAlign: "left" }}>
+                    {t("teamDetail.players.col.position")}
+                  </th>
+                  <th scope="col">{t("teamDetail.players.col.minutes")}</th>
+                  <th scope="col">{t("teamDetail.players.col.goals")}</th>
+                  <th scope="col">{t("teamDetail.players.col.xg")}</th>
+                  <th scope="col">{t("teamDetail.players.col.assists")}</th>
+                  <th scope="col">{t("teamDetail.players.col.xa")}</th>
+                  <th scope="col">
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 2 }}>
+                      {t("teamDetail.players.col.xgChain")}
+                      <InfoTooltip
+                        aria-label={t("panelInfo.about", { panel: t("teamDetail.players.col.xgChain") })}
+                        data-testid="xg-chain-info"
+                      >
+                        {t("panelInfo.xgChain")}
+                      </InfoTooltip>
+                    </span>
+                  </th>
+                  <th scope="col">
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 2 }}>
+                      {t("teamDetail.players.col.xgBuildup")}
+                      <InfoTooltip
+                        aria-label={t("panelInfo.about", { panel: t("teamDetail.players.col.xgBuildup") })}
+                        data-testid="xg-buildup-info"
+                      >
+                        {t("panelInfo.xgBuildup")}
+                      </InfoTooltip>
+                    </span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {sortedPlayers.map((p: PlayerOut) => (
+                  <tr key={`${p.name}-${p.position}`}>
+                    <th scope="row" style={{ textAlign: "left" }}>
+                      {p.name}
+                    </th>
+                    <td style={{ textAlign: "left" }}>{p.position}</td>
+                    <td>{p.minutes}</td>
+                    <td>{p.goals}</td>
+                    <td>{p.xg.toFixed(2)}</td>
+                    <td>{p.assists}</td>
+                    <td>{p.xa.toFixed(2)}</td>
+                    <td>{p.xgChain.toFixed(2)}</td>
+                    <td>{p.xgBuildup.toFixed(2)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </section>
       </div>
     </div>

@@ -9,7 +9,13 @@ export type { PooledCurve } from "../demo/predictGrid";
 async function fetchPooledCurveLive(metric: Metric): Promise<PooledCurve> {
   const { data, error } = await api.GET("/api/curves", { params: { query: { metric, method: "pooled" } } });
   if (error) throw new Error("GET /api/curves failed");
-  return { games: data.games, currentRmse: data.current_rmse, priorRmse: data.prior.rmse };
+  return {
+    games: data.games,
+    currentRmse: data.current_rmse,
+    priorRmse: data.prior.rmse,
+    crossover: data.crossover,
+    n: data.n_observations,
+  };
 }
 
 /**

@@ -27,7 +27,9 @@ from __future__ import annotations
 import argparse
 import csv
 import glob
+import json
 import os
+import re
 import sqlite3
 import sys
 from collections import defaultdict
@@ -124,6 +126,42 @@ CREATE TABLE saved_scenarios (
     UNIQUE (user_id, name)
 );
 CREATE INDEX idx_scenarios_user ON saved_scenarios(user_id);
+
+-- Understat's own player id is stable across seasons (spot-checked: Salah is
+-- id 1250 in both the 2023 and 2024 files), so it -- not a surrogate -- is
+-- the key here alongside season_id.
+--
+-- team_id is NULL for a player who moved clubs mid-season: Understat reports
+-- one row for them with team_title comma-separated ("Aston Villa,Manchester
+-- United", 97 rows / 2.0% of 4,806 player-seasons) and totals aggregated
+-- across both clubs with no way to split them back apart. Rather than
+-- silently attribute that row to either club, it is excluded from every
+-- per-club roster/aggregate (a plain `WHERE team_id = ?` already does this
+-- for free) -- see CLAUDE.md "4a. ETL" for why this side was picked over
+-- attributing to the first-listed club.
+CREATE TABLE players (
+    season_id    INTEGER NOT NULL REFERENCES seasons(id),
+    player_id    INTEGER NOT NULL,
+    name         TEXT    NOT NULL,
+    team_id      INTEGER REFERENCES teams(id),
+    position     TEXT    NOT NULL,
+    games        INTEGER NOT NULL,
+    minutes      INTEGER NOT NULL,
+    goals        INTEGER NOT NULL,
+    xg           REAL    NOT NULL,
+    assists      INTEGER NOT NULL,
+    xa           REAL    NOT NULL,
+    shots        INTEGER NOT NULL,
+    key_passes   INTEGER NOT NULL,
+    npg          INTEGER NOT NULL,
+    npxg         REAL    NOT NULL,
+    xg_chain     REAL    NOT NULL,
+    xg_buildup   REAL    NOT NULL,
+    yellow_cards INTEGER NOT NULL,
+    red_cards    INTEGER NOT NULL,
+    PRIMARY KEY (season_id, player_id)
+);
+CREATE INDEX idx_players_team ON players(season_id, team_id);
 """
 
 
@@ -157,6 +195,57 @@ def read_matches(raw_dir: str) -> list[dict]:
                     }
                 )
         print(f"  read {os.path.basename(path)}")
+    return rows
+
+
+_SEASON_FROM_JSON_NAME = re.compile(r"understat_EPL_(\d+)\.json$")
+
+
+def read_players(raw_dir: str) -> list[dict]:
+    """Reads the `players` array out of each season's raw JSON (not the CSV --
+    the match exporter only carries match rows; the player payload Understat
+    returns alongside it, 17 fields per player-season, lives only here)."""
+    paths = sorted(glob.glob(os.path.join(raw_dir, "understat_EPL_*.json")))
+    if not paths:
+        raise SystemExit(
+            f"no player files in {raw_dir}/.\n"
+            f"Run:  python3 scripts/fetch_understat.py\n"
+            f"(that script needs plain internet access to understat.com)"
+        )
+    rows = []
+    for path in paths:
+        season = int(_SEASON_FROM_JSON_NAME.search(os.path.basename(path)).group(1))
+        with open(path, encoding="utf-8") as fh:
+            payload = json.load(fh)
+        for p in payload["players"]:
+            teams = p["team_title"].split(",")
+            rows.append(
+                {
+                    "season": season,
+                    "player_id": int(p["id"]),
+                    "name": p["player_name"],
+                    # None (never looked up against the teams table) for a
+                    # mid-season transfer -- see the players table's own
+                    # comment in SCHEMA for why.
+                    "team": teams[0] if len(teams) == 1 else None,
+                    "position": p["position"],
+                    "games": int(p["games"]),
+                    "minutes": int(p["time"]),
+                    "goals": int(p["goals"]),
+                    "xg": float(p["xG"]),
+                    "assists": int(p["assists"]),
+                    "xa": float(p["xA"]),
+                    "shots": int(p["shots"]),
+                    "key_passes": int(p["key_passes"]),
+                    "npg": int(p["npg"]),
+                    "npxg": float(p["npxG"]),
+                    "xg_chain": float(p["xGChain"]),
+                    "xg_buildup": float(p["xGBuildup"]),
+                    "yellow_cards": int(p["yellow_cards"]),
+                    "red_cards": int(p["red_cards"]),
+                }
+            )
+        print(f"  read {os.path.basename(path)} ({len(payload['players'])} players)")
     return rows
 
 
@@ -229,6 +318,10 @@ def build(raw_dir: str, db_path: str) -> None:
     matches = read_matches(raw_dir)
     print(f"  {len(matches)} matches total")
 
+    players = read_players(raw_dir)
+    multi_club = sum(1 for p in players if p["team"] is None)
+    print(f"  {len(players)} player-seasons total ({multi_club} mid-season transfers, excluded from every club)")
+
     states = build_team_states(matches)
     print(f"  {len(states)} team-state rows")
 
@@ -297,6 +390,42 @@ def build(raw_dir: str, db_path: str) -> None:
         ],
     )
 
+    unmatched_team = {p["team"] for p in players if p["team"] is not None} - set(team_id)
+    if unmatched_team:
+        print(f"  ! player rows reference teams absent from the matches table: {unmatched_team}", file=sys.stderr)
+
+    con.executemany(
+        """INSERT INTO players
+           (season_id, player_id, name, team_id, position, games, minutes, goals,
+            xg, assists, xa, shots, key_passes, npg, npxg, xg_chain, xg_buildup,
+            yellow_cards, red_cards)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+        [
+            (
+                season_id[p["season"]],
+                p["player_id"],
+                p["name"],
+                team_id.get(p["team"]) if p["team"] is not None else None,
+                p["position"],
+                p["games"],
+                p["minutes"],
+                p["goals"],
+                p["xg"],
+                p["assists"],
+                p["xa"],
+                p["shots"],
+                p["key_passes"],
+                p["npg"],
+                p["npxg"],
+                p["xg_chain"],
+                p["xg_buildup"],
+                p["yellow_cards"],
+                p["red_cards"],
+            )
+            for p in players
+        ],
+    )
+
     # Season pairs: consecutive seasons, with the teams that appear in both.
     teams_by_season = defaultdict(set)
     for m in matches:
@@ -335,6 +464,7 @@ def build(raw_dir: str, db_path: str) -> None:
         "teams": "SELECT COUNT(*) FROM teams",
         "matches": "SELECT COUNT(*) FROM matches",
         "team_state rows": "SELECT COUNT(*) FROM team_state",
+        "player-seasons": "SELECT COUNT(*) FROM players",
         "season pairs": "SELECT COUNT(*) FROM season_pairs",
     }
     for label, sql in checks.items():

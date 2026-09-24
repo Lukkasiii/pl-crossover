@@ -10,6 +10,8 @@ interface CompareCurveChartProps {
   curveB: PooledCurve;
   labelA: string;
   labelB: string;
+  /** The pooled fit's own crossover (the held-out-checked reference the rest of the site quotes), drawn as a third line so the two in-sample pair curves are read against it rather than against each other alone. */
+  pooledCrossover: number | null;
 }
 
 /**
@@ -19,8 +21,13 @@ interface CompareCurveChartProps {
  * marked. Not RmseChart: that component's shape is current-vs-prior for one
  * pair, not pair-vs-pair, and forcing a second unrelated shape onto it would
  * only make both harder to read.
+ *
+ * The x-axis is a numeric "value" axis, not "category" -- a per-pair
+ * crossover lands on an exact games count, but the pooled reference line
+ * below is a fractional interpolation (11.8, not 12), and a category axis
+ * cannot place a mark between two categories.
  */
-export function CompareCurveChart({ curveA, curveB, labelA, labelB }: CompareCurveChartProps) {
+export function CompareCurveChart({ curveA, curveB, labelA, labelB, pooledCrossover }: CompareCurveChartProps) {
   const { t } = useLocale();
   const option = useMemo<EChartsOption>(() => {
     const colors = getColors();
@@ -33,15 +40,16 @@ export function CompareCurveChart({ curveA, curveB, labelA, labelB }: CompareCur
     // tooltip already, so the label itself just needs the marker glyph.
     const seriesFor = (curve: PooledCurve, color: string, name: string, labelPosition: "insideEndTop" | "insideEndBottom"): LineSeriesOption => {
       const crossoverIndex = curve.currentRmse.findIndex((v) => v < curve.priorRmse);
+      const crossoverGames = crossoverIndex === -1 ? null : curve.games[crossoverIndex];
       return {
         name,
         type: "line",
-        data: curve.currentRmse,
+        data: curve.currentRmse.map((v, i) => [curve.games[i], v]),
         showSymbol: false,
         itemStyle: { color },
         lineStyle: { width: 2, color },
         markLine:
-          crossoverIndex === -1
+          crossoverGames === null
             ? undefined
             : {
                 silent: false,
@@ -49,28 +57,65 @@ export function CompareCurveChart({ curveA, curveB, labelA, labelB }: CompareCur
                 symbolSize: 8,
                 lineStyle: { color, width: 1, type: "dashed" },
                 label: { formatter: t("chart.crossoverMarker"), position: labelPosition, color, fontWeight: "bold", fontSize: 12 },
-                data: [{ xAxis: crossoverIndex }],
+                data: [{ xAxis: crossoverGames }],
               },
       };
     };
+
+    // A silent, dataless line whose only job is to host the pooled-reference
+    // markLine -- ECharts markLines belong to a series, and this one isn't
+    // "pair A" or "pair B". Left out of legend.data below so it never shows
+    // as a third selectable entry.
+    const pooledReference: LineSeriesOption | null =
+      pooledCrossover === null
+        ? null
+        : {
+            name: "pooled-reference",
+            type: "line",
+            data: [],
+            silent: true,
+            markLine: {
+              silent: false,
+              symbol: "none",
+              lineStyle: { color: colors.textSecondary, width: 1.5, type: "solid" },
+              label: {
+                formatter: t("compare.chart.pooledCrossoverLabel", { games: pooledCrossover.toFixed(1) }),
+                position: "insideStartTop",
+                color: colors.textSecondary,
+                fontWeight: "bold",
+                fontSize: 12,
+              },
+              data: [{ xAxis: pooledCrossover }],
+            },
+          };
 
     return {
       grid: { left: 48, right: 16, top: 32, bottom: 32 },
       tooltip: { trigger: "axis", valueFormatter: (v) => (v as number).toFixed(2) },
       legend: { top: 0, data: [labelA, labelB] },
       xAxis: {
-        type: "category",
+        type: "value",
         name: t("chart.gamesPlayed"),
-        data: curveA.games,
+        min: 1,
+        max: 38,
         axisLabel: { fontFamily: fonts.mono },
       },
-      yAxis: { type: "value", name: t("chart.rmsePositions"), axisLabel: { formatter: (v: number) => v.toFixed(2) } },
+      yAxis: {
+        type: "value",
+        name: t("chart.rmsePositions"),
+        // See RmseChart.tsx's identical comment: zero is not a meaningful
+        // RMSE here, and anchoring the axis there squashes every real value
+        // into a shallow band at the top of the chart.
+        scale: true,
+        axisLabel: { formatter: (v: number) => v.toFixed(2) },
+      },
       series: [
         seriesFor(curveA, colors.series1, labelA, "insideEndTop"),
         seriesFor(curveB, colors.series5, labelB, "insideEndBottom"),
+        ...(pooledReference ? [pooledReference] : []),
       ],
     };
-  }, [curveA, curveB, labelA, labelB, t]);
+  }, [curveA, curveB, labelA, labelB, pooledCrossover, t]);
 
   return <EChart option={option} />;
 }

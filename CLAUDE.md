@@ -47,7 +47,7 @@ everything built from here on. The "depth beats breadth" rule still applies
 | Layer | Status |
 |---|---|
 | Understat fetcher | done, tested |
-| ETL → SQLite | done, 14 tests passing |
+| ETL → SQLite, players table | done, 18 tests passing |
 | Model engine (OLS, LOSO, Bayesian, crossover) | done, reproduces the original study |
 | 38-matchweek curves | done, `data/curves.json` |
 | REST + WebSocket API | done, `api/tests` passing |
@@ -57,6 +57,7 @@ everything built from here on. The "depth beats breadth" rule still applies
 | Multi-page shell: routing, sidebar nav, design tokens (light theme), i18n | done (Stage 5) |
 | /season, /model content | done — the Stage 1–4 dashboard's panels split across the two |
 | Overview, Teams, Compare, Method page content | done (Stage 6) |
+| Player layer: `players` table, `/teams/:slug` Key players section | done (Stage 7) |
 | Ask the Model panel | not started |
 
 Pushed to `github.com/Lukkasiii/pl-crossover`.
@@ -107,6 +108,61 @@ common teams out of 20. They are excluded from the regression but kept in
 `pair_teams` with `in_pair = 0`, so the UI greys them out rather than dropping
 three clubs from the table with no explanation.
 
+**A mid-season transfer's row cannot be split back apart.** Understat's raw
+player payload (`data/raw/understat_EPL_<year>.json`'s `players` array, 17
+fields, 4,806 player-seasons across nine seasons) reports one row per player
+per season, not per club -- a player who changed clubs mid-season gets a
+single row with `team_title` comma-separated ("Aston Villa,Manchester
+United", 97 rows / 2.0% of the total) and every stat on it (minutes, goals,
+xG, ...) summed across both clubs. There is no per-club breakdown anywhere
+in the payload to split it back apart with.
+
+**Decision: attribute that row to no club, not to the first one listed.**
+`players.team_id` is `NULL` for these 97 rows rather than a guess. The
+alternative -- attributing to `team_title.split(",")[0]` -- would silently
+put some fraction of a player's goals-for-a-different-club onto a roster
+that never had them, a wrong number presented as a real one. `NULL` costs a
+squad list one row it can't otherwise place, which the UI states outright
+rather than hiding; a plain `WHERE team_id = ?` already excludes them from
+every per-club roster/aggregate for free, so there is no separate filter a
+caller could forget.
+
+**xGChain and xGBuildup, sourced before writing a word of copy about them.**
+Understat's own site publishes no glossary for either field (checked
+directly: understat.com has no about/FAQ/definitions page). Both metrics
+originate with StatsBomb's Thom Lawrence ("Introducing xGChain and
+xGBuildup", hudl.com/blog/introducing-xgchain-and-xgbuildup) and are
+independently confirmed, in full agreement, by American Soccer Analysis
+("Expected goal chains are back!",
+americansocceranalysis.com/home/2018/9/4/expected-goal-chains-are-back) and
+MartinOnData ("xGChain & xGBuildup 101",
+pythonfootball.com/p/xgchain-and-xgbuildup-101):
+
+- **xGChain** — the total xG of every shot from a possession a player took
+  part in *at any point* -- a pass, a dribble, a drawn foul, a key pass, or
+  the shot itself. Everyone who touched the move gets full credit for the
+  eventual shot's xG.
+- **xGBuildup** — a **per-possession, per-player exclusion**, not a
+  subtraction of two actions' values from the same total (an easy misreading
+  of Lawrence's original, loosest wording, "exclude shots and assists from
+  the possession chains"). For each possession chain, whoever took the shot
+  or made the key pass gets **nothing at all** from that chain -- not
+  "xGChain minus his shot"; the whole chain drops out for him, even though he
+  was also involved earlier in it. ASA is explicit: "we identify all the
+  possession chains in which that player made a successful pass or dribble,
+  or earned a foul, but didn't take a shot or complete a key pass."
+  MartinOnData, independently: "Start with xGChain. Exclude the players who
+  made the final two touches -- the key pass and the shot." A striker who
+  plays the first pass of a move and then scores from it himself gets
+  **zero** xGBuildup from that chain, not his xGChain total minus the shot's
+  value -- which is exactly why xGBuildup runs high for deep-lying
+  midfielders and near zero for pure finishers.
+
+Understat implements this definition (not a variant); the three sources
+agree with each other on the mechanism above, so there is no disagreement to
+present both sides of -- the earlier draft of this note mis-stated that
+mechanism as a two-action subtraction, which was wrong, not the sourcing.
+
 ## Data model (`data/pl.db`, SQLite)
 
 ```
@@ -120,6 +176,11 @@ team_state(season_id, team_id, games_played,       <- the core table
            points, xg, xga, xgd, live_rank)        6,840 rows
 season_pairs(id, prior_season_id, current_season_id, label, common_team_count)
 pair_teams(pair_id, team_id, in_pair, final_rank)
+players(season_id, player_id, name, team_id,       <- team_id NULL for a
+        position, games, minutes, goals, xg,          mid-season transfer,
+        assists, xa, shots, key_passes, npg, npxg,     see above -- 4,806 rows,
+        xg_chain, xg_buildup,                          97 with team_id NULL
+        yellow_cards, red_cards)
 users(id, email, password_hash, created_at)
 saved_scenarios(id, user_id, name, params, created_at, updated_at)
 ```
@@ -154,6 +215,20 @@ matches the original study exactly.
 
 **The weight crossover and the RMSE crossover are different events.** One is a
 property of the model, the other of the data. Plot both; do not conflate them.
+
+**A single season pair's own regression has no held-out check, and the app
+says so.** `compute_curve` (and `GET /api/curves`) can be scoped to one pair's
+own ~17 observations via `pair_id`, reusing the same `ols_fit` the pooled
+curve uses -- real numbers, not invented ones. But 17 observations and two
+parameters is a small in-sample fit, and LOSO needs more than one group to
+leave one out of, so it cannot be computed at that size. Across the eight
+pairs those in-sample crossovers range from about 1 to about 37 games
+(pair 6 crosses at ~1, pair 8 at ~36.6) -- mostly estimation noise, not eight
+different football facts. `/compare`'s "season pairs" mode is the only place
+this fit is shown, and it says exactly that in its own caption, with the
+pooled fit's crossover (the 11.8 the rest of the site quotes, the one with a
+held-out check behind it) drawn alongside as a reference line. Do not surface
+a per-pair crossover anywhere else without the same caveat.
 
 ## Results to preserve
 
@@ -273,9 +348,15 @@ server should not be needed for the suite.
 ```
 GET  /api/seasons                      season pairs, team counts
 GET  /api/pairs/{id}/table?games=N     league table at N games, with live_rank
-GET  /api/curves?metric=xg&method=pooled
+GET  /api/team-seasons                 every team's history across season pairs
+GET  /api/team-players?pair_id&team_id squad for one team's season in a pair,
+                                       plus the season's excluded-transfer count
+GET  /api/curves?metric=xg&method=pooled&pair_id=
                                        RMSE/MAE/R² per matchweek, prior baseline,
-                                       crossover, LOSO series
+                                       crossover, LOSO series -- pair_id scopes
+                                       the same fit to just that pair's ~17
+                                       observations (no LOSO at that size); see
+                                       "The model" section below
 POST /api/predict                      {metric, games, prior_weight, obs_variance}
 POST /api/ask                          preset question id -> cached answer + tool trace
 WS   /ws/replay?pair={id}            two-way: client sends play/pause/seek,
@@ -338,7 +419,7 @@ diluting the 30-second read — a wall of panels reads as *more*, not as
 | `/season` | Season Replay Engine — the Stage 1–4 dashboard (replay, RMSE curve, prediction tuner, standings) moved here unchanged |
 | `/model` | The Bayesian model explained: the blend formula, prior-share-by-checkpoint table |
 | `/teams` | All teams, one list |
-| `/teams/:slug` | One team's history across season pairs |
+| `/teams/:slug` | One team's history across season pairs, plus a Key players table for the selected season |
 | `/compare` | Side-by-side: two teams, or two season pairs |
 | `/method` | The three methodologies (pooled / per-season / rank-based) and why only two ship — see "Results to preserve" above |
 | `/scenarios` | Saved scenarios — the Stage 4 auth + scenarios panel moved here unchanged. Auth-gated *for saving*, same rule as before: signed out shows a sign-in prompt inline, never a redirect wall |

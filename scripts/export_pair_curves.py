@@ -38,6 +38,7 @@ def main() -> None:
                     "priorRmse": round(c["prior"].rmse, 4),
                     "currentRmse": [round(f.rmse, 4) for f in c["current"]],
                     "crossover": c["crossover"],
+                    "n": c["n_observations"],
                 }
     finally:
         con.close()

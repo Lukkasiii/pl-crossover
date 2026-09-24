@@ -117,6 +117,49 @@ def test_auth_tables_exist(db):
     assert {"users", "saved_scenarios"} <= names
 
 
+# --- players ----------------------------------------------------------------
+
+
+def test_player_rows_exist_for_every_season(db):
+    rows = db.execute("SELECT season_id, COUNT(*) c FROM players GROUP BY season_id").fetchall()
+    assert len(rows) == 2
+    assert all(r["c"] > 0 for r in rows)
+
+
+def test_non_penalty_stats_never_exceed_the_total(db):
+    """npg/npxG are the total with penalties stripped out -- they can never
+    exceed goals/xG (see CLAUDE.md "4a. ETL" for the field definitions)."""
+    bad = db.execute("SELECT COUNT(*) FROM players WHERE goals < npg OR xg < npxg - 1e-9").fetchone()[0]
+    assert bad == 0
+
+
+def test_minutes_never_exceed_a_full_38_game_season(db):
+    bad = db.execute("SELECT COUNT(*) FROM players WHERE minutes > 38 * 90").fetchone()[0]
+    assert bad == 0
+
+
+def test_mid_season_transfers_have_no_club_and_are_excluded_from_rosters(db):
+    """A player Understat reports under two clubs (comma team_title) gets
+    team_id = NULL rather than attributed to either -- see the players
+    table's own comment in build_db.py for why. That must mean a plain
+    per-club roster query (`WHERE team_id = ?`) already excludes them, with
+    no separate filter a caller could forget, and every other player is
+    attributed to exactly one club."""
+    season_id = db.execute("SELECT id FROM seasons ORDER BY id LIMIT 1").fetchone()["id"]
+    total = db.execute("SELECT COUNT(*) FROM players WHERE season_id = ?", (season_id,)).fetchone()[0]
+    unattributed = db.execute(
+        "SELECT COUNT(*) FROM players WHERE season_id = ? AND team_id IS NULL", (season_id,)
+    ).fetchone()[0]
+    assert unattributed == 2  # factory.py writes exactly two per synthetic season
+    rostered = db.execute(
+        """SELECT COUNT(*) FROM players p
+           JOIN teams t ON t.id = p.team_id
+           WHERE p.season_id = ?""",
+        (season_id,),
+    ).fetchone()[0]
+    assert rostered == total - unattributed
+
+
 # --- model ----------------------------------------------------------------
 
 

@@ -1,7 +1,7 @@
 import type { Metric } from "../ws/types";
 import type { PooledCurve } from "./predictGrid";
 
-type PairCurves = Record<string, Record<Metric, { priorRmse: number; currentRmse: number[]; crossover: number | null }>>;
+type PairCurves = Record<string, Record<Metric, { priorRmse: number; currentRmse: number[]; crossover: number | null; n: number }>>;
 
 let pairCurvesPromise: Promise<PairCurves> | null = null;
 
@@ -20,5 +20,11 @@ export async function lookupPairCurve(metric: Metric, pairId: number): Promise<P
   const curves = await loadPairCurves();
   const entry = curves[String(pairId)]?.[metric];
   if (!entry) throw new Error(`demo pair-curves.json has no entry for pair ${pairId}, metric ${metric}`);
-  return { games: Array.from({ length: entry.currentRmse.length }, (_, i) => i + 1), currentRmse: entry.currentRmse, priorRmse: entry.priorRmse };
+  return {
+    games: Array.from({ length: entry.currentRmse.length }, (_, i) => i + 1),
+    currentRmse: entry.currentRmse,
+    priorRmse: entry.priorRmse,
+    crossover: entry.crossover,
+    n: entry.n,
+  };
 }

@@ -39,6 +39,13 @@ export function RmseChart({ metric, roundsSoFar }: RmseChartProps) {
       yAxis: {
         type: "value",
         name: t("chart.rmsePositions"),
+        // A "value" axis anchors at zero unless told not to -- zero is not a
+        // meaningful RMSE here (nothing is ever near it, and there is no
+        // part-of-a-whole reading a zero baseline would protect), so without
+        // this every real value gets squashed into the top third of the
+        // chart and the crossover reads as a shallow crossing instead of the
+        // event it is.
+        scale: true,
         axisLabel: { formatter: (v: number) => v.toFixed(2) },
       },
       series: [

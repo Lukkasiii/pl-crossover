@@ -8,7 +8,13 @@ import type { Metric } from "../ws/types";
 async function fetchPairCurveLive(metric: Metric, pairId: number): Promise<PooledCurve> {
   const { data, error } = await api.GET("/api/curves", { params: { query: { metric, pair_id: pairId } } });
   if (error) throw new Error("GET /api/curves failed");
-  return { games: data.games, currentRmse: data.current_rmse, priorRmse: data.prior.rmse };
+  return {
+    games: data.games,
+    currentRmse: data.current_rmse,
+    priorRmse: data.prior.rmse,
+    crossover: data.crossover,
+    n: data.n_observations,
+  };
 }
 
 function keyFor(metric: Metric, pairId: number | null): string | null {
