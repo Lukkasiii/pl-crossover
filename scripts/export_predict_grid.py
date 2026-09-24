@@ -27,7 +27,15 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from api.app.analytics import load_observations  # noqa: E402
 from api.app.config import get_settings  # noqa: E402
 from api.app.db import connect  # noqa: E402
-from api.app.model import DEFAULT_OBS_VARIANCE, bayes_blend, bayes_weights, ols_fit, predicted_rank, score_residuals  # noqa: E402
+from api.app.model import (  # noqa: E402
+    DEFAULT_OBS_VARIANCE,
+    bayes_blend,
+    bayes_weights,
+    find_crossover,
+    ols_fit,
+    predicted_rank,
+    score_residuals,
+)
 
 OUT_PATH = os.path.join(os.path.dirname(__file__), "..", "web", "public", "demo", "predict-grid.json")
 METRICS = ["xg", "xgd", "gd", "points"]
@@ -64,6 +72,7 @@ def main() -> None:
     current_fit_out: dict[str, list[dict]] = {}
     blended_rmse_out: dict[str, list[list[float]]] = {}
     blended_mae_out: dict[str, list[list[float]]] = {}
+    crossover_out: dict[str, float | None] = {}
 
     for metric in METRICS:
         prior_x = np.array([o.prior[metric] for o in observations], dtype=float)
@@ -92,6 +101,11 @@ def main() -> None:
         current_fit_out[metric] = current_fit_rows
         blended_rmse_out[metric] = blended_rmse_rows
         blended_mae_out[metric] = blended_mae_rows
+        # The pooled fit's own crossover -- the held-out-checked reference
+        # /compare's "season pairs" mode draws its per-pair curves against,
+        # since a single pair's own crossover is in-sample noise (see
+        # api/app/analytics.py's compute_curve docstring).
+        crossover_out[metric] = find_crossover(GAMES, [f["rmse"] for f in current_fit_rows], prior_fit.rmse)
 
     grid = {
         "games": GAMES,
@@ -103,6 +117,7 @@ def main() -> None:
         "weightData": weight_data,
         "blendedRmse": blended_rmse_out,
         "blendedMae": blended_mae_out,
+        "crossover": crossover_out,
     }
 
     os.makedirs(os.path.dirname(OUT_PATH), exist_ok=True)

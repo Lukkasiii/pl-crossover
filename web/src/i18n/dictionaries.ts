@@ -196,7 +196,9 @@ export const en = {
   "compare.chart.rankBySeason.heading": "Final rank by season",
   "compare.chart.rmseCurves.heading": "RMSE curve, xG",
   "compare.chart.rmseCurves.caption":
-    "Each pair's own regression on its own ~17 teams, not the single shared pooled curve every replay round shows -- see /method for that distinction. This is why the two curves (and their crossover points) genuinely differ.",
+    "Each curve here is that pair's own regression on its own ~17 teams, scored in-sample on the same rows it was fitted to -- there is no held-out check available at that sample size (LOSO needs more than one group). Across the eight season pairs that produces crossovers ranging from about 1 to about 37 games, and that spread is mostly estimation noise, not eight different football facts. The grey reference line is the pooled fit on all 136 observations -- the 11.8 the rest of the site quotes -- the only one of the three with a held-out check behind it.",
+  "compare.chart.pooledCrossoverLabel": "pooled crossover ({games})",
+  "compare.chart.pairLabelWithN": "{label} (n={n})",
   "compare.table.heading": "Summary",
   "compare.table.stat": "Stat",
   "compare.table.delta": "Delta (A − B)",
@@ -418,7 +420,9 @@ export const zh = {
   "compare.chart.rankBySeason.heading": "各赛季最终名次",
   "compare.chart.rmseCurves.heading": "RMSE 曲线（xG）",
   "compare.chart.rmseCurves.caption":
-    "各自基于其自身约 17 支球队的独立回归，而非每次回放都会展示的那条共用的合并曲线——两者的区别见「方法论」页。这正是两条曲线（及其交叉点）明显不同的原因。",
+    "这里的每条曲线都是该赛季组合基于其自身约 17 支球队的独立回归，且是在拟合所用的那些行上做同内样本评分——在这样的样本量下没有留出集可供检验（LOSO 至少需要一个以上的分组）。在全部八组赛季组合中，这会得到从约 1 场到约 37 场不等的交叉点，而这种差异主要来自估计噪声，而非八个不同的足球事实。灰色参考线是基于全部 136 个观测值的合并拟合——也就是本站其他地方引用的 11.8——三者之中唯一有留出集检验支撑的一个。",
+  "compare.chart.pooledCrossoverLabel": "合并交叉点（{games}）",
+  "compare.chart.pairLabelWithN": "{label}（n={n}）",
   "compare.table.heading": "汇总",
   "compare.table.stat": "指标",
   "compare.table.delta": "差值（A − B）",

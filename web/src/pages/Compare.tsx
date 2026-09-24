@@ -3,6 +3,7 @@ import { useLocale } from "../i18n/LocaleContext";
 import { useTeamSeasons, type TeamOut } from "../api/useTeamSeasons";
 import { useSeasons } from "../api/useSeasons";
 import { usePairCurve } from "../api/usePairCurve";
+import { usePooledCurve } from "../api/usePooledCurve";
 import { Select } from "../components/ui/Select";
 import { RankLineChart } from "../charts/RankLineChart";
 import { CompareCurveChart } from "../charts/CompareCurveChart";
@@ -122,6 +123,10 @@ function PairsCompare() {
 
   const { curve: curveA } = usePairCurve("xg", effectiveAId);
   const { curve: curveB } = usePairCurve("xg", effectiveBId);
+  // The held-out-checked reference the two in-sample pair curves are drawn
+  // against -- see the caption below and CLAUDE.md's "in-sample and
+  // held-out scores are always reported together".
+  const { curve: pooledCurve } = usePooledCurve("xg");
 
   if (!pairs) return <p className="placeholder-note">{t("app.loadingPage")}</p>;
 
@@ -158,7 +163,13 @@ function PairsCompare() {
         <p className="panel-framing">{t("compare.chart.rmseCurves.caption")}</p>
         {curveA && curveB ? (
           <div className="chart-box">
-            <CompareCurveChart curveA={curveA} curveB={curveB} labelA={pairA.label} labelB={pairB.label} />
+            <CompareCurveChart
+              curveA={curveA}
+              curveB={curveB}
+              labelA={t("compare.chart.pairLabelWithN", { label: pairA.label, n: curveA.n })}
+              labelB={t("compare.chart.pairLabelWithN", { label: pairB.label, n: curveB.n })}
+              pooledCrossover={pooledCurve?.crossover ?? null}
+            />
           </div>
         ) : (
           <p className="placeholder-note">{t("app.loadingPage")}</p>
