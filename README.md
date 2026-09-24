@@ -16,6 +16,8 @@ crossover exactly rather than bracketing it: **11.8 games**, not "≈12."
 It is also a portfolio project built for a Frontend Engineer Intern application —
 see [Frontend decisions](#frontend-decisions) for what that means in practice.
 
+![The replay running: standings updating round by round and the crossover marker landing on the RMSE curve around game 12](design/replay-crossover.gif)
+
 **Demo account** (only needed to save named parameter sets — see
 [Auth and saved scenarios](#auth-and-saved-scenarios)):
 
@@ -601,6 +603,7 @@ data/
 design/
   mockup.png                  Figma-first mockup, next to the built result
   auth-scenarios.gif           e2e/auth-scenarios.spec.ts, recorded
+  replay-crossover.gif         e2e-gif/replay-crossover.spec.ts, recorded
 ```
 
 ## Sources
