@@ -9,6 +9,12 @@ import styles from "./Teams.module.css";
 
 type SortKey = "name" | "seasons" | "bestRank" | "points";
 
+// meanPoints is rounded to 1dp before formatting, but Intl drops a trailing
+// zero on an otherwise-integral mean (55.0 -> "55") -- forcing exactly one
+// fraction digit is what keeps the column's precision from looking ragged
+// (Arsenal "70.8" next to Aston Villa "55"). Shared wherever a mean is shown.
+export const MEAN_POINTS_FORMAT: Intl.NumberFormatOptions = { minimumFractionDigits: 1, maximumFractionDigits: 1 };
+
 export interface TeamStats {
   seasonsPlayed: number;
   bestRank: number;
@@ -127,7 +133,7 @@ export default function Teams() {
                     </div>
                     <div>
                       <dt>{t("teams.card.meanPoints")}</dt>
-                      <dd>{formatNumber(stats.meanPoints)}</dd>
+                      <dd>{formatNumber(stats.meanPoints, MEAN_POINTS_FORMAT)}</dd>
                     </div>
                   </dl>
                 </Link>

@@ -8,16 +8,23 @@ import { Select } from "../components/ui/Select";
 import { RankLineChart } from "../charts/RankLineChart";
 import { CompareCurveChart } from "../charts/CompareCurveChart";
 import { broadcastName } from "../teamNames";
-import { summarize, type TeamStats } from "./Teams";
+import { MEAN_POINTS_FORMAT, summarize, type TeamStats } from "./Teams";
 import styles from "./Compare.module.css";
 
 type Mode = "teams" | "pairs";
 
-const STAT_ROWS: { key: keyof TeamStats; labelKey: "teams.card.seasons" | "teams.card.bestRank" | "teams.card.worstRank" | "teams.card.meanPoints" }[] = [
+const STAT_ROWS: {
+  key: keyof TeamStats;
+  labelKey: "teams.card.seasons" | "teams.card.bestRank" | "teams.card.worstRank" | "teams.card.meanPoints";
+  // Only meanPoints is a genuine mean (can be a non-integer); the other
+  // three are plain counts/ranks that are always whole, so forcing a
+  // decimal on them would claim a precision the stat doesn't have.
+  format?: Intl.NumberFormatOptions;
+}[] = [
   { key: "seasonsPlayed", labelKey: "teams.card.seasons" },
   { key: "bestRank", labelKey: "teams.card.bestRank" },
   { key: "worstRank", labelKey: "teams.card.worstRank" },
-  { key: "meanPoints", labelKey: "teams.card.meanPoints" },
+  { key: "meanPoints", labelKey: "teams.card.meanPoints", format: MEAN_POINTS_FORMAT },
 ];
 
 function TeamsCompare({ teams }: { teams: TeamOut[] }) {
@@ -96,9 +103,9 @@ function TeamsCompare({ teams }: { teams: TeamOut[] }) {
                   <th scope="row" style={{ textAlign: "left" }}>
                     {t(row.labelKey)}
                   </th>
-                  <td>{formatNumber(statsA[row.key])}</td>
-                  <td>{formatNumber(statsB[row.key])}</td>
-                  <td>{formatNumber(Math.round((statsA[row.key] - statsB[row.key]) * 10) / 10)}</td>
+                  <td>{formatNumber(statsA[row.key], row.format)}</td>
+                  <td>{formatNumber(statsB[row.key], row.format)}</td>
+                  <td>{formatNumber(Math.round((statsA[row.key] - statsB[row.key]) * 10) / 10, row.format)}</td>
                 </tr>
               ))}
             </tbody>

@@ -11,7 +11,7 @@ interface LocaleContextValue {
   locale: Locale;
   setLocale: (locale: Locale) => void;
   t: (key: TranslationKey, params?: Record<string, string | number>) => string;
-  formatNumber: (n: number) => string;
+  formatNumber: (n: number, options?: Intl.NumberFormatOptions) => string;
   formatDate: (iso: string) => string;
 }
 
@@ -42,7 +42,8 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
       if (!params) return raw;
       return raw.replace(/\{(\w+)\}/g, (_match, name: string) => String(params[name] ?? ""));
     };
-    const formatNumber = (n: number) => new Intl.NumberFormat(locale === "zh" ? "zh-CN" : "en-US").format(n);
+    const formatNumber = (n: number, options?: Intl.NumberFormatOptions) =>
+      new Intl.NumberFormat(locale === "zh" ? "zh-CN" : "en-US", options).format(n);
     const formatDate = (iso: string) =>
       new Intl.DateTimeFormat(locale === "zh" ? "zh-CN" : "en-US", { dateStyle: "medium" }).format(new Date(iso));
     const setLocale = (next: Locale) => {
