@@ -134,19 +134,34 @@ originate with StatsBomb's Thom Lawrence ("Introducing xGChain and
 xGBuildup", hudl.com/blog/introducing-xgchain-and-xgbuildup) and are
 independently confirmed, in full agreement, by American Soccer Analysis
 ("Expected goal chains are back!",
-americansocceranalysis.com/home/2018/9/4/expected-goal-chains-are-back):
+americansocceranalysis.com/home/2018/9/4/expected-goal-chains-are-back) and
+MartinOnData ("xGChain & xGBuildup 101",
+pythonfootball.com/p/xgchain-and-xgbuildup-101):
 
 - **xGChain** — the total xG of every shot from a possession a player took
   part in *at any point* -- a pass, a dribble, a drawn foul, a key pass, or
   the shot itself. Everyone who touched the move gets full credit for the
   eventual shot's xG.
-- **xGBuildup** — the same, minus the player's *own* key passes and shots.
-  Both sources agree this is exactly two actions excluded (the assist and
-  the shot), not one -- xGBuildup credits the earlier build-up
-  specifically, never the pass or shot that finished the move.
+- **xGBuildup** — a **per-possession, per-player exclusion**, not a
+  subtraction of two actions' values from the same total (an easy misreading
+  of Lawrence's original, loosest wording, "exclude shots and assists from
+  the possession chains"). For each possession chain, whoever took the shot
+  or made the key pass gets **nothing at all** from that chain -- not
+  "xGChain minus his shot"; the whole chain drops out for him, even though he
+  was also involved earlier in it. ASA is explicit: "we identify all the
+  possession chains in which that player made a successful pass or dribble,
+  or earned a foul, but didn't take a shot or complete a key pass."
+  MartinOnData, independently: "Start with xGChain. Exclude the players who
+  made the final two touches -- the key pass and the shot." A striker who
+  plays the first pass of a move and then scores from it himself gets
+  **zero** xGBuildup from that chain, not his xGChain total minus the shot's
+  value -- which is exactly why xGBuildup runs high for deep-lying
+  midfielders and near zero for pure finishers.
 
-Understat implements this definition (not a variant); the two sources agree
-with each other, so there is no disagreement to present both sides of.
+Understat implements this definition (not a variant); the three sources
+agree with each other on the mechanism above, so there is no disagreement to
+present both sides of -- the earlier draft of this note mis-stated that
+mechanism as a two-action subtraction, which was wrong, not the sourcing.
 
 ## Data model (`data/pl.db`, SQLite)
 

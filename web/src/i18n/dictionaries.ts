@@ -209,7 +209,7 @@ export const en = {
   "panelInfo.xgChain":
     "The total xG of every shot from a possession this player took part in at any point this season -- a pass, a dribble, a drawn foul, a key pass, or the shot itself. Everyone who touched the move gets full credit for the eventual shot's xG.",
   "panelInfo.xgBuildup":
-    "The same as xGChain, but with this player's own key passes and shots excluded -- credit for building the move, not for the pass or shot that finished it.",
+    "The same possession chains as xGChain, but only the ones where this player did not take the shot or make the key pass -- a move they finished themselves counts for nothing here, however they started it. That's why xGBuildup runs high for deep-lying midfielders and near zero for pure finishers.",
   "compare.subtitle": "Two teams, or two season pairs, side by side.",
   "compare.mode.teams": "Teams",
   "compare.mode.pairs": "Season pairs",
@@ -458,7 +458,7 @@ export const zh = {
   "panelInfo.xgChain":
     "本赛季中，该球员在任意阶段参与过的、最终形成射门的进攻串联所对应的全部 xG——无论是传球、带球、造成犯规、关键传球，还是射门本身。参与这次进攻的每个人都会被记为这次射门 xG 的全额贡献。",
   "panelInfo.xgBuildup":
-    "与 xGChain 相同，但排除了该球员自己完成的关键传球和射门——只计入他在推进进攻过程中的贡献，不计入终结这次进攻的传球或射门本身。",
+    "与 xGChain 统计的是同一批进攻串联，但只计入该球员既没有射门、也没有送出关键传球的那些串联——只要他自己终结了这次进攻，无论他更早参与了多少，这次串联对他的 xGBuildup 贡献都是零。这正是为什么组织型中场的 xGBuildup 普遍较高，而纯粹的终结者则接近于零。",
   "compare.subtitle": "两支球队，或两组赛季组合，并列对比。",
   "compare.mode.teams": "球队",
   "compare.mode.pairs": "赛季组合",
