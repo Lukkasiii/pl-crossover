@@ -20,6 +20,29 @@
      header, so scrolling the table never scrolls the page around it. */
   overflow: auto;
   max-height: 560px;
+  position: relative;
+}
+
+/* The stationary zone bands (see StandingsTable.tsx): absolutely placed
+   inside the scroll wrapper, so they scroll with the table but never move
+   when rows reorder. The table sits above them in its own stacking layer. */
+.backdrop {
+  position: absolute;
+  top: 0;
+  pointer-events: none;
+}
+
+.stripe {
+  position: absolute;
+  left: 0;
+  right: 0;
+  box-sizing: border-box;
+  border-left: 3px solid transparent;
+}
+
+.table.stationary {
+  position: relative;
+  z-index: 1;
 }
 
 .table {
@@ -116,13 +139,22 @@
   background: var(--panel);
 }
 
-/* brightness, not a background swap: every row's background is now
-   meaningful (the zone tint), so hover has to layer on top of whatever
-   that is rather than replacing it. Darkens, not lightens -- on the light
-   surfaces below, brightness > 1 clips near-white/pastel backgrounds
-   straight to white and erases the zone tint instead of highlighting it. */
-.table tbody tr.hovered {
-  filter: brightness(0.97);
+/* Transparent so the stationary backdrop shows through. The trade-off the
+   opaque background above existed to avoid: two rows swapping places now
+   show both rows' text for the few frames they overlap mid-slide. At 180ms
+   (useFlip.ts) that's a brief crossfade, where the alternative was every
+   band sliding around the table on every swap. */
+.table.stationary tbody tr {
+  background: transparent;
+}
+
+/* A translucent layer on the cells, not a background swap: the zone tint
+   underneath is meaningful -- on the row itself in a filtered view, on the
+   stationary backdrop otherwise -- so hover darkens whatever is there
+   rather than replacing it. A filter on the <tr> did this before, but a
+   filter on a transparent row has nothing to darken. */
+.table tbody tr.hovered td {
+  background-image: linear-gradient(rgb(24 24 27 / 0.04), rgb(24 24 27 / 0.04));
 }
 
 /* Not `opacity` -- at a low enough value to read as visibly "excluded" it

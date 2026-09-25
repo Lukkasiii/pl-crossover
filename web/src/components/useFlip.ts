@@ -1,6 +1,11 @@
 import { useEffect, useLayoutEffect, useRef } from "react";
 
-const FLIP_DURATION_MS = 400;
+// Shorter than the 200ms gap between match frames at 1x (BASE_FRAME_INTERVAL
+// in routers/replay.py, BASE_FRAME_INTERVAL_MS in useDemoReplay.ts): at the
+// old 400ms every reorder at 1x was still mid-flight when the next frame
+// landed, so the table was never at rest. Ease-out, so most of the travel
+// happens early and a row reads as "arrived" well before the next frame.
+const FLIP_DURATION_MS = 180;
 const easeOutCubic = (t: number) => 1 - (1 - t) ** 3;
 
 /**
@@ -30,6 +35,12 @@ export function useFlip<K>(keys: readonly K[], getRow: (key: K) => HTMLElement |
   const prevRects = useRef<Map<K, DOMRect>>(new Map());
   const prevKeys = useRef<readonly K[]>([]);
   const activeRafs = useRef<Map<K, number>>(new Map());
+  // The translateY each row is visually offset by right now -- tracked here
+  // rather than read back from the DOM (see below for why reading it back
+  // is unreliable), so an interrupted animation can resume from where the
+  // row actually is on screen instead of snapping back to its last layout
+  // position first. At faster speeds interruption is the normal case.
+  const currentOffsets = useRef<Map<K, number>>(new Map());
 
   useLayoutEffect(() => {
     // A re-render that doesn't actually reorder `keys` must be a no-op here,
@@ -76,7 +87,11 @@ export function useFlip<K>(keys: readonly K[], getRow: (key: K) => HTMLElement |
       for (const [key, next] of nextRects) {
         const prev = prevRects.current.get(key);
         if (!prev) continue; // newly mounted row -- nothing to animate from
-        const deltaY = prev.top - next.top;
+        // Where the row was *drawn* just before this commit: its previous
+        // layout position plus whatever offset its interrupted animation
+        // had reached.
+        const deltaY = prev.top + (currentOffsets.current.get(key) ?? 0) - next.top;
+        currentOffsets.current.delete(key);
         if (deltaY === 0) continue;
 
         const el = getRow(key);
@@ -86,10 +101,12 @@ export function useFlip<K>(keys: readonly K[], getRow: (key: K) => HTMLElement |
           const t = Math.min((now - start) / FLIP_DURATION_MS, 1);
           const offset = deltaY * (1 - easeOutCubic(t));
           el.style.transform = offset === 0 ? "none" : `translateY(${offset}px)`;
+          currentOffsets.current.set(key, offset);
           if (t < 1) {
             activeRafs.current.set(key, requestAnimationFrame(tick));
           } else {
             activeRafs.current.delete(key);
+            currentOffsets.current.delete(key);
           }
         };
         activeRafs.current.set(key, requestAnimationFrame(tick));

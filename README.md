@@ -516,12 +516,52 @@ this machine, and the reason lives in a different line than the one the
 pitch describes.** A small, honest number instead of the large one "decouple
 the arrival rate from the render rate" implied — see CLAUDE.md's working
 style on exactly this: a properly-measured small effect is a better answer
-than an invented large one. Gating `FrameCache`'s own notification on
-whether the snapshot the current `viewSeq` resolves to actually changed is
-the real next step; not done here — this task was to measure the existing
-mechanism, not to change it out from under the measurement. Reproduce with
+than an invented large one. Reproduce with
 `npx playwright test --config=playwright.perf.config.ts` (see
 `e2e-perf/README.md`).
+
+**Follow-up: gating the cache's notification.** `FrameCache.add()` now
+notifies subscribers only when the frame is at or before the playhead the UI
+last read (`frameCache.ts`) — during playback nearly every message is *ahead*
+of it, so nothing re-renders until the next state commit moves the playhead.
+Same harness, same machine, same day, interleaved ×8 per arm; the "before"
+row swaps in only the old `frameCache.ts` with everything else on the branch
+identical:
+
+| 50x, full season, median (spread), n=8 | duration (ms) | long tasks (count) | long tasks (total ms) | messages |
+|---|---|---|---|---|
+| before gate — coalesced | 6537 (3177) | 7 (36) | 360 (3302) | 330 |
+| before gate — bypassed | 6636 (2411) | 7 (30) | 356 (2861) | 325 |
+| after gate — coalesced | 2047 (100) | 5 (2) | 337 (139) | 417 |
+| after gate — bypassed | 1892 (64) | 3.5 (1) | 228 (72) | 387 |
+
+The gate is the real win: a 50x season finishes in ~2s instead of ~6.5s
+(server pacing alone is 418 × 4ms ≈ 1.7s), and the run-to-run spread
+collapses from seconds to ~100ms. Both arms improve because both were
+paying for the notification: every message used to trigger a synchronous
+`useSyncExternalStore` re-render on top of whatever state commit followed.
+The before/after rows are two separate runs, not interleaved against each
+other, so treat the size of that gap as approximate — but a 3x drop with
+non-overlapping spreads is not drift. **What did not change: coalesced vs
+bypassed is still indistinguishable** (bypassed is marginally faster here,
+while processing ~30 fewer messages per run, so not a like-for-like win
+either way). With the notification gated, one React commit per message is
+already cheap enough at this table size that batching commits to rAF buys
+nothing measurable on this machine. The DOM-commit column is dropped from
+this table: its `MutationObserver` watches attributes too, so it counts the
+FLIP `transform` writes (whose duration also changed, see below) as much as
+React commits, and stopped isolating the thing it was meant to.
+
+**FLIP duration vs 1x pacing.** 1x emits a match frame every 200ms; the
+standings FLIP ran for 400ms, so at 1x every reorder was still mid-slide when
+the next one landed, and each interruption restarted the slide from the
+row's *last layout position* rather than where it was drawn — a visible
+jump. Now 180ms (`useFlip.ts`), under the frame gap, and an interrupted
+slide resumes from the row's current on-screen offset. The zone bands no
+longer ride along either: they are a stationary backdrop at the slot
+positions, and only names and numbers slide across it
+(`e2e/standings-bands.spec.ts` samples the stripes mid-reorder and requires
+them not to have moved by a pixel).
 
 **Parse time of the 2MB demo frames JSON**, measured in-page (`fetch` +
 `JSON.parse` on `frames-1.json`, 2,051,789 bytes, median of 10 runs in headless
