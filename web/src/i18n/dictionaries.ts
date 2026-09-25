@@ -91,7 +91,7 @@ export const en = {
   "chart.gamesPlayed": "games played",
   "chart.rmsePositions": "RMSE (positions)",
   "chart.currentRmse": "current RMSE",
-  "chart.crossoverMarker": "⚡ crossover",
+  "chart.crossoverMarker": "⚡ Crossover",
   "chart.lastSeason": "Last season",
   "chart.thisSeason": "This season",
   "chart.blended": "Blended",
@@ -135,7 +135,14 @@ export const en = {
   "auth.email": "Email",
   "auth.password": "Password",
   "auth.createAccount": "Create account",
-  "auth.genericError": "something went wrong",
+  "auth.genericError": "Something went wrong.",
+  "auth.demo.title": "Demo sign-in — runs in your browser",
+  "auth.demo.body":
+    "This is not a real account system. The static demo has no server, so this sign-in accepts only the built-in account above and keeps its saved scenarios in this browser's local storage. The real implementation — bcrypt password hashing, a JWT access token held in memory, a refresh token in an httpOnly cookie — lives in api/app/security.py and api/app/routers/auth.py and runs against the backend with docker compose up.",
+  "auth.demo.wrongCredentials": "This demo only signs in its built-in account — use the email and password shown above.",
+  "auth.demo.noRegistration": "The static demo has no registration — use the built-in demo account.",
+  "auth.demo.signInFirst": "Sign in with the demo account first.",
+  "auth.demo.scenarioGone": "That scenario no longer exists.",
 
   "scenarios.heading": "Saved scenarios",
   "scenarios.namePlaceholder": "name this scenario…",
@@ -148,18 +155,30 @@ export const en = {
   "scenarios.rename": "Rename",
   "scenarios.delete": "Delete",
   "scenarios.renameLabelPrefix": "rename",
-  "scenarios.signInPrompt": "Sign in to save and load named parameter sets.",
+  "scenarios.signInPrompt": "Sign in to save the model settings you tune on Season Replay and Model as named scenarios, then load, rename or delete them later.",
   "scenarios.method.pooled": "pooled",
   "scenarios.method.per_season": "per-season",
 
+  "cover.headline": "When does this season start telling you more than the last one?",
+  "cover.subtitle": "Eight Premier League season pairs, replayed match by match, to find the game where this season's numbers overtake last season's as the better predictor of the final table.",
+  "cover.enter": "Enter the dashboard",
+  "cover.scroll": "SCROLL",
+  "cover.priorLabel": "Last season's xG",
+  "cover.currentLabel": "This season's xG",
+  "cover.chartLabel":
+    "The prediction error of this season's xG falls with every game played and drops below last season's xG at game {games}.",
+
+  "overview.hook":
+    "Every August, predictions for the Premier League lean on last season's final table — it's the only complete evidence anyone has. As matches are played, this season's own results pile up, and at some point they become the better guide. This project measures exactly when that handover happens, across eight pairs of consecutive seasons from 2016/17 to 2024/25.",
   "overview.headlineUnit": "games",
-  "overview.headlineSub": "the point where this season's xG starts predicting the final table better than last season's did.",
+  "overview.headlineSub":
+    "That's when this season's xG — expected goals, a measure of how good a team's chances were — starts predicting the final table better than last season's full-season xG did. Less than a third of the way through a 38-game season.",
   "overview.headlineNote":
-    "A four-checkpoint graduate workbook interpolated \"about 12\"; match-level data puts it at 11.8 -- exactly, not bracketed.",
-  "overview.stat.crossover": "crossover (xG)",
-  "overview.stat.observations": "observations",
-  "overview.stat.pairs": "season pairs",
-  "overview.stat.frames": "replay frames",
+    "A four-checkpoint graduate workbook interpolated \"about 12\"; match-level data puts it at 11.8 — exactly, not bracketed.",
+  "overview.stat.crossover": "Crossover (xG)",
+  "overview.stat.observations": "Observations",
+  "overview.stat.pairs": "Season pairs",
+  "overview.stat.frames": "Replay frames",
   "overview.nav.season.body": "Play the season back match by match and watch the model's prediction sharpen in real time.",
   "overview.nav.model.body":
     "The Bayesian blend behind the replay: how much of the prediction comes from last season versus this one.",
@@ -213,7 +232,15 @@ export const en = {
   "teamDetail.players.sort.xgChain": "xGChain",
   "teamDetail.players.sort.xgBuildup": "xGBuildup",
   "teamDetail.players.col.player": "Player",
-  "teamDetail.players.col.position": "Pos",
+  "teamDetail.players.col.position": "Roles",
+  "position.gk": "Goalkeeper",
+  "position.d": "Defender",
+  "position.m": "Midfielder",
+  "position.f": "Forward",
+  "position.sub": "sub appearances",
+  "position.subOnly": "Substitute appearances only",
+  "panelInfo.position":
+    "Each word is a role the player appeared in that season; \"sub appearances\" means they also came off the bench at least once. Understat publishes no glossary for this field, so this reading is derived from the data: players listed only as substitutes average 9.6 minutes per appearance, players never listed as one average 88.4.",
   "teamDetail.players.col.minutes": "Min",
   "teamDetail.players.col.goals": "Goals",
   "teamDetail.players.col.xg": "xG",
@@ -248,37 +275,72 @@ export const en = {
   "compare.table.delta": "Delta (A − B)",
 
   "method.intro":
-    "Three methodologies were tried against the original graduate workbook. Only two ship in this app -- the third was never exactly reproducible, and three methodologies in one dashboard would be indefensible in an interview.",
-  "method.methodologies.heading": "Three methods, two of them shipped",
-  "method.methodologies.pooled":
-    "Pooled regression (the original deck's slide 7) pools every observation -- the 17 teams common to both seasons, across all 8 season pairs, 136 rows -- into a single fit. It is what this app uses by default, and it reproduces the deck's figures exactly.",
-  "method.methodologies.perSeason":
-    "Per-season regression (slides 9 and 11) instead fits each of the 8 season pairs separately and averages the result across them -- offered here as a toggle, not the default. It reproduces the deck's per-season xG figures exactly too: 4.42, 4.02, 3.69 and 3.41 RMSE at games 5, 10, 15 and 20. The deck stops at 20; carried through to a full season this method reaches 3.16 at game 38.",
-  "method.methodologies.rankBased":
-    "The deck's slide 11 also plots a third line: a rank-based method with no regression at all, taken straight from the original goal-difference workbook. It does not reproduce exactly from match-level data, and its quirks were not worth carrying forward, so this app never implements it.",
-  "method.methodologies.rule":
-    "The app's own rule follows from that: pooled regression is the default, per-season regression is a toggle, and the rank-based method never ships.",
-  "method.results.heading": "All ten published figures, reproduced exactly",
-  "method.results.intro":
-    "scripts/validate_checkpoints.py is a regression test against the original study: every one of its ten published figures reproduces from match-level data, for all four metrics the study compares.",
-  "method.results.note":
-    "The presentation itself said \"crossover ≈ 12 games\", interpolated from just four checkpoints. Match-level data puts it exactly where the crossover column below does -- that is this project's headline: answering, exactly, what the coursework could only bracket.",
-  "method.results.scrollableRegion": "Published-figures table, scrollable",
-  "method.results.col.metric": "metric",
-  "method.results.col.priorRmse": "prior RMSE",
-  "method.results.col.crossover": "crossover",
-  "method.blend.heading": "The Bayesian blend",
+    "How this site measures when a new season's own results become a better guide than last season's — written for someone who has never watched a Premier League match.",
+  "method.question.heading": "The question",
+  "method.question.p1":
+    "A Premier League season is 20 clubs playing 38 games each, and the final table ranks them 1 to 20. Before the first game, the best available guess at where a club will finish is how it did last season: clubs keep most of their players, budgets and managers from one year to the next. Here is how well that guess held up for the most recent pair of seasons in the data:",
+  "method.question.p2":
+    "Decent, not great. Every game of the new season adds evidence of its own. The question this site answers is when that evidence starts telling you more than last season did — and exactly after how many games.",
+  "method.measure.heading": "What \"better\" means",
+  "method.measure.p1":
+    "Both guesses are scored the same way. A straight-line fit turns one number per club into a predicted finishing position, and we measure how far those predictions miss, in league places, with RMSE — root-mean-square error, the typical size of a miss, with big misses counting extra. Lower is better.",
+  "method.measure.p2":
+    "The number is xG, expected goals: how many goals a club's chances were worth, judged by where and how each shot was taken. It is steadier than goals actually scored, which swing on luck. The prior — the guess made before this season has told us anything — is the same fit applied to each club's xG over all 38 games of last season.",
+  "method.measure.p3":
+    "Pooled across eight pairs of consecutive seasons, 2016/17 to 2024/25 (17 clubs play in both seasons of each pair, 136 club-seasons in all), last season's xG misses the final position by 4.09 places. After 5 games, this season's xG misses by more — 4.51 — but the miss shrinks with every game played, and at 11.8 games it drops below last season's:",
+  "method.measure.p4":
+    "The 11.8 is also checked out of sample: refitting with one season pair held out, then predicting that pair from the other seven, makes the error only 0.02–0.07 places worse. The result is not an artefact of scoring a fit on the same rows it was fitted to.",
+  "method.blend.heading": "Blending the two instead of choosing",
   "method.blend.intro":
-    "The replay's weight bars come from blending the two rank predictions by precision, not by a fixed ratio:",
-  "method.blend.priorWeight": "w_prior = 1 / sigma²_prior, fixed at 5 -- last season does not improve with time.",
-  "method.blend.dataWeight": "w_data = N / sigma²_obs, with sigma²_obs = 1.5, growing as more games are played.",
-  "method.blend.priorShare":
-    "That fixed prior against a growing data weight is why the prior's share of the blend falls on a curve as the season goes on: 60% at 5 games, 43% at 10, 33% at 15, and 27% at 20 -- matching the original study exactly.",
-  "method.constraints.heading": "Two constraints that shaped the app",
+    "Picking one guess and throwing the other away wastes information, so the replay also shows a blend: each guess gets a weight, and the prediction is their weighted average.",
+  "method.blend.weights":
+    "Last season's weight is fixed (w_prior = 5): it doesn't become more informative as the new season goes on. This season's weight grows with every game (w_data = N / 1.5, N being games played). So the blend starts out led by last season and hands over gradually — the prior's share is 60% at 5 games, 43% at 10, 33% at 15 and 27% at 20, the same figures as the original study.",
+  "method.blend.twoCrossovers":
+    "These are two different handovers, and the app never treats one as the other. The weights are equal at 7.5 games — a consequence of the model's settings. The error crossover at 11.8 games is a fact about the data. The replay plots both.",
+  "method.fig.slope.label":
+    "Slope chart: each of the 17 clubs in both {prior} and {current}, joined from last season's finishing position to this season's. Most lines are nearly flat; a few move by five or more places.",
+  "method.fig.slope.caption":
+    "Each line is one club, from where it finished last season (left) to where it finished this one (right). Highlighted: moves of {big} places or more — the misses a last-season guess can't see coming.",
+  "method.fig.curves.label":
+    "Line chart of prediction error by games played: last season's xG misses by {prior} places at every point; this season's xG starts higher and falls, crossing below it at {games} games.",
+  "method.fig.curves.crossoverAt": "{games} games",
+  "method.fig.curves.current": "This season's xG, after N games",
+  "method.fig.curves.prior": "Last season's xG, all 38 games",
+  "method.fig.curves.caption":
+    "RMSE in league places (lower is better), pooled over all eight season pairs. Last season's line is flat because its data doesn't change as this season is played.",
+  "method.fig.weights.label":
+    "Stacked area chart of the blend's weights by games played: last season's share falls as games accumulate, equal to this season's at {parity} games. Last season's share at the checkpoints: {shares}.",
+  "method.fig.weights.prior": "Last season's share of the blend",
+  "method.fig.weights.data": "This season's share",
+  "method.fig.weights.caption":
+    "The numbers along the top are last season's share at games 5, 10, 15 and 20. The two shares are equal at {parity} games.",
+  "method.methodologies.heading": "Three methods, two of them shipped",
+  "method.methodologies.intro":
+    "The original study — a graduate sports-analytics project — computed these errors three different ways without always saying which. The app keeps them apart:",
+  "method.methodologies.pooled":
+    "Pooled regression (the original deck's slide 7) puts every observation — the 17 clubs common to both seasons, across all 8 season pairs, 136 rows — into a single fit. It is what this app uses by default, and it reproduces the deck's figures exactly.",
+  "method.methodologies.perSeason":
+    "Per-season regression (slides 9 and 11) instead fits each of the 8 season pairs separately and averages the result — offered here as a toggle, not the default. It reproduces the deck's per-season xG figures exactly too: 4.42, 4.02, 3.69 and 3.41 RMSE at games 5, 10, 15 and 20. The deck stops at 20; carried through a full season, this method reaches 3.16 at game 38.",
+  "method.methodologies.rankBased":
+    "Slide 11 also plots a third line: a rank-based method with no regression at all, taken from the original goal-difference workbook. It does not reproduce exactly from match-level data, and its quirks weren't worth carrying forward, so this app never implements it.",
+  "method.methodologies.rule":
+    "Hence the app's rule: pooled regression by default, per-season regression as a toggle, the rank-based method never.",
+  "method.results.heading": "The evidence: all ten published figures, reproduced",
+  "method.results.intro":
+    "Everything above rests on the numbers below. scripts/validate_checkpoints.py is a regression test against the original study: every one of its published figures reproduces from match-level data, for all four measures the study compared — xG, xGD (xG for minus xG against), GD (goal difference) and points.",
+  "method.results.caption":
+    "RMSE in league places after N games (lower is better). Crossover: the game at which this season's error drops below last season's.",
+  "method.results.note":
+    "The original presentation said \"crossover ≈ 12 games\", interpolated from four checkpoints. Match-level data puts it at 11.8 — answering exactly what the coursework could only bracket.",
+  "method.results.scrollableRegion": "Published-figures table, scrollable",
+  "method.results.col.metric": "Measure",
+  "method.results.col.priorRmse": "Last season's RMSE",
+  "method.results.col.crossover": "Crossover (games)",
+  "method.constraints.heading": "Two details that shaped the app",
   "method.constraints.gamesPlayed":
-    "Everything here is indexed by games played, never by calendar matchweek, because Premier League matchweeks are not aligned -- games get postponed. Standing in for a round with \"every 10th match\" fails as a uniform checkpoint in 35 of the 38 matchweeks in 2020/21 and 30 of 38 in 2022/23, with teams left up to six games apart by the time a \"round\" notionally ends.",
-  "method.constraints.twoCrossovers":
-    "The weight crossover and the RMSE crossover are two different events, and the replay plots both without conflating them: one is a property of the model -- the fixed prior weight and the growing data weight reaching parity -- and the other a property of the data itself -- the point where this season's own regression starts outperforming last season's.",
+    "Everything is counted by games each club has played, never by calendar round, because clubs don't play in lockstep — games get postponed. Treating \"every 10th match\" as a round fails as a uniform checkpoint in 35 of the 38 rounds of 2020/21 and 30 of 38 in 2022/23, with clubs up to six games apart by the time a \"round\" notionally ends.",
+  "method.constraints.promoted":
+    "Three clubs each season were promoted from the division below, so they have no Premier League season to predict from. They're left out of the fit rather than guessed at — which is why each pair contributes 17 clubs, not 20 — and shown greyed out in the tables instead of silently dropped.",
 } as const;
 
 export const zh = {
@@ -405,7 +467,14 @@ export const zh = {
   "auth.email": "邮箱",
   "auth.password": "密码",
   "auth.createAccount": "创建账户",
-  "auth.genericError": "出了点问题",
+  "auth.genericError": "出了点问题。",
+  "auth.demo.title": "演示登录——在你的浏览器中运行",
+  "auth.demo.body":
+    "这不是真正的账户系统。静态演示站没有服务器，所以这里只接受上面的内置账户，保存的方案存放在本浏览器的 localStorage 中。真正的实现——bcrypt 密码哈希、保存在内存中的 JWT 访问令牌、放在 httpOnly Cookie 中的刷新令牌——位于 api/app/security.py 和 api/app/routers/auth.py，用 docker compose up 启动后端即可运行。",
+  "auth.demo.wrongCredentials": "此演示只能登录内置账户——请使用上面显示的邮箱和密码。",
+  "auth.demo.noRegistration": "静态演示站不提供注册——请使用内置演示账户。",
+  "auth.demo.signInFirst": "请先用演示账户登录。",
+  "auth.demo.scenarioGone": "该方案已不存在。",
 
   "scenarios.heading": "已保存方案",
   "scenarios.namePlaceholder": "为该方案命名…",
@@ -418,12 +487,23 @@ export const zh = {
   "scenarios.rename": "重命名",
   "scenarios.delete": "删除",
   "scenarios.renameLabelPrefix": "重命名",
-  "scenarios.signInPrompt": "登录后可保存和加载命名参数方案。",
+  "scenarios.signInPrompt": "登录后，可以把在“赛季回放”和“模型”页调好的模型参数保存为命名方案，之后再加载、重命名或删除。",
   "scenarios.method.pooled": "合并回归",
   "scenarios.method.per_season": "逐赛季回归",
 
+  "cover.headline": "本赛季从哪一场起，比上赛季更能说明问题？",
+  "cover.subtitle": "八组英超相邻赛季，逐场回放，找出本赛季数据超越上赛季、成为最终排名更好预测依据的那一场。",
+  "cover.enter": "进入看板",
+  "cover.scroll": "向下滚动",
+  "cover.priorLabel": "上赛季 xG",
+  "cover.currentLabel": "本赛季 xG",
+  "cover.chartLabel": "本赛季 xG 的预测误差随比赛场次增加而下降，在第 {games} 场低于上赛季 xG。",
+
+  "overview.hook":
+    "每年八月，人们预测英超排名时依靠的都是上赛季的最终积分榜——那是当时唯一完整的证据。随着比赛一场场进行，本赛季自己的数据不断累积，总有一刻会成为更好的依据。这个项目用 2016/17 到 2024/25 的八组相邻赛季，精确测量这一交接发生在第几场。",
   "overview.headlineUnit": "场",
-  "overview.headlineSub": "本赛季的 xG 从这一场开始，比上赛季的最终积分榜更能预测本赛季的最终排名。",
+  "overview.headlineSub":
+    "从这一场起，本赛季的 xG（预期进球，衡量一支球队创造的机会有多好）比上赛季全季的 xG 更能预测最终排名——还不到 38 场赛季的三分之一。",
   "overview.headlineNote": "一份仅有四个检查点的毕业作业插值得到「约 12 场」；逐场比赛的数据把它精确到了 11.8 场，而不只是一个区间。",
   "overview.stat.crossover": "交叉点（xG）",
   "overview.stat.observations": "观测样本",
@@ -481,7 +561,15 @@ export const zh = {
   "teamDetail.players.sort.xgChain": "xGChain",
   "teamDetail.players.sort.xgBuildup": "xGBuildup",
   "teamDetail.players.col.player": "球员",
-  "teamDetail.players.col.position": "位置",
+  "teamDetail.players.col.position": "出场角色",
+  "position.gk": "门将",
+  "position.d": "后卫",
+  "position.m": "中场",
+  "position.f": "前锋",
+  "position.sub": "替补出场",
+  "position.subOnly": "仅替补出场",
+  "panelInfo.position":
+    "每个词是该球员本赛季出场过的一个角色；“替补出场”表示他至少有一次替补登场。Understat 没有公布这个字段的说明，所以这里的解读是从数据推断出来的：只被标为替补的球员平均每次出场 9.6 分钟，从未被标为替补的球员平均 88.4 分钟。",
   "teamDetail.players.col.minutes": "分钟",
   "teamDetail.players.col.goals": "进球",
   "teamDetail.players.col.xg": "xG",
@@ -516,36 +604,69 @@ export const zh = {
   "compare.table.delta": "差值（A − B）",
 
   "method.intro":
-    "这项研究曾尝试过三种方法论来对照原始的毕业设计工作表，但本应用只采用其中两种——第三种从未能精确复现，而在同一个仪表盘中呈现三种方法论，在面试中是站不住脚的。",
+    "这个网站如何测量：新赛季自己的战绩从什么时候起，比上赛季更能说明问题——写给从没看过英超比赛的人。",
+  "method.question.heading": "问题",
+  "method.question.p1":
+    "一个英超赛季有 20 支球队，每队踢 38 场，最终积分榜把它们排成第 1 到第 20 名。第一场比赛之前，预测一支球队最终名次的最好依据，就是它上赛季的表现：球队的大部分球员、预算和主教练都会延续到下一年。下图是数据中最近一组相邻赛季里，这个预测的准确程度：",
+  "method.question.p2":
+    "还不错，但远谈不上准。新赛季的每一场比赛都会带来新的证据。这个网站要回答的是：这些证据从什么时候开始比上赛季更有说服力——精确到第几场。",
+  "method.measure.heading": "“更好”是什么意思",
+  "method.measure.p1":
+    "两种预测用同样的方式打分。一条直线拟合把每支球队的一个数字换算成预测名次，再用 RMSE（均方根误差：一次预测的典型偏差，偏得越多惩罚越重）衡量预测平均差了多少个名次。越低越好。",
+  "method.measure.p2":
+    "用的数字是 xG（预期进球）：根据每次射门的位置和方式，估算一支球队创造的机会值多少个进球。它比实际进球更稳定，实际进球受运气影响大。先验——本赛季还没提供任何信息之前的那个预测——就是把同样的拟合用在每支球队上赛季全部 38 场的 xG 上。",
+  "method.measure.p3":
+    "把 2016/17 到 2024/25 的八组相邻赛季合并（每组中两个赛季都在英超的球队有 17 支，共 136 个球队赛季），上赛季 xG 对最终名次的预测平均偏差 4.09 个名次。踢完 5 场时，本赛季 xG 的偏差更大——4.51——但每多踢一场偏差就缩小一点，到第 11.8 场时降到上赛季之下：",
+  "method.measure.p4":
+    "11.8 这个结果还做了样本外检验：每次留出一组赛季，用其余七组拟合后再预测它，误差只变差 0.02–0.07 个名次。这个结论并不是“在拟合所用的同一批数据上打分”造成的假象。",
+  "method.blend.heading": "不做取舍，而是混合两者",
+  "method.blend.intro":
+    "只选一个预测、扔掉另一个，会浪费信息。所以回放里还展示了一种混合：两个预测各有一个权重，最终预测是它们的加权平均。",
+  "method.blend.weights":
+    "上赛季的权重是固定的（w_prior = 5）：随着新赛季推进，它不会变得更有信息量。本赛季的权重随每一场比赛增长（w_data = N / 1.5，N 为已赛场次）。所以这个混合一开始以上赛季为主，然后逐步交接——先验的占比在第 5、10、15、20 场时分别为 60%、43%、33% 和 27%，与原始研究的数字一致。",
+  "method.blend.twoCrossovers":
+    "这是两次不同的交接，本应用从不把它们混为一谈。两者权重在第 7.5 场相等——这是模型参数设定的结果；误差在第 11.8 场交叉——这是数据本身的事实。回放会把两者都画出来。",
+  "method.fig.slope.label":
+    "斜率图：{prior} 和 {current} 两个赛季都在英超的 17 支球队，每条线从上赛季的最终名次连到本赛季的最终名次。大多数线几乎是平的，少数变动了五个名次以上。",
+  "method.fig.slope.caption":
+    "每条线代表一支球队，左边是上赛季的最终名次，右边是本赛季的。高亮的是变动 {big} 个名次及以上的球队——只看上赛季的预测无法预见的那些偏差。",
+  "method.fig.curves.label":
+    "按已赛场次绘制的预测误差折线图：上赛季 xG 的偏差始终为 {prior} 个名次；本赛季 xG 起点更高并不断下降，在第 {games} 场降到其下方。",
+  "method.fig.curves.crossoverAt": "第 {games} 场",
+  "method.fig.curves.current": "本赛季 xG（前 N 场）",
+  "method.fig.curves.prior": "上赛季 xG（全部 38 场）",
+  "method.fig.curves.caption":
+    "RMSE，单位为名次（越低越好），八组赛季合并计算。上赛季那条线是平的，因为本赛季比赛进行时，上赛季的数据不会变。",
+  "method.fig.weights.label":
+    "按已赛场次绘制的混合权重堆叠面积图：上赛季的占比随场次增加而下降，在第 {parity} 场与本赛季相等。各检查点上赛季的占比：{shares}。",
+  "method.fig.weights.prior": "上赛季在混合中的占比",
+  "method.fig.weights.data": "本赛季的占比",
+  "method.fig.weights.caption": "顶部的数字是第 5、10、15、20 场时上赛季的占比。两者在第 {parity} 场相等。",
   "method.methodologies.heading": "三种方法，两种上线",
+  "method.methodologies.intro":
+    "原始研究——一份研究生体育分析课程项目——用三种不同的方法计算这些误差，而且并不总是说明用的是哪一种。本应用把它们分开：",
   "method.methodologies.pooled":
-    "合并回归（原始幻灯片第 7 页）把所有观测值——两个赛季共同拥有的 17 支球队，跨全部 8 组赛季组合，共 136 行——合并为一次拟合。本应用默认使用这一方法，它精确复现了原始幻灯片的数据。",
+    "合并回归（原始幻灯片第 7 页）把所有观测值——两个赛季共同拥有的 17 支球队，跨全部 8 组赛季组合，共 136 行——放进一次拟合。本应用默认使用这一方法，它精确复现了原始幻灯片的数据。",
   "method.methodologies.perSeason":
-    "逐赛季回归（幻灯片第 9、11 页）则对 8 组赛季组合分别拟合，再取平均——本应用将其作为一个可切换的选项，而非默认值。它同样精确复现了原始幻灯片中 xG 的逐赛季数据：在第 5、10、15、20 场时的 RMSE 分别为 4.42、4.02、3.69、3.41。原始幻灯片止步于第 20 场；本应用把这一方法延伸到整个赛季，第 38 场为 3.16。",
+    "逐赛季回归（幻灯片第 9、11 页）则对 8 组赛季组合分别拟合，再取平均——本应用将其作为可切换选项，而非默认值。它同样精确复现了原始幻灯片中 xG 的逐赛季数据：第 5、10、15、20 场的 RMSE 分别为 4.42、4.02、3.69、3.41。原始幻灯片止步于第 20 场；延伸到整个赛季，这一方法在第 38 场为 3.16。",
   "method.methodologies.rankBased":
-    "幻灯片第 11 页还画出了第三条线：一种完全不做回归、直接基于名次的方法，照搬自最初的净胜球工作表。它无法从逐场比赛数据中精确复现，其种种细节也不值得延续，因此本应用从未实现它。",
-  "method.methodologies.rule":
-    "由此得出本应用自身的规则：合并回归是默认方法，逐赛季回归是一个可切换选项，而基于名次的方法永远不会上线。",
-  "method.results.heading": "十项已发表结果，全部精确复现",
+    "幻灯片第 11 页还画出了第三条线：一种完全不做回归、直接基于名次的方法，来自最初的净胜球工作表。它无法从逐场比赛数据中精确复现，其种种细节也不值得延续，因此本应用从未实现它。",
+  "method.methodologies.rule": "由此得出本应用的规则：默认用合并回归，逐赛季回归作为可切换选项，基于名次的方法永不上线。",
+  "method.results.heading": "证据：十项已发表结果，全部复现",
   "method.results.intro":
-    "scripts/validate_checkpoints.py 是对照原始研究的回归测试：其发表的十项结果，针对研究比较的全部四个指标，均可从逐场比赛数据中精确复现。",
+    "上面的一切都建立在下面这些数字上。scripts/validate_checkpoints.py 是对照原始研究的回归测试：其发表的每一项结果，都能从逐场比赛数据中复现，覆盖研究比较的全部四个指标——xG、xGD（xG 减去被对手创造的 xG）、GD（净胜球）和积分。",
+  "method.results.caption": "踢完 N 场时的 RMSE，单位为名次（越低越好）。交叉点：本赛季误差降到上赛季之下的那一场。",
   "method.results.note":
-    "报告本身只说「交叉点 ≈ 12 场」，这是仅从四个检查点插值得到的。逐场比赛的数据恰好把它精确定位在下方交叉点一列所示之处——这正是本项目的核心结论：精确回答了课程作业只能给出区间估计的问题。",
+    "原始报告只说“交叉点 ≈ 12 场”，是从四个检查点插值得到的。逐场比赛的数据把它确定为 11.8——精确回答了课程作业只能给出区间的问题。",
   "method.results.scrollableRegion": "已发表结果表格，可滚动",
   "method.results.col.metric": "指标",
-  "method.results.col.priorRmse": "prior RMSE",
-  "method.results.col.crossover": "crossover",
-  "method.blend.heading": "贝叶斯混合",
-  "method.blend.intro": "回放中的权重柱状图，来自按精度（而非固定比例）混合两个名次预测：",
-  "method.blend.priorWeight": "w_prior = 1 / sigma²_prior，固定为 5——上赛季的数据不会随时间变得更可靠。",
-  "method.blend.dataWeight": "w_data = N / sigma²_obs，其中 sigma²_obs = 1.5，随已赛场次增加而增大。",
-  "method.blend.priorShare":
-    "固定的先验权重对上不断增长的数据权重，正是先验占比随赛季推进而沿曲线下降的原因：在第 5、10、15、20 场时分别为 60%、43%、33% 和 27%——与原始研究完全一致。",
-  "method.constraints.heading": "塑造了这款应用的两个约束",
+  "method.results.col.priorRmse": "上赛季 RMSE",
+  "method.results.col.crossover": "交叉点（场）",
+  "method.constraints.heading": "塑造了这款应用的两个细节",
   "method.constraints.gamesPlayed":
-    "本应用中的一切都按已赛场次索引，而非按日历意义上的比赛轮次，因为英超联赛的轮次并不对齐——比赛会延期。用「每第 10 场比赛」来代替一个轮次，在 2020/21 赛季的 38 轮中有 35 轮无法作为统一的检查点，在 2022/23 赛季中则有 30 轮如此，等到一个「轮次」名义上结束时，球队之间最多可相差六场比赛。",
-  "method.constraints.twoCrossovers":
-    "权重交叉点与 RMSE 交叉点是两个不同的事件，回放会将两者分别绘出，而不会混为一谈：一个是模型自身的属性——固定的先验权重与不断增长的数据权重达到相等的那一点；另一个是数据本身的属性——本赛季自己的回归开始超越上赛季的那一点。",
+    "一切都按每支球队自己的已赛场次计算，而不是按日历轮次，因为各队并不同步比赛——比赛会延期。把“每 10 场比赛”当作一轮，在 2020/21 赛季的 38 轮中有 35 轮无法作为统一的检查点，2022/23 赛季中有 30 轮如此，等到一“轮”名义上结束时，球队之间最多相差六场。",
+  "method.constraints.promoted":
+    "每个赛季有三支球队从下一级联赛升级上来，它们没有可供预测的英超赛季。这些球队不参与拟合，而不是被猜一个值——所以每组赛季贡献 17 支球队而不是 20 支——在表格中它们以灰色显示，而不是被悄悄删掉。",
 } as const satisfies Record<keyof typeof en, string>;
 
 export type TranslationKey = keyof typeof en;

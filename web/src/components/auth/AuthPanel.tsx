@@ -1,28 +1,28 @@
-import { useState, type FormEvent } from "react";
+import { useState } from "react";
+import * as Popover from "@radix-ui/react-popover";
 import { useAuth } from "../../auth/AuthContext";
-import { DEMO_MODE } from "../../demo/mode";
 import { useLocale } from "../../i18n/LocaleContext";
+import { SignInForm } from "./SignInForm";
 import styles from "./AuthPanel.module.css";
 
-type Tab = "login" | "register";
-
 /**
- * Sits in the header, next to the season-pair picker. Never blocks anything
- * below it -- the dashboard is fully interactive whether this shows "Sign in"
- * or an email address, per CLAUDE.md Feature 4: login unlocks saving
- * scenarios and nothing else.
+ * Sits in the sidebar footer. Never blocks anything -- the dashboard is
+ * fully interactive whether this shows "Sign in" or an email address, per
+ * CLAUDE.md Feature 4: login unlocks saving scenarios and nothing else.
+ * Shown on the static demo too, where the form signs in the built-in demo
+ * account (see SignInForm and auth/browserBackend.ts).
+ *
+ * The form is a Radix Popover portalled to <body>: rendered inside the
+ * sidebar it was clipped by the sidebar's own overflow, and dropping below
+ * a trigger at the very bottom of the viewport put it off-screen entirely.
+ * Radix positions it beside the sidebar and flips it when there's no room.
  */
 export function AuthPanel() {
   const { t } = useLocale();
-  const { user, loading, login, register, logout } = useAuth();
+  const { user, loading, logout } = useAuth();
   const [open, setOpen] = useState(false);
-  const [tab, setTab] = useState<Tab>("login");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
 
-  if (DEMO_MODE || loading) return null;
+  if (loading) return null;
 
   if (user) {
     return (
@@ -37,98 +37,28 @@ export function AuthPanel() {
     );
   }
 
-  const closeAndReset = () => {
-    setOpen(false);
-    setPassword("");
-    setError(null);
-  };
-
-  const submit = async (e: FormEvent) => {
-    e.preventDefault();
-    setSubmitting(true);
-    setError(null);
-    try {
-      if (tab === "login") await login(email, password);
-      else await register(email, password);
-      closeAndReset();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t("auth.genericError"));
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
   return (
     <div className={`${styles.panel} sidebar-auth`}>
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        aria-expanded={open}
-        data-testid="sign-in-open-button"
-      >
-        {t("auth.signIn")}
-      </button>
-
-      {open && (
-        <div className={styles.popover} role="dialog" aria-label={t("auth.signIn")} data-testid="auth-dialog">
-          <div className={styles.tabs} role="tablist">
-            <button
-              type="button"
-              role="tab"
-              aria-pressed={tab === "login"}
-              aria-selected={tab === "login"}
-              onClick={() => setTab("login")}
-              data-testid="auth-tab-login"
-            >
-              {t("auth.signIn")}
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-pressed={tab === "register"}
-              aria-selected={tab === "register"}
-              onClick={() => setTab("register")}
-              data-testid="auth-tab-register"
-            >
-              {t("auth.register")}
-            </button>
-          </div>
-
-          <form className={styles.form} onSubmit={submit}>
-            <label>
-              {t("auth.email")}
-              <input
-                type="email"
-                required
-                autoComplete="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                data-testid="auth-email-input"
-              />
-            </label>
-            <label>
-              {t("auth.password")}
-              <input
-                type="password"
-                required
-                minLength={8}
-                autoComplete={tab === "login" ? "current-password" : "new-password"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                data-testid="auth-password-input"
-              />
-            </label>
-            {error && (
-              <p className={styles.error} role="alert">
-                {error}
-              </p>
-            )}
-            <button type="submit" disabled={submitting} data-testid="auth-submit-button">
-              {tab === "login" ? t("auth.signIn") : t("auth.createAccount")}
-            </button>
-          </form>
-        </div>
-      )}
+      <Popover.Root open={open} onOpenChange={setOpen}>
+        <Popover.Trigger asChild>
+          <button type="button" data-testid="sign-in-open-button">
+            {t("auth.signIn")}
+          </button>
+        </Popover.Trigger>
+        <Popover.Portal>
+          <Popover.Content
+            className={styles.popover}
+            side="right"
+            align="end"
+            sideOffset={12}
+            collisionPadding={16}
+            aria-label={t("auth.signIn")}
+            data-testid="auth-dialog"
+          >
+            <SignInForm idPrefix="sidebar" onSignedIn={() => setOpen(false)} />
+          </Popover.Content>
+        </Popover.Portal>
+      </Popover.Root>
     </div>
   );
 }

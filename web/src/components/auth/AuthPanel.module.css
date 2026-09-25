@@ -13,12 +13,15 @@
   color: var(--text-secondary);
 }
 
+/* Positioned by Radix (see AuthPanel.tsx); these only bound its size so a
+   tall demo notice scrolls inside the card instead of off the screen. */
 .popover {
-  position: absolute;
-  top: calc(100% + 8px);
-  right: 0;
   z-index: 20;
-  width: 260px;
+  width: 300px;
+  max-width: calc(100vw - 32px);
+  max-height: var(--radix-popover-content-available-height);
+  overflow-y: auto;
+  box-sizing: border-box;
   background: var(--panel);
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -37,7 +40,7 @@
   padding: 4px 8px;
 }
 
-.tabs button[aria-pressed="true"] {
+.tabs button[aria-selected="true"] {
   border-color: var(--blue);
   color: var(--text);
 }
@@ -74,4 +77,44 @@
   color: var(--relegation);
   font-size: 13px;
   margin: 0;
+}
+
+/* The static demo's disclosure: set apart from the form, first thing read. */
+.demoNotice {
+  margin-bottom: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--primary);
+  border-radius: 6px;
+  background: var(--bg);
+  font-size: var(--text-xs);
+  line-height: var(--leading-normal);
+  color: var(--text-secondary);
+}
+
+.demoNotice p {
+  margin: 0;
+}
+
+.demoNoticeTitle {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.demoCredentials {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px var(--space-2);
+  margin: var(--space-2) 0;
+}
+
+.demoCredentials dt {
+  color: var(--text-secondary);
+}
+
+.demoCredentials dd {
+  margin: 0;
+  font-family: var(--font-mono);
+  color: var(--text);
+  overflow-wrap: anywhere;
 }

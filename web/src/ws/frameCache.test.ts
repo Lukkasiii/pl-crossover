@@ -87,4 +87,39 @@ describe("FrameCache", () => {
     const c = cache.getSnapshot(0);
     expect(c).not.toBe(a);
   });
+
+  it("doesn't notify subscribers for frames ahead of the playhead they last read", () => {
+    const cache = new FrameCache();
+    cache.add(matchFrame(0));
+    cache.getSnapshot(0);
+    let notified = 0;
+    cache.subscribe(() => notified++);
+
+    cache.add(matchFrame(1));
+    cache.add(roundFrame(2, 1));
+    expect(notified).toBe(0);
+    // ...but they're in the cache for the next read at a later playhead.
+    expect(cache.getSnapshot(2).match?.seq).toBe(1);
+    expect(cache.getSnapshot(2).roundsSoFar).toHaveLength(1);
+  });
+
+  it("notifies when a frame at or before the playhead changes (a reconnect overwrite)", () => {
+    const cache = new FrameCache();
+    cache.add(matchFrame(0));
+    cache.add(matchFrame(1));
+    cache.getSnapshot(1);
+    let notified = 0;
+    cache.subscribe(() => notified++);
+
+    cache.add(matchFrame(1));
+    expect(notified).toBe(1);
+  });
+
+  it("notifies before anything has been read, so the first frame renders", () => {
+    const cache = new FrameCache();
+    let notified = 0;
+    cache.subscribe(() => notified++);
+    cache.add(matchFrame(0));
+    expect(notified).toBe(1);
+  });
 });

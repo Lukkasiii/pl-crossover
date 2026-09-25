@@ -1,0 +1,260 @@
+/* The cover is its own surface: the project's deep purple, the same
+   --primary the sidebar uses, with every foreground drawn from the
+   --primary-ink tokens already validated against it. */
+.cover {
+  box-sizing: border-box;
+  height: 100svh;
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  gap: var(--space-6);
+  padding: var(--space-6) clamp(var(--space-4), 6vw, 96px) var(--space-4);
+  background: var(--primary);
+  color: var(--primary-ink);
+}
+
+.returning {
+  animation: cover-drop 450ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.leaving {
+  animation: cover-lift 450ms cubic-bezier(0.64, 0, 0.78, 0) both;
+}
+
+@keyframes cover-lift {
+  to {
+    transform: translateY(-100%);
+  }
+}
+
+@keyframes cover-drop {
+  from {
+    transform: translateY(-100%);
+  }
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.brand {
+  font-family: var(--font-heading);
+  font-weight: 500;
+  font-size: var(--text-base);
+  letter-spacing: 0.02em;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-4);
+  max-width: 900px;
+  padding-top: clamp(0px, 6vh, 72px);
+}
+
+.headline {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-weight: 500;
+  font-size: clamp(32px, 5.2vw, 68px);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+  color: var(--primary-ink);
+}
+
+.subtitle {
+  margin: 0;
+  max-width: 44ch;
+  font-size: clamp(var(--text-base), 1.6vw, var(--text-lg));
+  line-height: var(--leading-normal);
+  color: var(--primary-ink-secondary);
+}
+
+.enter {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  padding: var(--space-3) var(--space-5);
+  border-radius: 999px;
+  background: var(--primary-ink);
+  color: var(--primary);
+  font-weight: 600;
+  text-decoration: none;
+  transition: transform 150ms ease;
+}
+
+.enter:hover {
+  transform: translateY(1px);
+}
+
+.enter:focus-visible {
+  outline: 2px solid var(--primary-ink);
+  outline-offset: 3px;
+}
+
+.chart {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.markerRow {
+  position: relative;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.plot {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+.plot svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.prior {
+  stroke: var(--primary-ink-secondary);
+  stroke-width: 1.5;
+  stroke-dasharray: 6 6;
+  opacity: 0;
+  animation: fade-in 800ms ease-out 200ms forwards;
+}
+
+/* pathLength="1" on the element makes the whole path length 1, so a
+   dasharray of 1 and a dashoffset sliding 1 -> 0 draws it end to end
+   without measuring anything in JS. */
+.current {
+  fill: none;
+  stroke: var(--primary-ink);
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation-name: draw;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+
+.marker {
+  stroke: var(--cover-accent);
+  stroke-width: 1.5;
+  opacity: 0;
+  animation: fade-in 500ms ease-out forwards;
+}
+
+/* Amber from the chart palette: 5.4:1 on --primary, so the label passes
+   AA as normal text, not only as large text. */
+.cover {
+  --cover-accent: #d97706;
+}
+
+.markerLabel {
+  position: absolute;
+  bottom: 2px;
+  transform: translateX(-50%);
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: var(--text-sm);
+  color: var(--cover-accent);
+  white-space: nowrap;
+  opacity: 0;
+  animation: fade-in 500ms ease-out forwards;
+}
+
+.priorLabel,
+.currentLabel {
+  position: absolute;
+  right: 0;
+  font-size: var(--text-xs);
+  color: var(--primary-ink-secondary);
+  white-space: nowrap;
+}
+
+.priorLabel {
+  transform: translateY(calc(-100% - 6px));
+  opacity: 0;
+  animation: fade-in 800ms ease-out 200ms forwards;
+}
+
+.currentLabel {
+  transform: translateY(6px);
+  color: var(--primary-ink);
+  opacity: 0;
+  animation: fade-in 500ms ease-out forwards;
+}
+
+.scrollHint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-size: var(--text-xs);
+  letter-spacing: 0.24em;
+  color: var(--primary-ink-secondary);
+}
+
+.chevron {
+  animation: nudge 1.8s ease-in-out infinite;
+}
+
+@keyframes draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes fade-in {
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes nudge {
+  50% {
+    transform: translateY(4px);
+  }
+}
+
+/* Reduced motion kills the motion outright, not a slower version of it:
+   the finished frame -- curve drawn, marker and labels shown -- with no
+   draw, no fades, no nudge, no slide. */
+@media (prefers-reduced-motion: reduce) {
+  .cover,
+  .cover *,
+  .returning,
+  .leaving {
+    animation: none !important;
+  }
+
+  .current {
+    stroke-dashoffset: 0;
+  }
+
+  .prior,
+  .marker,
+  .markerLabel,
+  .priorLabel,
+  .currentLabel {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 720px) {
+  .cover {
+    gap: var(--space-4);
+    padding: var(--space-4);
+  }
+}

@@ -30,6 +30,15 @@ export class FrameCache {
     else return;
     if (frame.seq > this.cachedThrough) this.cachedThrough = frame.seq;
     this.version++;
+    // Only a frame at or before the playhead the UI last read can change
+    // what it shows. During playback almost every message is *ahead* of
+    // that playhead (it only advances at the next rAF flush), and notifying
+    // anyway made every subscriber re-run getSnapshot and -- because a new
+    // version always built a new object -- re-render synchronously, once
+    // per message: the rAF batching upstream saved nothing (README,
+    // "Frontend decisions"). When the playhead does move, React re-renders
+    // from its own state change and reads the new frames then.
+    if (this.lastSnapshot !== null && frame.seq > this.lastSnapshot.viewSeq) return;
     this.listeners.forEach((l) => l());
   }
 

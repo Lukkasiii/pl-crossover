@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import type { TableRow } from "../ws/types";
@@ -59,6 +59,8 @@ export function StandingsTable({ rows, currentSeasonLabel }: StandingsTableProps
   const writeUrlParam = useUrlParamWriter();
   const bands = useMemo(() => bandsForSeason(currentSeasonLabel), [currentSeasonLabel]);
   const rowRefs = useRef<Map<number, HTMLTableRowElement>>(new Map());
+  const tableRef = useRef<HTMLTableElement>(null);
+  const backdropRef = useRef<HTMLDivElement>(null);
   const [hoveredTeamId, setHoveredTeamId] = useState<number | null>(null);
 
   // Local state drives the input immediately (typing shouldn't wait on a
@@ -87,6 +89,19 @@ export function StandingsTable({ rows, currentSeasonLabel }: StandingsTableProps
       return matchesQuery(row, query);
     });
   }, [rows, bands, zoneFilter, sampleFilter, query]);
+
+  // The bands belong to *places*, not teams: positions 1-4 are the
+  // Champions League places whoever is in them. So with the full table on
+  // screen they're painted as a stationary backdrop behind transparent rows,
+  // and a reorder slides only the names and numbers across a background that
+  // never moves -- per-row tints travelled with their teams and made every
+  // swap churn the whole table. A filtered view has no fixed place-to-slot
+  // mapping (slot 3 might be 11th), so there each row carries its own tint
+  // as before. Unranked slots (the season's first round, before every team
+  // has played) stay unpainted rather than implying a place nobody holds.
+  const stationary = rows !== null && visibleRows !== null && visibleRows.length === rows.length;
+  const rankedCount = rows?.filter((r) => r.live_rank !== null).length ?? 0;
+  usePinStripes(tableRef, backdropRef, stationary);
 
   // Called every render regardless of `rows` being null -- hooks can't be conditional.
   useFlip(
@@ -143,7 +158,23 @@ export function StandingsTable({ rows, currentSeasonLabel }: StandingsTableProps
           wcag2a/2.1.1/2.1.3) flags a scrolling div with neither, since without them
           a keyboard-only user has no way to pan to the table's right-hand columns. */}
       <div className={styles.tableWrap} tabIndex={0} role="region" aria-label={t("standings.scrollableRegion")}>
-        <table className={styles.table}>
+        {stationary && (
+          <div ref={backdropRef} className={styles.backdrop} aria-hidden="true" data-testid="standings-backdrop">
+            {/* One stripe per ranked slot, band or not, so stripe i always pins to <tr> i. */}
+            {Array.from({ length: rankedCount }, (_, i) => {
+              const band = bandForRank(bands, i + 1);
+              return (
+                <div
+                  key={i}
+                  className={styles.stripe}
+                  data-band={band?.key}
+                  style={band ? { background: band.bg, borderLeftColor: band.border } : undefined}
+                />
+              );
+            })}
+          </div>
+        )}
+        <table ref={tableRef} className={`${styles.table}${stationary ? ` ${styles.stationary}` : ""}`}>
           <thead>
             <tr>
               <th scope="col">#</th>
@@ -186,7 +217,7 @@ export function StandingsTable({ rows, currentSeasonLabel }: StandingsTableProps
                   className={[row.in_pair ? "" : styles.excluded, row.team_id === hoveredTeamId ? styles.hovered : ""]
                     .filter(Boolean)
                     .join(" ")}
-                  style={bandStyle(band)}
+                  style={stationary ? undefined : bandStyle(band)}
                   aria-label={ariaLabel}
                   onMouseEnter={() => setHoveredTeamId(row.team_id)}
                   onMouseLeave={() => setHoveredTeamId((id) => (id === row.team_id ? null : id))}
@@ -195,7 +226,7 @@ export function StandingsTable({ rows, currentSeasonLabel }: StandingsTableProps
                       directly on a table row doesn't reliably paint in every engine
                       under border-collapse: collapse (Safari in particular), while a
                       cell border always does. */}
-                  <td style={band ? { borderLeft: `3px solid ${band.border}` } : undefined}>
+                  <td style={band && !stationary ? { borderLeft: `3px solid ${band.border}` } : undefined}>
                     {isChampion && (
                       <span className={styles.championMark} aria-hidden="true">
                         &#127942;
@@ -240,6 +271,49 @@ export function StandingsTable({ rows, currentSeasonLabel }: StandingsTableProps
       </ul>
     </Tooltip.Provider>
   );
+}
+
+/**
+ * Pins each backdrop stripe to its table slot. Slot i is simply the i-th
+ * <tr> in the DOM (React reorders the nodes), and offsetTop/offsetHeight
+ * are layout values a FLIP `transform` never touches -- so even measured
+ * mid-animation, a stripe lands on the slot, not on the row sliding
+ * through it. Written straight to the stripes' styles: this is syncing
+ * DOM to DOM, and a state round-trip would re-render the table after
+ * every commit to say what the layout already knows. Re-runs after every
+ * commit (cheap: useFlip has already forced layout by then) and whenever
+ * the table resizes, which can rewrap a name and change row heights.
+ */
+function usePinStripes(
+  tableRef: React.RefObject<HTMLTableElement | null>,
+  backdropRef: React.RefObject<HTMLDivElement | null>,
+  active: boolean,
+) {
+  const pin = useCallback(() => {
+    const table = tableRef.current;
+    const backdrop = backdropRef.current;
+    if (!table || !backdrop) return;
+    const rows = table.tBodies[0]?.rows;
+    backdrop.style.left = `${table.offsetLeft}px`;
+    backdrop.style.width = `${table.offsetWidth}px`;
+    Array.from(backdrop.children as HTMLCollectionOf<HTMLElement>).forEach((stripe, i) => {
+      const tr = rows?.[i];
+      stripe.style.top = `${tr ? table.offsetTop + tr.offsetTop : 0}px`;
+      stripe.style.height = `${tr ? tr.offsetHeight : 0}px`;
+    });
+  }, [tableRef, backdropRef]);
+
+  useLayoutEffect(pin);
+
+  // `active` flips when the backdrop (and, on first load, the table)
+  // mounts, which is when there is finally something to observe.
+  useLayoutEffect(() => {
+    const table = tableRef.current;
+    if (!active || !table) return;
+    const observer = new ResizeObserver(pin);
+    observer.observe(table);
+    return () => observer.disconnect();
+  }, [active, tableRef, pin]);
 }
 
 /**

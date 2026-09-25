@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 const ROUTES = [
-  { nav: "nav-overview", page: "page-overview", path: "/" },
+  { nav: "nav-overview", page: "page-overview", path: "/overview" },
   { nav: "nav-season", page: "page-season", path: "/season" },
   { nav: "nav-model", page: "page-model", path: "/model" },
   { nav: "nav-teams", page: "page-teams", path: "/teams" },
@@ -12,7 +12,7 @@ const ROUTES = [
 
 test.describe("sidebar navigation", () => {
   test("every route is reachable from the sidebar by mouse", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/overview");
     for (const route of ROUTES) {
       await page.getByTestId(route.nav).click();
       await expect(page.getByTestId(route.page)).toBeVisible();
@@ -26,7 +26,7 @@ test.describe("sidebar navigation", () => {
   // sequence. Caps at 40 tabs so a broken tab trap fails the test instead
   // of hanging it.
   test("every route is reachable from the sidebar by keyboard", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/overview");
     // Under parallel load the JS bundle can still be hydrating when the
     // first Tab fires -- wait for the nav to actually be there so this
     // tests the real tab order, not a race with hydration.

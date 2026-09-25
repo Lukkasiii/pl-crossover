@@ -1,7 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
-const PLACEHOLDER_ROUTES = ["/", "/model", "/teams", "/teams/arsenal", "/compare", "/method"];
+const PLACEHOLDER_ROUTES = ["/overview", "/model", "/teams", "/teams/arsenal", "/compare", "/method"];
 
 /**
  * Runs the real WCAG 2 A/AA ruleset (axe-core's default) against every
@@ -37,6 +37,18 @@ test.describe("accessibility", () => {
     // The replay lands on frame 0 as soon as it's ready, without a click --
     // nothing is playing yet, so the DOM is already stable for axe to scan.
     await expect(page.locator("table tbody tr").first()).toBeVisible();
+
+    const results = await new AxeBuilder({ page }).analyze();
+    expect(results.violations).toEqual([]);
+  });
+
+  // The cover has no sidebar, so it can't share the loop above's wait.
+  // Reduced motion renders the finished frame at once, so axe scans the
+  // marker label at full opacity rather than mid-fade.
+  test("/ (cover) has no axe violations", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto("/");
+    await expect(page.getByTestId("cover-curve")).toBeVisible();
 
     const results = await new AxeBuilder({ page }).analyze();
     expect(results.violations).toEqual([]);

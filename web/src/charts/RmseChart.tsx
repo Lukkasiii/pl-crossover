@@ -32,13 +32,22 @@ export function RmseChart({ metric, roundsSoFar }: RmseChartProps) {
     const prior = priorRmse === null ? [] : games.map(() => priorRmse);
 
     return {
-      grid: { left: 48, right: 16, top: 32, bottom: 32 },
+      // The band above the grid belongs to the crossover marker's label
+      // alone (ECharts draws it just above the markLine's top end). The
+      // legend is HTML above the canvas instead of an ECharts legend: in the
+      // 251px-wide /season panel at 1024px the canvas legend wrapped to two
+      // rows and landed on the label, and no fixed top padding survives a
+      // legend whose row count depends on width and locale. The y-axis name
+      // sits on the side (nameLocation "middle") for the same reason.
+      // e2e/chart-overlap.spec.ts measures this at every layout-spec width.
+      grid: { left: 60, right: 16, top: 28, bottom: 32 },
       tooltip: { trigger: "axis", valueFormatter: (v) => (v as number).toFixed(2) },
-      legend: { top: 0, data: [t("chart.currentSeason"), t("chart.priorSeason")] },
       xAxis: { type: "category", name: t("chart.gamesPlayed"), data: games, axisLabel: { fontFamily: fonts.mono } },
       yAxis: {
         type: "value",
         name: t("chart.rmsePositions"),
+        nameLocation: "middle",
+        nameGap: 44,
         // A "value" axis anchors at zero unless told not to -- zero is not a
         // meaningful RMSE here (nothing is ever near it, and there is no
         // part-of-a-whole reading a zero baseline would protect), so without
@@ -94,5 +103,22 @@ export function RmseChart({ metric, roundsSoFar }: RmseChartProps) {
     };
   }, [metric, roundsSoFar, t]);
 
-  return <EChart option={option} />;
+  const colors = getColors();
+  return (
+    <div className="chart-with-legend">
+      <ul className="chart-legend">
+        <li>
+          <span className="chart-legend-swatch" style={{ borderTopColor: colors.green }} aria-hidden="true" />
+          {t("chart.currentSeason")}
+        </li>
+        <li>
+          <span className="chart-legend-swatch dashed" style={{ borderTopColor: colors.red }} aria-hidden="true" />
+          {t("chart.priorSeason")}
+        </li>
+      </ul>
+      <div className="chart-canvas">
+        <EChart option={option} />
+      </div>
+    </div>
+  );
 }

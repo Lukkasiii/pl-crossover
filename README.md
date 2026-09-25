@@ -25,7 +25,8 @@ ECharts, tree-shaken down from 1,118.52 KB / 371.16 KB gzip for the naive
 `import * as echarts from "echarts"` — full method and per-route numbers in
 [Frontend decisions](#frontend-decisions).
 
-**Demo account** (only needed to save named parameter sets — see
+**Demo account** (only needed to save named parameter sets — works on the
+deployed demo too, where the sign-in runs in the browser; see
 [Auth and saved scenarios](#auth-and-saved-scenarios)):
 
 ```
@@ -136,10 +137,22 @@ per frame, which is the actual load the render-decoupling below exists for.
 
 ## Auth and saved scenarios
 
-`AuthPanel` and `ScenariosPanel` return nothing under `VITE_DEMO_MODE` — the
-static demo has no backend to authenticate against — so this is the one
-feature the deployed demo can never show. The GIF below is the real round
-trip instead: signing in as the seeded demo account, tuning σ, saving it as a
+One interface, two implementations, chosen in one place
+(`web/src/auth/backend.ts`): `apiBackend` is the real account system —
+bcrypt password hashing, a JWT access token held in memory, a refresh token
+in an httpOnly cookie (`api/app/security.py`, `api/app/routers/auth.py`) —
+and `browserBackend` is the static demo's stand-in, because GitHub Pages has
+no server to authenticate against. The stand-in signs in only the built-in
+demo account above, prints its credentials in the sign-in panel itself, has
+no registration, and keeps that one account's scenarios in `localStorage`
+(every access wrapped, with an in-memory fallback for private windows where
+storage throws). The panel says, in both languages, that it runs in the
+browser and where the real implementation lives — same rule as the Ask
+panel: nothing may read as a real account system when it isn't one.
+`e2e/production-base.spec.ts` drives the demo version end to end on the real
+demo build.
+
+The GIF below is the real backend's round trip: signing in as the seeded demo account, tuning σ, saving it as a
 named scenario, reloading (the access token is gone, the session survives on
 the refresh cookie), loading the scenario back, renaming, deleting, and
 signing out. It's `e2e/auth-scenarios.spec.ts` itself, recorded —
@@ -516,12 +529,52 @@ this machine, and the reason lives in a different line than the one the
 pitch describes.** A small, honest number instead of the large one "decouple
 the arrival rate from the render rate" implied — see CLAUDE.md's working
 style on exactly this: a properly-measured small effect is a better answer
-than an invented large one. Gating `FrameCache`'s own notification on
-whether the snapshot the current `viewSeq` resolves to actually changed is
-the real next step; not done here — this task was to measure the existing
-mechanism, not to change it out from under the measurement. Reproduce with
+than an invented large one. Reproduce with
 `npx playwright test --config=playwright.perf.config.ts` (see
 `e2e-perf/README.md`).
+
+**Follow-up: gating the cache's notification.** `FrameCache.add()` now
+notifies subscribers only when the frame is at or before the playhead the UI
+last read (`frameCache.ts`) — during playback nearly every message is *ahead*
+of it, so nothing re-renders until the next state commit moves the playhead.
+Same harness, same machine, same day, interleaved ×8 per arm; the "before"
+row swaps in only the old `frameCache.ts` with everything else on the branch
+identical:
+
+| 50x, full season, median (spread), n=8 | duration (ms) | long tasks (count) | long tasks (total ms) | messages |
+|---|---|---|---|---|
+| before gate — coalesced | 6537 (3177) | 7 (36) | 360 (3302) | 330 |
+| before gate — bypassed | 6636 (2411) | 7 (30) | 356 (2861) | 325 |
+| after gate — coalesced | 2047 (100) | 5 (2) | 337 (139) | 417 |
+| after gate — bypassed | 1892 (64) | 3.5 (1) | 228 (72) | 387 |
+
+The gate is the real win: a 50x season finishes in ~2s instead of ~6.5s
+(server pacing alone is 418 × 4ms ≈ 1.7s), and the run-to-run spread
+collapses from seconds to ~100ms. Both arms improve because both were
+paying for the notification: every message used to trigger a synchronous
+`useSyncExternalStore` re-render on top of whatever state commit followed.
+The before/after rows are two separate runs, not interleaved against each
+other, so treat the size of that gap as approximate — but a 3x drop with
+non-overlapping spreads is not drift. **What did not change: coalesced vs
+bypassed is still indistinguishable** (bypassed is marginally faster here,
+while processing ~30 fewer messages per run, so not a like-for-like win
+either way). With the notification gated, one React commit per message is
+already cheap enough at this table size that batching commits to rAF buys
+nothing measurable on this machine. The DOM-commit column is dropped from
+this table: its `MutationObserver` watches attributes too, so it counts the
+FLIP `transform` writes (whose duration also changed, see below) as much as
+React commits, and stopped isolating the thing it was meant to.
+
+**FLIP duration vs 1x pacing.** 1x emits a match frame every 200ms; the
+standings FLIP ran for 400ms, so at 1x every reorder was still mid-slide when
+the next one landed, and each interruption restarted the slide from the
+row's *last layout position* rather than where it was drawn — a visible
+jump. Now 180ms (`useFlip.ts`), under the frame gap, and an interrupted
+slide resumes from the row's current on-screen offset. The zone bands no
+longer ride along either: they are a stationary backdrop at the slot
+positions, and only names and numbers slide across it
+(`e2e/standings-bands.spec.ts` samples the stripes mid-reorder and requires
+them not to have moved by a pixel).
 
 **Parse time of the 2MB demo frames JSON**, measured in-page (`fetch` +
 `JSON.parse` on `frames-1.json`, 2,051,789 bytes, median of 10 runs in headless

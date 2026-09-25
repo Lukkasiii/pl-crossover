@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Pre-renders a real dist/<route>/index.html for each of the seven known
+// Pre-renders a real dist/<route>/index.html for each of the eight known
 // static routes (see CLAUDE.md "v2 -- multi-page dashboard / Routes"),
 // baking route-specific <title>/description/OG/Twitter tags into the
 // static HTML shell before any JS runs.
@@ -27,6 +27,12 @@ const DIST = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "dist
 const SITE_URL = "https://lukkasiii.github.io/pl-crossover";
 
 const ROUTES = [
+  {
+    path: "overview",
+    title: "Overview — PL Crossover",
+    description:
+      "The answer in one screen: 11.8 games into a Premier League season, this season's xG starts predicting the final table better than last season's table does.",
+  },
   {
     path: "season",
     title: "Season Replay — PL Crossover",

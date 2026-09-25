@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 const BASE = "/pl-crossover";
 
 const ROUTES = [
-  { nav: "nav-overview", path: `${BASE}/`, page: "page-overview" },
+  { nav: "nav-overview", path: `${BASE}/overview`, page: "page-overview" },
   { nav: "nav-season", path: `${BASE}/season`, page: "page-season" },
   { nav: "nav-model", path: `${BASE}/model`, page: "page-model" },
   { nav: "nav-teams", path: `${BASE}/teams`, page: "page-teams" },
@@ -24,7 +24,7 @@ const ROUTES = [
 test.describe("production base path", () => {
   for (const route of ROUTES) {
     test(`clicking ${route.nav} stays on ${route.path}`, async ({ page }) => {
-      await page.goto(`${BASE}/`);
+      await page.goto(`${BASE}/overview`);
       await page.getByTestId(route.nav).click();
       await expect(page.getByTestId(route.page)).toBeVisible();
       expect(new URL(page.url()).pathname).toBe(route.path);
@@ -56,7 +56,7 @@ test.describe("production base path", () => {
   for (const route of ROUTES) {
     test(`a direct hit on ${route.path} renders the right route`, async ({ page }) => {
       const response = await page.goto(route.path);
-      // Every route here is one of the seven scripts/prerender-routes.mjs
+      // Every route here is one of the eight scripts/prerender-routes.mjs
       // covers (or the root, which is dist/index.html itself) -- a real
       // dist/<route>/index.html file exists for each, so GitHub Pages'
       // directory-index resolution serves it directly as a genuine 200,
@@ -67,6 +67,18 @@ test.describe("production base path", () => {
       expect(new URL(page.url()).pathname).toBe(route.path);
     });
   }
+
+  // Entering from the cover navigates to "/overview" through the router;
+  // under the real basename a wrong-basename navigate() is exactly the
+  // failure only this config can see (see useUrlParamWriter's history).
+  test("the root serves the cover, and entering it lands on the real Overview path", async ({ page }) => {
+    const response = await page.goto(`${BASE}/`);
+    expect(response?.status()).toBe(200);
+    await expect(page.getByTestId("page-cover")).toBeVisible();
+    await page.getByTestId("cover-enter").click();
+    await expect(page.getByTestId("page-overview")).toBeVisible();
+    expect(new URL(page.url()).pathname).toBe(`${BASE}/overview`);
+  });
 
   test("known routes carry their own <title> in the raw HTML, not just after the SPA boots", async ({ request }) => {
     // A crawler or link-unfurler never runs the SPA's JS, which is what
@@ -84,5 +96,57 @@ test.describe("production base path", () => {
       expect(title, `${route.path} has no <title> in its raw response`).toBeTruthy();
       expect(title, `${route.path}'s raw <title> should differ from the generic root title`).not.toBe(rootTitle);
     }
+  });
+
+  // The static demo has no backend, so /scenarios runs on the in-browser
+  // stand-in (src/auth/browserBackend.ts). Only this config builds in demo
+  // mode, so this is the only place it can be exercised.
+  test("the demo sign-in works end to end, and says what it is", async ({ page }) => {
+    await page.goto(`${BASE}/scenarios`);
+    const prompt = page.getByTestId("scenarios-sign-in-prompt");
+    await expect(prompt.getByTestId("auth-demo-notice")).toContainText("not a real account system");
+    await expect(prompt.getByTestId("auth-demo-email")).toHaveText("demo@plcrossover.dev");
+    await expect(prompt.getByTestId("auth-demo-password")).toHaveText("crossover-demo");
+    await expect(prompt.getByTestId("auth-tab-register")).toHaveCount(0);
+
+    // Anything but the built-in account is refused.
+    await prompt.getByTestId("auth-password-input").fill("not-the-password");
+    await prompt.getByTestId("auth-submit-button").click();
+    await expect(prompt.getByRole("alert")).toBeVisible();
+
+    await prompt.getByTestId("auth-password-input").fill("crossover-demo");
+    await prompt.getByTestId("auth-submit-button").click();
+    await expect(page.getByTestId("account-email")).toHaveText("demo@plcrossover.dev");
+
+    await page.getByTestId("scenario-name-input").fill("demo scenario");
+    await page.getByTestId("scenario-save-button").click();
+    const row = page.locator('[data-testid^="scenario-row-"]').filter({ hasText: "demo scenario" });
+    await expect(row).toContainText("w=5");
+
+    // Survives a reload: session and scenarios both persist in this browser.
+    await page.reload();
+    await expect(page.getByTestId("account-email")).toHaveText("demo@plcrossover.dev");
+    await expect(row).toBeVisible();
+
+    await row.locator('[data-testid^="scenario-rename-btn-"]').click();
+    const renameInput = page.locator('[data-testid^="scenario-rename-input-"]');
+    await renameInput.fill("renamed demo");
+    await renameInput.press("Enter");
+    const renamed = page.locator('[data-testid^="scenario-row-"]').filter({ hasText: "renamed demo" });
+    await expect(renamed).toBeVisible();
+
+    await renamed.locator('[data-testid^="scenario-load-"]').click();
+    await renamed.locator('[data-testid^="scenario-delete-"]').click();
+    await expect(page.getByTestId("scenarios-empty")).toBeVisible();
+
+    await page.getByTestId("sign-out-button").click();
+    await expect(page.getByTestId("scenarios-sign-in-prompt")).toBeVisible();
+  });
+
+  test("the demo sign-in notice is in Chinese too", async ({ page }) => {
+    await page.goto(`${BASE}/scenarios?lang=zh`);
+    await expect(page.getByTestId("scenarios-sign-in-prompt").getByTestId("auth-demo-notice")).toContainText(
+      "这不是真正的账户系统",
+    );
   });
 });
