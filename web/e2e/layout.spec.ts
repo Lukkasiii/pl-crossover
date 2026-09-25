@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-const ROUTES = ["/", "/season", "/model", "/teams", "/teams/arsenal", "/compare", "/method", "/scenarios"];
+const ROUTES = ["/", "/overview", "/season", "/model", "/teams", "/teams/arsenal", "/compare", "/method", "/scenarios"];
 
 /**
  * fr tracks default to min-width: auto, so a wide table or chart can hold
@@ -47,7 +47,7 @@ test.describe("layout", () => {
         await page.goto(route);
         // The sidebar collapses to a drawer at max-width: 720px (Sidebar.css);
         // above that it's a normal visible column at every width swept here.
-        if (width > 720) {
+        if (width > 720 && route !== "/") {
           await expect(page.getByTestId("sidebar-nav")).toBeVisible();
         }
         if (route === "/season") {

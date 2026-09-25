@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 const BASE = "/pl-crossover";
 
 const ROUTES = [
-  { nav: "nav-overview", path: `${BASE}/`, page: "page-overview" },
+  { nav: "nav-overview", path: `${BASE}/overview`, page: "page-overview" },
   { nav: "nav-season", path: `${BASE}/season`, page: "page-season" },
   { nav: "nav-model", path: `${BASE}/model`, page: "page-model" },
   { nav: "nav-teams", path: `${BASE}/teams`, page: "page-teams" },
@@ -24,7 +24,7 @@ const ROUTES = [
 test.describe("production base path", () => {
   for (const route of ROUTES) {
     test(`clicking ${route.nav} stays on ${route.path}`, async ({ page }) => {
-      await page.goto(`${BASE}/`);
+      await page.goto(`${BASE}/overview`);
       await page.getByTestId(route.nav).click();
       await expect(page.getByTestId(route.page)).toBeVisible();
       expect(new URL(page.url()).pathname).toBe(route.path);
@@ -56,7 +56,7 @@ test.describe("production base path", () => {
   for (const route of ROUTES) {
     test(`a direct hit on ${route.path} renders the right route`, async ({ page }) => {
       const response = await page.goto(route.path);
-      // Every route here is one of the seven scripts/prerender-routes.mjs
+      // Every route here is one of the eight scripts/prerender-routes.mjs
       // covers (or the root, which is dist/index.html itself) -- a real
       // dist/<route>/index.html file exists for each, so GitHub Pages'
       // directory-index resolution serves it directly as a genuine 200,
@@ -67,6 +67,18 @@ test.describe("production base path", () => {
       expect(new URL(page.url()).pathname).toBe(route.path);
     });
   }
+
+  // Entering from the cover navigates to "/overview" through the router;
+  // under the real basename a wrong-basename navigate() is exactly the
+  // failure only this config can see (see useUrlParamWriter's history).
+  test("the root serves the cover, and entering it lands on the real Overview path", async ({ page }) => {
+    const response = await page.goto(`${BASE}/`);
+    expect(response?.status()).toBe(200);
+    await expect(page.getByTestId("page-cover")).toBeVisible();
+    await page.getByTestId("cover-enter").click();
+    await expect(page.getByTestId("page-overview")).toBeVisible();
+    expect(new URL(page.url()).pathname).toBe(`${BASE}/overview`);
+  });
 
   test("known routes carry their own <title> in the raw HTML, not just after the SPA boots", async ({ request }) => {
     // A crawler or link-unfurler never runs the SPA's JS, which is what

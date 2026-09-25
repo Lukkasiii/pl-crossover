@@ -13,7 +13,7 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { to: "/", labelKey: "nav.overview", end: true, testid: "nav-overview" },
+  { to: "/overview", labelKey: "nav.overview", end: false, testid: "nav-overview" },
   { to: "/season", labelKey: "nav.season", end: false, testid: "nav-season" },
   { to: "/model", labelKey: "nav.model", end: false, testid: "nav-model" },
   { to: "/teams", labelKey: "nav.teams", end: false, testid: "nav-teams" },

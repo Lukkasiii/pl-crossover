@@ -3,9 +3,10 @@ import { Link } from "react-router-dom";
 import { useLocale } from "../i18n/LocaleContext";
 import { usePooledCurve } from "../api/usePooledCurve";
 import type { RoundFrame, RoundMetric } from "../ws/types";
+import { useReturnToCover } from "../routing/useReturnToCover";
 import styles from "./Overview.module.css";
 
-// / must stay ECharts-free at first paint (see CLAUDE.md "v2 -- multi-page
+// /overview must stay ECharts-free at first paint (see CLAUDE.md "v2 -- multi-page
 // dashboard"): the hero, stat cards and nav cards below render immediately,
 // and only the chart chunk (RmseChart + its EChart/echarts-core dependency)
 // loads behind this second Suspense boundary, after the route's own.
@@ -39,6 +40,7 @@ function NavCard({ to, title, body }: { to: string; title: string; body: string 
 export default function Overview() {
   const { t } = useLocale();
   const { curve } = usePooledCurve("xg");
+  useReturnToCover();
 
   useEffect(() => {
     document.title = `${t("nav.overview")} — ${t("nav.siteTitle")}`;

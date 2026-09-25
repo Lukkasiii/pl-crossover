@@ -8,7 +8,7 @@ import { expect, test } from "@playwright/test";
  * intersect -- the ⚡ Crossover label colliding with the legend on
  * /overview is the bug that prompted it. Same widths as layout.spec.ts.
  */
-const ROUTES = ["/", "/season", "/model", "/compare", "/teams/arsenal"];
+const ROUTES = ["/overview", "/season", "/model", "/compare", "/teams/arsenal"];
 const WIDTHS = [1440, 1024, 900, 390] as const;
 
 interface Box {

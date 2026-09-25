@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { AppShell } from "./routes/AppShell";
 import { ReplaySessionLayout } from "./routes/ReplaySessionLayout";
 import { useLocale } from "./i18n/LocaleContext";
+import Cover from "./pages/Cover";
 import "./App.css";
 
 // Every route lazy-loads -- Overview needs no ECharts at all, and it was
@@ -10,6 +11,8 @@ import "./App.css";
 // least needed it. Season and Model split the Stage 1-4 dashboard's four
 // panels between them (see CLAUDE.md); Scenarios carries the Stage 4 auth
 // panel unchanged; the rest are Stage 5 placeholders.
+// Cover is the one eager import: it is the first paint for anyone opening
+// the site, and a lazy chunk would put a round trip in front of it.
 const Overview = lazy(() => import("./pages/Overview"));
 const Season = lazy(() => import("./pages/Season"));
 const Model = lazy(() => import("./pages/Model"));
@@ -28,8 +31,10 @@ function App() {
   return (
     <Suspense fallback={<RouteFallback />}>
       <Routes>
+        {/* The cover sits outside the shell: no sidebar, its own full-bleed surface. */}
+        <Route index element={<Cover />} />
         <Route element={<AppShell />}>
-          <Route index element={<Overview />} />
+          <Route path="overview" element={<Overview />} />
           <Route element={<ReplaySessionLayout />}>
             <Route path="season" element={<Season />} />
             <Route path="model" element={<Model />} />
