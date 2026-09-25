@@ -25,7 +25,8 @@ ECharts, tree-shaken down from 1,118.52 KB / 371.16 KB gzip for the naive
 `import * as echarts from "echarts"` — full method and per-route numbers in
 [Frontend decisions](#frontend-decisions).
 
-**Demo account** (only needed to save named parameter sets — see
+**Demo account** (only needed to save named parameter sets — works on the
+deployed demo too, where the sign-in runs in the browser; see
 [Auth and saved scenarios](#auth-and-saved-scenarios)):
 
 ```
@@ -136,10 +137,22 @@ per frame, which is the actual load the render-decoupling below exists for.
 
 ## Auth and saved scenarios
 
-`AuthPanel` and `ScenariosPanel` return nothing under `VITE_DEMO_MODE` — the
-static demo has no backend to authenticate against — so this is the one
-feature the deployed demo can never show. The GIF below is the real round
-trip instead: signing in as the seeded demo account, tuning σ, saving it as a
+One interface, two implementations, chosen in one place
+(`web/src/auth/backend.ts`): `apiBackend` is the real account system —
+bcrypt password hashing, a JWT access token held in memory, a refresh token
+in an httpOnly cookie (`api/app/security.py`, `api/app/routers/auth.py`) —
+and `browserBackend` is the static demo's stand-in, because GitHub Pages has
+no server to authenticate against. The stand-in signs in only the built-in
+demo account above, prints its credentials in the sign-in panel itself, has
+no registration, and keeps that one account's scenarios in `localStorage`
+(every access wrapped, with an in-memory fallback for private windows where
+storage throws). The panel says, in both languages, that it runs in the
+browser and where the real implementation lives — same rule as the Ask
+panel: nothing may read as a real account system when it isn't one.
+`e2e/production-base.spec.ts` drives the demo version end to end on the real
+demo build.
+
+The GIF below is the real backend's round trip: signing in as the seeded demo account, tuning σ, saving it as a
 named scenario, reloading (the access token is gone, the session survives on
 the refresh cookie), loading the scenario back, renaming, deleting, and
 signing out. It's `e2e/auth-scenarios.spec.ts` itself, recorded —

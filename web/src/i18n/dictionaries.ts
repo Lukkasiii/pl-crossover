@@ -135,7 +135,14 @@ export const en = {
   "auth.email": "Email",
   "auth.password": "Password",
   "auth.createAccount": "Create account",
-  "auth.genericError": "something went wrong",
+  "auth.genericError": "Something went wrong.",
+  "auth.demo.title": "Demo sign-in — runs in your browser",
+  "auth.demo.body":
+    "This is not a real account system. The static demo has no server, so this sign-in accepts only the built-in account above and keeps its saved scenarios in this browser's local storage. The real implementation — bcrypt password hashing, a JWT access token held in memory, a refresh token in an httpOnly cookie — lives in api/app/security.py and api/app/routers/auth.py and runs against the backend with docker compose up.",
+  "auth.demo.wrongCredentials": "This demo only signs in its built-in account — use the email and password shown above.",
+  "auth.demo.noRegistration": "The static demo has no registration — use the built-in demo account.",
+  "auth.demo.signInFirst": "Sign in with the demo account first.",
+  "auth.demo.scenarioGone": "That scenario no longer exists.",
 
   "scenarios.heading": "Saved scenarios",
   "scenarios.namePlaceholder": "name this scenario…",
@@ -148,7 +155,7 @@ export const en = {
   "scenarios.rename": "Rename",
   "scenarios.delete": "Delete",
   "scenarios.renameLabelPrefix": "rename",
-  "scenarios.signInPrompt": "Sign in to save and load named parameter sets.",
+  "scenarios.signInPrompt": "Sign in to save the model settings you tune on Season Replay and Model as named scenarios, then load, rename or delete them later.",
   "scenarios.method.pooled": "pooled",
   "scenarios.method.per_season": "per-season",
 
@@ -425,7 +432,14 @@ export const zh = {
   "auth.email": "邮箱",
   "auth.password": "密码",
   "auth.createAccount": "创建账户",
-  "auth.genericError": "出了点问题",
+  "auth.genericError": "出了点问题。",
+  "auth.demo.title": "演示登录——在你的浏览器中运行",
+  "auth.demo.body":
+    "这不是真正的账户系统。静态演示站没有服务器，所以这里只接受上面的内置账户，保存的方案存放在本浏览器的 localStorage 中。真正的实现——bcrypt 密码哈希、保存在内存中的 JWT 访问令牌、放在 httpOnly Cookie 中的刷新令牌——位于 api/app/security.py 和 api/app/routers/auth.py，用 docker compose up 启动后端即可运行。",
+  "auth.demo.wrongCredentials": "此演示只能登录内置账户——请使用上面显示的邮箱和密码。",
+  "auth.demo.noRegistration": "静态演示站不提供注册——请使用内置演示账户。",
+  "auth.demo.signInFirst": "请先用演示账户登录。",
+  "auth.demo.scenarioGone": "该方案已不存在。",
 
   "scenarios.heading": "已保存方案",
   "scenarios.namePlaceholder": "为该方案命名…",
@@ -438,7 +452,7 @@ export const zh = {
   "scenarios.rename": "重命名",
   "scenarios.delete": "删除",
   "scenarios.renameLabelPrefix": "重命名",
-  "scenarios.signInPrompt": "登录后可保存和加载命名参数方案。",
+  "scenarios.signInPrompt": "登录后，可以把在“赛季回放”和“模型”页调好的模型参数保存为命名方案，之后再加载、重命名或删除。",
   "scenarios.method.pooled": "合并回归",
   "scenarios.method.per_season": "逐赛季回归",
 

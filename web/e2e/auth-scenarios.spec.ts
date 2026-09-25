@@ -24,16 +24,14 @@ function scenarioRow(page: Page, name: string) {
 
 const REPO_ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 
-// The auth UI has no other window into it: AuthPanel and ScenariosPanel
-// return null/a sign-in prompt under DEMO_MODE (no backend behind the
-// static demo build), so the deployed demo can never show them. This is the
-// one place that can -- recording this spec is how the README's auth
-// section gets a real GIF of it working instead of the feature being
-// invisible everywhere but a local checkout. A smaller viewport keeps the
-// source video (and the GIF made from it) down in size without cropping any
-// panel out of frame, and stays above the 720px sidebar-to-drawer
-// breakpoint so the sidebar (and AuthPanel inside it) is always visible,
-// not behind a drawer toggle.
+// This drives the *real* account system (api backend: bcrypt, JWT, refresh
+// cookie) -- the static demo swaps in an in-browser stand-in instead (see
+// src/auth/backend.ts), covered by production-base.spec.ts. Recording this
+// spec is how the README's auth section gets a GIF of the real one working.
+// A smaller viewport keeps the source video (and the GIF made from it) down
+// in size without cropping any panel out of frame, and stays above the 720px
+// sidebar-to-drawer breakpoint so the sidebar (and AuthPanel inside it) is
+// always visible, not behind a drawer toggle.
 test.use({ video: "on", viewport: { width: 960, height: 720 } });
 
 test.beforeAll(() => {

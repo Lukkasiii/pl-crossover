@@ -1,11 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { api } from "./client";
-import { errorDetail } from "./errorDetail";
 import { useAuth } from "../auth/AuthContext";
-import type { components } from "./schema";
+import { authBackend, type ScenarioOut, type ScenarioParams } from "../auth/backend";
 
-export type ScenarioParams = components["schemas"]["ScenarioParams"];
-export type ScenarioOut = components["schemas"]["ScenarioOut"];
+export type { ScenarioOut, ScenarioParams } from "../auth/backend";
 
 /**
  * Scoped by user id (not just "scenarios") so logging out and a different
@@ -24,43 +21,23 @@ export function useScenarios() {
   const query = useQuery<ScenarioOut[]>({
     queryKey: key,
     enabled: user !== null,
-    queryFn: async () => {
-      const { data, error } = await api.GET("/api/scenarios");
-      if (error) throw new Error(errorDetail(error, "failed to load scenarios"));
-      return data;
-    },
+    queryFn: () => authBackend.listScenarios(),
   });
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: key });
 
   const save = useMutation({
-    mutationFn: async ({ name, params }: { name: string; params: ScenarioParams }) => {
-      const { data, error } = await api.POST("/api/scenarios", { body: { name, params } });
-      if (error) throw new Error(errorDetail(error, "failed to save scenario"));
-      return data;
-    },
+    mutationFn: ({ name, params }: { name: string; params: ScenarioParams }) => authBackend.createScenario(name, params),
     onSuccess: invalidate,
   });
 
   const rename = useMutation({
-    mutationFn: async ({ id, name }: { id: number; name: string }) => {
-      const { data, error } = await api.PUT("/api/scenarios/{scenario_id}", {
-        params: { path: { scenario_id: id } },
-        body: { name },
-      });
-      if (error) throw new Error(errorDetail(error, "failed to rename scenario"));
-      return data;
-    },
+    mutationFn: ({ id, name }: { id: number; name: string }) => authBackend.renameScenario(id, name),
     onSuccess: invalidate,
   });
 
   const remove = useMutation({
-    mutationFn: async (id: number) => {
-      const { error } = await api.DELETE("/api/scenarios/{scenario_id}", {
-        params: { path: { scenario_id: id } },
-      });
-      if (error) throw new Error(errorDetail(error, "failed to delete scenario"));
-    },
+    mutationFn: (id: number) => authBackend.deleteScenario(id),
     onSuccess: invalidate,
   });
 

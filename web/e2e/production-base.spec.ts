@@ -97,4 +97,56 @@ test.describe("production base path", () => {
       expect(title, `${route.path}'s raw <title> should differ from the generic root title`).not.toBe(rootTitle);
     }
   });
+
+  // The static demo has no backend, so /scenarios runs on the in-browser
+  // stand-in (src/auth/browserBackend.ts). Only this config builds in demo
+  // mode, so this is the only place it can be exercised.
+  test("the demo sign-in works end to end, and says what it is", async ({ page }) => {
+    await page.goto(`${BASE}/scenarios`);
+    const prompt = page.getByTestId("scenarios-sign-in-prompt");
+    await expect(prompt.getByTestId("auth-demo-notice")).toContainText("not a real account system");
+    await expect(prompt.getByTestId("auth-demo-email")).toHaveText("demo@plcrossover.dev");
+    await expect(prompt.getByTestId("auth-demo-password")).toHaveText("crossover-demo");
+    await expect(prompt.getByTestId("auth-tab-register")).toHaveCount(0);
+
+    // Anything but the built-in account is refused.
+    await prompt.getByTestId("auth-password-input").fill("not-the-password");
+    await prompt.getByTestId("auth-submit-button").click();
+    await expect(prompt.getByRole("alert")).toBeVisible();
+
+    await prompt.getByTestId("auth-password-input").fill("crossover-demo");
+    await prompt.getByTestId("auth-submit-button").click();
+    await expect(page.getByTestId("account-email")).toHaveText("demo@plcrossover.dev");
+
+    await page.getByTestId("scenario-name-input").fill("demo scenario");
+    await page.getByTestId("scenario-save-button").click();
+    const row = page.locator('[data-testid^="scenario-row-"]').filter({ hasText: "demo scenario" });
+    await expect(row).toContainText("w=5");
+
+    // Survives a reload: session and scenarios both persist in this browser.
+    await page.reload();
+    await expect(page.getByTestId("account-email")).toHaveText("demo@plcrossover.dev");
+    await expect(row).toBeVisible();
+
+    await row.locator('[data-testid^="scenario-rename-btn-"]').click();
+    const renameInput = page.locator('[data-testid^="scenario-rename-input-"]');
+    await renameInput.fill("renamed demo");
+    await renameInput.press("Enter");
+    const renamed = page.locator('[data-testid^="scenario-row-"]').filter({ hasText: "renamed demo" });
+    await expect(renamed).toBeVisible();
+
+    await renamed.locator('[data-testid^="scenario-load-"]').click();
+    await renamed.locator('[data-testid^="scenario-delete-"]').click();
+    await expect(page.getByTestId("scenarios-empty")).toBeVisible();
+
+    await page.getByTestId("sign-out-button").click();
+    await expect(page.getByTestId("scenarios-sign-in-prompt")).toBeVisible();
+  });
+
+  test("the demo sign-in notice is in Chinese too", async ({ page }) => {
+    await page.goto(`${BASE}/scenarios?lang=zh`);
+    await expect(page.getByTestId("scenarios-sign-in-prompt").getByTestId("auth-demo-notice")).toContainText(
+      "这不是真正的账户系统",
+    );
+  });
 });

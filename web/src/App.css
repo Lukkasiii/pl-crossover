@@ -307,3 +307,7 @@
 .table-scroll-wrap {
   overflow-x: auto;
 }
+
+.scenarios-sign-in {
+  max-width: 440px;
+}
