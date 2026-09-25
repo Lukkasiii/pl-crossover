@@ -59,6 +59,7 @@ everything built from here on. The "depth beats breadth" rule still applies
 | Overview, Teams, Compare, Method page content | done (Stage 6) |
 | Player layer: `players` table, `/teams/:slug` Key players section | done (Stage 7) |
 | Ask the Model panel | done (Stage 9) — real tool-calling loop, cached fixtures, `/model` panel |
+| Cover page at `/`, Overview at `/overview`, demo-mode sign-in, Method explainer | done (Stage 11) |
 
 Pushed to `github.com/Lukkasiii/pl-crossover`.
 
@@ -126,6 +127,20 @@ squad list one row it can't otherwise place, which the UI states outright
 rather than hiding; a plain `WHERE team_id = ?` already excludes them from
 every per-club roster/aggregate for free, so there is no separate filter a
 caller could forget.
+
+**Understat's `position` field is a set of roles, not one position.** Each
+letter (GK / D / M / F) is a role the player appeared in that season, and `S`
+means at least one substitute appearance. Understat publishes no glossary, so
+this is *derived from the data*: S-only players average 9.6 minutes per
+appearance, strings without S 88.4 (4,806 player-seasons). The UI spells the
+letters out and its ⓘ says it is derived — never present it as Understat's
+documented meaning.
+
+**The static demo's sign-in is not an account system.** `src/auth/backend.ts`
+chooses once between `apiBackend` (the real one) and `browserBackend` (GitHub
+Pages has no server): the latter signs in only the seeded demo account,
+prints its credentials in the panel, has no registration, and keeps scenarios
+in `localStorage`. The panel says so in both languages. Keep it that way.
 
 **xGChain and xGBuildup, sourced before writing a word of copy about them.**
 Understat's own site publishes no glossary for either field (checked
@@ -417,7 +432,8 @@ diluting the 30-second read — a wall of panels reads as *more*, not as
 
 | Route | Content |
 |---|---|
-| `/` | Overview — landing page, the 30-second pitch, links into the rest |
+| `/` | Cover — outside the shell: the question, one button, the real xG curve drawing itself. Scroll/click/Enter/Space enter `/overview`; a pull upward at the top of Overview returns (`useReturnToCover`) |
+| `/overview` | Overview — the 30-second pitch, links into the rest |
 | `/season` | Season Replay Engine — the Stage 1–4 dashboard (replay, RMSE curve, prediction tuner, standings) moved here unchanged |
 | `/model` | The Bayesian model explained: the blend formula, prior-share-by-checkpoint table |
 | `/teams` | All teams, one list |

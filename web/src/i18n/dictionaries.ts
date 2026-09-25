@@ -160,19 +160,19 @@ export const en = {
   "scenarios.method.per_season": "per-season",
 
   "cover.headline": "When does this season start telling you more than the last one?",
-  "cover.subtitle": "Eight Premier League season pairs, replayed match by match, to find the game where this season's results overtake last season's table as the better predictor.",
+  "cover.subtitle": "Eight Premier League season pairs, replayed match by match, to find the game where this season's numbers overtake last season's as the better predictor of the final table.",
   "cover.enter": "Enter the dashboard",
   "cover.scroll": "SCROLL",
-  "cover.priorLabel": "Last season's table",
+  "cover.priorLabel": "Last season's xG",
   "cover.currentLabel": "This season's xG",
   "cover.chartLabel":
-    "The prediction error of this season's xG falls with every game played and drops below last season's table at game {games}.",
+    "The prediction error of this season's xG falls with every game played and drops below last season's xG at game {games}.",
 
   "overview.hook":
     "Every August, predictions for the Premier League lean on last season's final table — it's the only complete evidence anyone has. As matches are played, this season's own results pile up, and at some point they become the better guide. This project measures exactly when that handover happens, across eight pairs of consecutive seasons from 2016/17 to 2024/25.",
   "overview.headlineUnit": "games",
   "overview.headlineSub":
-    "That's when this season's xG — expected goals, a measure of how good a team's chances were — starts predicting the final table better than last season's table did. Less than a third of the way through a 38-game season.",
+    "That's when this season's xG — expected goals, a measure of how good a team's chances were — starts predicting the final table better than last season's full-season xG did. Less than a third of the way through a 38-game season.",
   "overview.headlineNote":
     "A four-checkpoint graduate workbook interpolated \"about 12\"; match-level data puts it at 11.8 — exactly, not bracketed.",
   "overview.stat.crossover": "Crossover (xG)",
@@ -492,18 +492,18 @@ export const zh = {
   "scenarios.method.per_season": "逐赛季回归",
 
   "cover.headline": "本赛季从哪一场起，比上赛季更能说明问题？",
-  "cover.subtitle": "八组英超相邻赛季，逐场回放，找出本赛季战绩超越上赛季积分榜、成为更好预测依据的那一场。",
+  "cover.subtitle": "八组英超相邻赛季，逐场回放，找出本赛季数据超越上赛季、成为最终排名更好预测依据的那一场。",
   "cover.enter": "进入看板",
   "cover.scroll": "向下滚动",
-  "cover.priorLabel": "上赛季积分榜",
+  "cover.priorLabel": "上赛季 xG",
   "cover.currentLabel": "本赛季 xG",
-  "cover.chartLabel": "本赛季 xG 的预测误差随比赛场次增加而下降，在第 {games} 场低于上赛季积分榜。",
+  "cover.chartLabel": "本赛季 xG 的预测误差随比赛场次增加而下降，在第 {games} 场低于上赛季 xG。",
 
   "overview.hook":
     "每年八月，人们预测英超排名时依靠的都是上赛季的最终积分榜——那是当时唯一完整的证据。随着比赛一场场进行，本赛季自己的数据不断累积，总有一刻会成为更好的依据。这个项目用 2016/17 到 2024/25 的八组相邻赛季，精确测量这一交接发生在第几场。",
   "overview.headlineUnit": "场",
   "overview.headlineSub":
-    "从这一场起，本赛季的 xG（预期进球，衡量一支球队创造的机会有多好）比上赛季的积分榜更能预测最终排名——还不到 38 场赛季的三分之一。",
+    "从这一场起，本赛季的 xG（预期进球，衡量一支球队创造的机会有多好）比上赛季全季的 xG 更能预测最终排名——还不到 38 场赛季的三分之一。",
   "overview.headlineNote": "一份仅有四个检查点的毕业作业插值得到「约 12 场」；逐场比赛的数据把它精确到了 11.8 场，而不只是一个区间。",
   "overview.stat.crossover": "交叉点（xG）",
   "overview.stat.observations": "观测样本",
