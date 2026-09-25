@@ -1,0 +1,385 @@
+[
+  {
+    "id": "crossover-round-12",
+    "question_en": "Why did predictions get more accurate after round 12?",
+    "question_zh": "为什么第 12 轮之后预测会变得更准确？",
+    "answer_en": "The pooled xG regression's current-season RMSE first drops below the prior-season baseline (4.09 positions) at 11.8 games -- that is the crossover, not anything that changes at round 12 specifically. By round 10 the current-season fit is still slightly worse than the baseline (4.17 vs 4.09); by round 15 it is clearly ahead (3.87). \"After round 12\" is simply past the crossover: the model has been trending down all season, and round 12 is where it happens to have already crossed the baseline it is compared against.",
+    "answer_zh": "合并 xG 回归的本赛季 RMSE 在 11.8 场时首次跌破上赛季基线（4.09 个名次）——这就是交叉点，而不是第 12 轮本身发生了什么特殊变化。到第 10 轮时，本赛季拟合仍略逊于基线（4.17 对比 4.09）；到第 15 轮时已经明显领先（3.87）。「第 12 轮之后」只是恰好已经越过交叉点：模型整个赛季都在持续下降，而第 12 轮正好是它已经跌破对比基线之后的一个时间点。",
+    "tool_calls": [
+      {
+        "tool": "get_rmse_curve",
+        "args": {
+          "metric": "xg",
+          "method": "pooled"
+        },
+        "label": "get_rmse_curve(metric=xg)",
+        "relatesTo": "current-rmse-metrics",
+        "result": {
+          "metric": "xg",
+          "method": "pooled",
+          "n_observations": 136,
+          "n_pairs": 8,
+          "prior_rmse": 4.087,
+          "crossover": 11.84,
+          "rmse_at": {
+            "5": 4.507,
+            "10": 4.174,
+            "12": 4.071,
+            "15": 3.869,
+            "20": 3.635,
+            "38": 3.45
+          }
+        }
+      }
+    ]
+  },
+  {
+    "id": "sigma-prior-10",
+    "question_en": "What happens if σ_prior is set to 10?",
+    "question_zh": "如果把 σ_prior 设为 10 会发生什么？",
+    "answer_en": "w_prior = 1 / sigma_prior^2, so it runs the opposite way you might expect: the original study's default (w_prior=5) implies sigma_prior ≈ 0.45, and setting sigma_prior to 10 gives w_prior = 1/100 = 0.01 -- almost no weight at all, not more. At 12 games the blend moves from RMSE 3.85 (w_prior=5, w_data=8.0) to 4.07 (w_prior≈0, same w_data) -- close to the pooled current-season fit alone at 12 games (4.07), since the prior contributes almost nothing to the blend once its weight is this small.",
+    "answer_zh": "w_prior = 1 / sigma_prior^2，所以它的方向和直觉相反：原始研究默认 w_prior=5，对应 sigma_prior ≈ 0.45；把 sigma_prior 设为 10 会得到 w_prior = 1/100 = 0.01——权重几乎为零，而不是更大。在第 12 场时，混合预测的 RMSE 从 3.85（w_prior=5，w_data=8.0）变为 4.07（w_prior≈0，w_data 不变）——已经接近第 12 场时仅用本赛季数据拟合的结果（4.07），因为先验权重小到这种程度时，它对混合结果的贡献几乎为零。",
+    "tool_calls": [
+      {
+        "tool": "get_posterior",
+        "args": {
+          "metric": "xg",
+          "games": 12,
+          "prior_weight": 5.0,
+          "obs_variance": 1.5
+        },
+        "label": "get_posterior(σ_prior≈0.45)",
+        "relatesTo": "weight-bars",
+        "result": {
+          "metric": "xg",
+          "games": 12,
+          "prior_weight": 5.0,
+          "obs_variance": 1.5,
+          "prior_rmse": 4.087,
+          "current_rmse": 4.071,
+          "weight_prior": 5.0,
+          "weight_data": 8.0,
+          "blended_rmse": 3.853,
+          "blended_mae": 3.168
+        }
+      },
+      {
+        "tool": "get_posterior",
+        "args": {
+          "metric": "xg",
+          "games": 12,
+          "prior_weight": 0.01,
+          "obs_variance": 1.5
+        },
+        "label": "get_posterior(σ=10)",
+        "relatesTo": "weight-bars",
+        "result": {
+          "metric": "xg",
+          "games": 12,
+          "prior_weight": 0.01,
+          "obs_variance": 1.5,
+          "prior_rmse": 4.087,
+          "current_rmse": 4.071,
+          "weight_prior": 0.01,
+          "weight_data": 8.0,
+          "blended_rmse": 4.069,
+          "blended_mae": 3.342
+        }
+      },
+      {
+        "tool": "get_rmse_curve",
+        "args": {
+          "metric": "xg",
+          "method": "pooled"
+        },
+        "label": "get_rmse_curve(metric=xg)",
+        "relatesTo": "current-rmse-metrics",
+        "result": {
+          "metric": "xg",
+          "method": "pooled",
+          "n_observations": 136,
+          "n_pairs": 8,
+          "prior_rmse": 4.087,
+          "crossover": 11.84,
+          "rmse_at": {
+            "5": 4.507,
+            "10": 4.174,
+            "12": 4.071,
+            "15": 3.869,
+            "20": 3.635,
+            "38": 3.45
+          }
+        }
+      }
+    ]
+  },
+  {
+    "id": "fastest-metric",
+    "question_en": "Which metric becomes reliable earliest?",
+    "question_zh": "哪个指标最早变得可靠？",
+    "answer_en": "Ranked by pooled crossover, earliest first: points (crossover ≈ 6.5 games), then goal difference (crossover ≈ 8.5 games), then xG (crossover ≈ 11.8 games), then xGD (crossover ≈ 13.3 games). Points and goal difference are actual results, so a handful of games already separates teams by what happened; xG and xGD are performance-quality metrics and need more games before their signal outweighs the prior season's table.",
+    "answer_zh": "按合并交叉点由早到晚排序：积分（交叉点 ≈ 6.5 场），然后是净胜球（交叉点 ≈ 8.5 场），然后是xG（交叉点 ≈ 11.8 场），然后是xGD（交叉点 ≈ 13.3 场）。积分和净胜球反映的是已经发生的比赛结果，因此只需几场比赛就能靠实际战绩把球队区分开；xG 和 xGD 衡量的是表现质量，需要更多场次其信号才能超过上赛季积分榜的权重。",
+    "tool_calls": [
+      {
+        "tool": "get_rmse_curve",
+        "args": {
+          "metric": "xg",
+          "method": "pooled"
+        },
+        "label": "get_rmse_curve(metric=xg)",
+        "relatesTo": "current-rmse-metrics",
+        "result": {
+          "metric": "xg",
+          "method": "pooled",
+          "n_observations": 136,
+          "n_pairs": 8,
+          "prior_rmse": 4.087,
+          "crossover": 11.84,
+          "rmse_at": {
+            "5": 4.507,
+            "10": 4.174,
+            "12": 4.071,
+            "15": 3.869,
+            "20": 3.635,
+            "38": 3.45
+          }
+        }
+      },
+      {
+        "tool": "get_rmse_curve",
+        "args": {
+          "metric": "xgd",
+          "method": "pooled"
+        },
+        "label": "get_rmse_curve(metric=xgd)",
+        "relatesTo": "current-rmse-metrics",
+        "result": {
+          "metric": "xgd",
+          "method": "pooled",
+          "n_observations": 136,
+          "n_pairs": 8,
+          "prior_rmse": 3.764,
+          "crossover": 13.35,
+          "rmse_at": {
+            "5": 4.484,
+            "10": 3.963,
+            "12": 3.845,
+            "15": 3.595,
+            "20": 3.304,
+            "38": 3.081
+          }
+        }
+      },
+      {
+        "tool": "get_rmse_curve",
+        "args": {
+          "metric": "gd",
+          "method": "pooled"
+        },
+        "label": "get_rmse_curve(metric=gd)",
+        "relatesTo": "current-rmse-metrics",
+        "result": {
+          "metric": "gd",
+          "method": "pooled",
+          "n_observations": 136,
+          "n_pairs": 8,
+          "prior_rmse": 3.821,
+          "crossover": 8.48,
+          "rmse_at": {
+            "5": 4.274,
+            "10": 3.774,
+            "12": 3.732,
+            "15": 3.434,
+            "20": 2.903,
+            "38": 2.329
+          }
+        }
+      },
+      {
+        "tool": "get_rmse_curve",
+        "args": {
+          "metric": "points",
+          "method": "pooled"
+        },
+        "label": "get_rmse_curve(metric=points)",
+        "relatesTo": "current-rmse-metrics",
+        "result": {
+          "metric": "points",
+          "method": "pooled",
+          "n_observations": 136,
+          "n_pairs": 8,
+          "prior_rmse": 3.947,
+          "crossover": 6.53,
+          "rmse_at": {
+            "5": 4.218,
+            "10": 3.547,
+            "12": 3.406,
+            "15": 3.068,
+            "20": 2.585,
+            "38": 1.744
+          }
+        }
+      }
+    ]
+  },
+  {
+    "id": "pooled-vs-per-season",
+    "question_en": "Does the per-season method agree with the pooled regression?",
+    "question_zh": "逐赛季方法和合并回归的结果一致吗？",
+    "answer_en": "Both reproduce the original deck's xG figures exactly, but they cross the prior-season baseline (4.09 positions) at different points: pooled at 11.8 games, per-season at 9.4 -- 2.5 games earlier. That gap is a property of the fitting method, not a second football fact: per-season averages eight separate fits of only ~17 observations each, scored in-sample with no group left over to hold out and check against, so it always reads a little more confident than the pooled fit's 136-observation regression. That is why this app defaults to pooled -- it is the one with a held-out (leave-one-season-out) score behind it -- and offers per-season only as a toggle, never as the default.",
+    "answer_zh": "两种方法都精确复现了原始幻灯片的 xG 数据，但二者跌破上赛季基线（4.09 个名次）的时间点并不相同：合并回归在 11.8 场，逐赛季回归在 9.4 场——提前了 2.5 场。这个差距是拟合方法本身的特性，而不是又一条独立的足球事实：逐赛季方法是对 8 组、每组仅约 17 个观测值分别拟合后取平均，全部在样本内打分，没有多余的分组可以留出来做校验，因此它的结果总是比合并回归（136 个观测值）看起来更「自信」一些。这正是本应用默认使用合并回归——它背后有留一法（leave-one-season-out）的样本外校验——而逐赛季回归只作为一个可切换选项、从不作为默认值的原因。",
+    "tool_calls": [
+      {
+        "tool": "get_rmse_curve",
+        "args": {
+          "metric": "xg",
+          "method": "pooled"
+        },
+        "label": "get_rmse_curve(metric=xg, method=pooled)",
+        "relatesTo": "current-rmse-metrics",
+        "result": {
+          "metric": "xg",
+          "method": "pooled",
+          "n_observations": 136,
+          "n_pairs": 8,
+          "prior_rmse": 4.087,
+          "crossover": 11.84,
+          "rmse_at": {
+            "5": 4.507,
+            "10": 4.174,
+            "12": 4.071,
+            "15": 3.869,
+            "20": 3.635,
+            "38": 3.45
+          }
+        }
+      },
+      {
+        "tool": "get_rmse_curve",
+        "args": {
+          "metric": "xg",
+          "method": "per_season"
+        },
+        "label": "get_rmse_curve(metric=xg, method=per_season)",
+        "relatesTo": "current-rmse-metrics",
+        "result": {
+          "metric": "xg",
+          "method": "per_season",
+          "n_observations": 136,
+          "n_pairs": 8,
+          "prior_rmse": 4.087,
+          "crossover": 9.37,
+          "rmse_at": {
+            "5": 4.419,
+            "10": 4.023,
+            "12": 3.906,
+            "15": 3.692,
+            "20": 3.406,
+            "38": 3.159
+          }
+        }
+      }
+    ]
+  },
+  {
+    "id": "prior-share-by-checkpoint",
+    "question_en": "How much does the prior matter early versus late in the season?",
+    "question_zh": "先验在赛季初和赛季后期的重要性有何不同？",
+    "answer_en": "w_data = N / sigma_obs^2 grows with N while w_prior stays fixed at 5, so the prior's share of the blend (60% at 5 games, 43% at 10 games, 33% at 15 games, 27% at 20 games) shrinks all season by construction, not because any single game changes the weighting rule -- last season's table simply gets diluted by an ever-larger pool of current-season evidence.",
+    "answer_zh": "w_data = N / sigma_obs^2 会随场次 N 增长，而 w_prior 固定为 5，因此先验在混合预测中所占的比例（5 场时 60%，10 场时 43%，15 场时 33%，20 场时 27%）整个赛季都在按设计不断缩小，并不是某一场比赛改变了权重规则——上赛季的积分榜只是被越来越多的本赛季证据不断稀释。",
+    "tool_calls": [
+      {
+        "tool": "get_posterior",
+        "args": {
+          "metric": "xg",
+          "games": 5,
+          "prior_weight": 5.0,
+          "obs_variance": 1.5
+        },
+        "label": "get_posterior(games=5)",
+        "relatesTo": "weight-bars",
+        "result": {
+          "metric": "xg",
+          "games": 5,
+          "prior_weight": 5.0,
+          "obs_variance": 1.5,
+          "prior_rmse": 4.087,
+          "current_rmse": 4.507,
+          "weight_prior": 5.0,
+          "weight_data": 3.3333,
+          "blended_rmse": 4.025,
+          "blended_mae": 3.293
+        }
+      },
+      {
+        "tool": "get_posterior",
+        "args": {
+          "metric": "xg",
+          "games": 10,
+          "prior_weight": 5.0,
+          "obs_variance": 1.5
+        },
+        "label": "get_posterior(games=10)",
+        "relatesTo": "weight-bars",
+        "result": {
+          "metric": "xg",
+          "games": 10,
+          "prior_weight": 5.0,
+          "obs_variance": 1.5,
+          "prior_rmse": 4.087,
+          "current_rmse": 4.174,
+          "weight_prior": 5.0,
+          "weight_data": 6.6667,
+          "blended_rmse": 3.916,
+          "blended_mae": 3.258
+        }
+      },
+      {
+        "tool": "get_posterior",
+        "args": {
+          "metric": "xg",
+          "games": 15,
+          "prior_weight": 5.0,
+          "obs_variance": 1.5
+        },
+        "label": "get_posterior(games=15)",
+        "relatesTo": "weight-bars",
+        "result": {
+          "metric": "xg",
+          "games": 15,
+          "prior_weight": 5.0,
+          "obs_variance": 1.5,
+          "prior_rmse": 4.087,
+          "current_rmse": 3.869,
+          "weight_prior": 5.0,
+          "weight_data": 10.0,
+          "blended_rmse": 3.74,
+          "blended_mae": 3.104
+        }
+      },
+      {
+        "tool": "get_posterior",
+        "args": {
+          "metric": "xg",
+          "games": 20,
+          "prior_weight": 5.0,
+          "obs_variance": 1.5
+        },
+        "label": "get_posterior(games=20)",
+        "relatesTo": "weight-bars",
+        "result": {
+          "metric": "xg",
+          "games": 20,
+          "prior_weight": 5.0,
+          "obs_variance": 1.5,
+          "prior_rmse": 4.087,
+          "current_rmse": 3.635,
+          "weight_prior": 5.0,
+          "weight_data": 13.3333,
+          "blended_rmse": 3.572,
+          "blended_mae": 2.927
+        }
+      }
+    ]
+  }
+]

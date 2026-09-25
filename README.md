@@ -16,6 +16,8 @@ crossover exactly rather than bracketing it: **11.8 games**, not "≈12."
 It is also a portfolio project built for a Frontend Engineer Intern application —
 see [Frontend decisions](#frontend-decisions) for what that means in practice.
 
+![The replay running: standings updating round by round and the crossover marker landing on the RMSE curve around game 12](design/replay-crossover.gif)
+
 **Demo account** (only needed to save named parameter sets — see
 [Auth and saved scenarios](#auth-and-saved-scenarios)):
 
@@ -36,11 +38,11 @@ replay, charts and the σ tuner are all public.
 |---|---|
 | Data pipeline | built, tested |
 | Model engine | built, tested, reproduces the original study |
-| REST + WebSocket API | built, 51 tests passing |
-| React frontend | replay engine, standings, charts, seek/URL state, demo mode |
+| REST + WebSocket API | built, 75 tests passing |
+| React frontend | 7-route dashboard — replay, standings, charts, team/compare/method pages, i18n, demo mode |
 | Docker + CI | built |
 | Auth + saved scenarios | built end to end — sign in/register, scenarios panel |
-| Ask the Model (AI agent panel) | not started |
+| Ask the Model (AI agent panel) | built — cached tool-calling agent on `/model`, see [Ask the Model](#ask-the-model) |
 
 ## Quickstart
 
@@ -98,15 +100,21 @@ Browser
   ├── REST  ──────────────► FastAPI  ──────► SQLite (data/pl.db)
   │   /api/seasons, /api/pairs/{id}/table, /api/curves, /api/predict
   │
-  └── WebSocket  ──────────► FastAPI  ──────► frame list, built once per
-      /ws/replay?pair={id}                    pair at startup and cached
+  ├── WebSocket  ──────────► FastAPI  ──────► frame list, built once per
+  │   /ws/replay?pair={id}                    pair at startup and cached
+  │
+  └── Agent tool-calling loop ─► /api/ask ──► get_posterior / get_rmse_curve
+      (cached answers today; a live model is a one-line change — see
+      "Ask the Model" below)
 ```
 
-A third path — an agent that answers questions like "why did predictions get
-more accurate after round 12?" by calling `/api/curves` and `/api/predict` as
-tools — is planned (Feature 3) but not built yet; it will not use a live LLM
-API (no key, no budget), so the honest version to ship is a real tool-calling
-loop driven by cached answers, documented as such.
+The frontend is seven routes behind a shared sidebar shell (`/`, `/season`,
+`/model`, `/teams` + `/teams/:slug`, `/compare`, `/method`, `/scenarios`),
+each lazy-loaded (`React.lazy` + `Suspense`) so `/` — the 30-second pitch —
+never pulls in ECharts, the biggest chunk in the bundle, just to render a
+landing page. `/season` carries the replay dashboard this section's WebSocket
+protocol serves; `/model` carries the σ tuner, the per-metric RMSE bars, and
+the Ask panel below.
 
 ### WebSocket frame protocol
 
@@ -166,6 +174,69 @@ carry account-specific state, the ticket pattern above — or the
 `Sec-WebSocket-Protocol` subprotocol, which can also carry a token in the
 handshake — is what would gate it; building the endpoint unused would just be
 dead plumbing.
+
+## Ask the Model
+
+A question box at the bottom of `/model` — *"Why did predictions get more
+accurate after round 12?"*, *"What happens if σ_prior is set to 10?"* — that
+answers with real numbers and shows the tool calls that produced them. It
+lives on `/model`, not its own route: every preset question is about the
+Bayesian blend that page already explains, and the sidebar already carries
+seven entries — an eighth for one panel would dilute the nav more than it
+would help.
+
+**There is no live LLM call. There is a real agent.** Two tools
+(`get_posterior`, `get_rmse_curve` — `api/app/ask.py`) are thin wrappers over
+the same `analytics.compute_predict` / `analytics.get_curve` functions
+`/api/predict` and `/api/curves` already call, described to a model with real
+JSON Schema (`TOOL_SCHEMAS`). `LiveAskSource` is a genuine
+`while stop_reason == "tool_use"` loop against the Claude API using that exact
+schema — typed, importable, and never instantiated without a real Anthropic
+API key. What ships instead, because there is no key and no budget for one,
+is `CachedAskSource`: four preset questions, each with a fixed plan of tool
+calls, run once against the real `data/pl.db` by
+`scripts/generate_ask_fixtures.py` and committed as
+`api/app/ask_fixtures.json`. `POST /api/ask` at request time does zero DB
+queries and zero model calls in every deployment of this demo, live or
+static — it is a pure lookup.
+
+**Swapping to a live model is one line.** `get_ask_source()` in `api/app/ask.py`
+picks between the two sources on a single condition — whether `ANTHROPIC_API_KEY`
+is set (`Settings.anthropic_api_key`, the standard Anthropic SDK env var, not
+this project's usual `PL_`-prefixed ones — it names a third-party credential,
+not app config). Set it and every `POST /api/ask` call runs the real loop
+above instead of reading the fixture file; nothing else in the router, the
+schemas, or the frontend changes.
+
+**Every number in a cached answer is proven reproducible, not just asserted.**
+`api/tests/test_ask_fixtures.py` re-executes each fixture's exact recorded
+tool calls against the real `data/pl.db` and re-renders the answer text from
+the fresh results, then asserts it matches the committed fixture
+byte-for-byte. A fixture that drifted from a later change to `model.py`, or a
+`data/pl.db` rebuild, would fail this test — the fix is re-running
+`scripts/generate_ask_fixtures.py` and committing the diff, not loosening the
+assertion. Caught for real once already: an early draft's per-season xG
+figures didn't match what `analytics.compute_curve(method="per_season")`
+actually returns on the live data (a pre-existing drift between that method
+and the coursework's published per-season numbers, unrelated to this
+feature and out of scope to fix here) — the fix was dropping that question
+rather than shipping a confidently wrong number.
+
+**The streaming is real, the model behind it is not.** The frontend never
+receives tokens incrementally — `POST /api/ask` returns the whole cached
+answer in one response. `useStreamingText` (`web/src/hooks/`) reveals it a few
+characters at a time, batched to at most one `setState` per
+`requestAnimationFrame` — the same render-decoupling principle the replay
+uses for WebSocket frames, applied to a string instead of a socket. A stop
+button actually freezes the reveal (not fast-forwards it), the aria-live
+announcer is throttled to whole chunks instead of re-reading the answer on
+every character, and the panel never force-scrolls a reader who has scrolled
+up to re-read an earlier sentence. Clicking a tool-call chip
+(`get_posterior(σ=10)`, its result attached) highlights the panel on `/model`
+that call relates to.
+
+If any of this could be mistaken for a live model answering in real time,
+that is a bug in the copy, not a design choice — say so and it gets rewritten.
 
 ## Frontend decisions
 
@@ -290,11 +361,14 @@ teams, not per-team series. Only the standings table is per-team. Building the
 hover-link would mean adding a team dimension to charts that are aggregate by
 design, so it's skipped rather than built and left dangling.
 
-**Bundle size:** 932KB JS / 307KB gzip (`npm run build:demo`, the exact build
-GitHub Pages serves) after tree-shaking ECharts to just the line/bar charts
-this app uses (`echarts/core` + named imports, not
-`import * as echarts from "echarts"`). Not yet code-split; the Ask panel
-(Feature 3) is the obvious lazy-load candidate once it exists.
+**Bundle size:** 1044KB JS / 347KB gzip total across every chunk
+(`npm run build:demo`, the exact build GitHub Pages serves) after
+tree-shaking ECharts to just the line/bar charts this app uses
+(`echarts/core` + named imports, not `import * as echarts from "echarts"`).
+Every route is its own lazy chunk (`React.lazy` + `Suspense`), and the Ask
+panel is a second lazy boundary inside `/model` alone: `AskPanel-*.js` is
+4.9KB / 1.9KB gzip, and nothing outside `/model` ever fetches it — `/`, the
+30-second pitch, loads neither ECharts nor the agent panel's code.
 
 **Lighthouse Performance is 55, measured once, against the real deployed
 site** (`npx lighthouse https://lukkasiii.github.io/pl-crossover/`, default
@@ -404,8 +478,8 @@ rows.
 ## Tests
 
 ```bash
-python3 -m pytest api/tests -q   # 50 tests: model, API, auth, replay protocol
-cd web && npm run test           # Vitest: FrameCache, zone-band config, auth refresh
+python3 -m pytest api/tests -q   # 75 tests: model, API, auth, replay protocol, Ask fixture reproducibility
+cd web && npm run test           # Vitest: FrameCache, zone-band config, auth refresh, streaming reveal
 cd web && npx tsc -b && npm run lint
 ```
 
@@ -413,7 +487,10 @@ The Python suite generates two complete synthetic seasons, runs the real ETL
 over them and checks the output holds together: points equal 3W + D, ranks form
 an exact 1..20 permutation in every slice, league-wide goals scored equal goals
 conceded. Fixtures are written to a temp directory, so a test run can never be
-mistaken for real Understat output.
+mistaken for real Understat output. `api/tests/test_ask_fixtures.py` is the
+odd one out — it skips unless the real `data/pl.db` exists, because it exists
+specifically to check the *real* data against the committed cache (see
+[Ask the Model](#ask-the-model)), not a synthetic one.
 
 ## Self-teaching log
 
@@ -423,7 +500,26 @@ What was new for this project, going in: WebSocket as a two-way protocol
 FastAPI's own schema instead of hand-copying interfaces; `useSyncExternalStore`
 for reading a ref-based cache safely during render, which came up specifically
 because oxlint's `react(refs)` rule caught a ref read that would otherwise have
-shipped.
+shipped; Anthropic's tool-calling API shape (`tools` schema, the
+`tool_use`/`tool_result` message loop) for the Ask panel's `LiveAskSource`,
+learned without ever calling it live.
+
+A real bug found building the Ask panel's streaming reveal, not just a
+concept learned: `requestAnimationFrame`'s *rate* isn't the guarantee it
+looks like. A `stop()` that only `cancelAnimationFrame`'d the one frame ID a
+ref currently pointed at worked in manual testing but not under React
+StrictMode's dev-mode double-invoked effects — a second, independent reveal
+loop the ref didn't know about kept running to completion past every stop()
+call, silently, because each animation frame reschedules itself directly
+rather than going back through the effect that could be cancelled. Playwright
+driving the built page caught it (a "frozen" answer that kept growing after
+the stop button was clicked); the fix was a live generation counter checked
+inside every single frame callback, not just once at the top of the effect —
+now locked in by `useStreamingText.test.ts`, which fires a stale queued frame
+by hand after `stop()` to prove exactly this can't happen again. The same
+investigation surfaced that headless Chromium's `requestAnimationFrame` isn't
+vsync-paced the way a real display's is (it can fire far faster), so the
+reveal now gates advances to real elapsed time, not frame count.
 
 ## Getting the data
 
@@ -474,11 +570,17 @@ scripts/
   build_db.py                ETL -> SQLite
   export_openapi.py          dumps FastAPI's schema for openapi-typescript
   export_demo_frames.py      freezes the replay into web/public/demo/*.json
+  export_ask_fixtures.py     copies the committed Ask fixtures into the demo build
+  generate_ask_fixtures.py   runs every preset question against the real db,
+                              writes api/app/ask_fixtures.json
   validate_checkpoints.py    regression test against the original study
   seed_demo_account.py       creates/resets the README's demo login
 api/
   app/model.py                OLS, leave-one-season-out, Bayesian blend, crossover
   app/replay.py                builds and caches the 418-frame list per pair
+  app/ask.py                   tool schemas, the tool-calling loop, cached vs.
+                                live agent sources -- see "Ask the Model" above
+  app/ask_fixtures.json        committed cache POST /api/ask serves from
   app/routers/                 REST + WebSocket endpoints
   tests/
 web/
@@ -486,6 +588,8 @@ web/
   src/demo/                   useDemoReplay (static-JSON stand-in, same shape)
   src/charts/                 ECharts panels (RMSE curve, metric bars, weights)
   src/components/             standings table, zone bands, timeline, controls
+  src/components/AskPanel.tsx  preset questions, streaming reveal, tool-call chips
+  src/hooks/useStreamingText.ts  requestAnimationFrame-paced text reveal
   src/auth/                   AuthContext, in-memory token store
   src/components/auth/        sign-in/register panel, saved-scenarios panel
   src/api/client.ts            openapi-fetch client + single-flight 401 refresh
@@ -499,6 +603,7 @@ data/
 design/
   mockup.png                  Figma-first mockup, next to the built result
   auth-scenarios.gif           e2e/auth-scenarios.spec.ts, recorded
+  replay-crossover.gif         e2e-gif/replay-crossover.spec.ts, recorded
 ```
 
 ## Sources

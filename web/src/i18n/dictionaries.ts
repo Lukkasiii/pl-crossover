@@ -70,6 +70,22 @@ export const en = {
   "model.currentRmseFraming":
     "Which of xG, xGD, goal difference and points becomes reliable earliest -- the study's real question, one bar per metric at however many games the replay has reached.",
 
+  "askPanel.heading": "Ask the Model",
+  "askPanel.framing":
+    "Preset questions about the Bayesian blend above. The tool-calling path is real -- each answer cites the calls that produced its numbers -- and the answers themselves are cached fixtures, so the demo costs nothing to run.",
+  "askPanel.presetsLabel": "preset questions",
+  "askPanel.question.crossoverRound12": "Why did predictions get more accurate after round 12?",
+  "askPanel.question.sigmaPrior10": "What happens if σ_prior is set to 10?",
+  "askPanel.question.fastestMetric": "Which metric becomes reliable earliest?",
+  "askPanel.question.pooledVsPerSeason": "Does the per-season method agree with the pooled regression?",
+  "askPanel.question.priorShare": "How much does the prior matter early versus late in the season?",
+  "askPanel.askAnother": "Ask another question",
+  "askPanel.stop": "Stop",
+  "askPanel.loading": "fetching the answer…",
+  "askPanel.failedToLoad": "failed to load the answer",
+  "askPanel.toolCallsHeading": "Tool calls",
+  "askPanel.streamingStatus": "Revealing the cached answer",
+
   "chart.currentSeason": "Current season",
   "chart.priorSeason": "Last season (prior)",
   "chart.gamesPlayed": "games played",
@@ -237,7 +253,7 @@ export const en = {
   "method.methodologies.pooled":
     "Pooled regression (the original deck's slide 7) pools every observation -- the 17 teams common to both seasons, across all 8 season pairs, 136 rows -- into a single fit. It is what this app uses by default, and it reproduces the deck's figures exactly.",
   "method.methodologies.perSeason":
-    "Per-season regression (slides 9 and 11) instead fits each of the 8 season pairs separately and averages the result across them -- offered here as a toggle, not the default. It reproduces the deck's per-season xG figures exactly too: 3.85, 4.42, 4.02, 3.69 and 3.41 RMSE at games 5, 10, 15, 20 and 38.",
+    "Per-season regression (slides 9 and 11) instead fits each of the 8 season pairs separately and averages the result across them -- offered here as a toggle, not the default. It reproduces the deck's per-season xG figures exactly too: 4.42, 4.02, 3.69 and 3.41 RMSE at games 5, 10, 15 and 20. The deck stops at 20; carried through to a full season this method reaches 3.16 at game 38.",
   "method.methodologies.rankBased":
     "The deck's slide 11 also plots a third line: a rank-based method with no regression at all, taken straight from the original goal-difference workbook. It does not reproduce exactly from match-level data, and its quirks were not worth carrying forward, so this app never implements it.",
   "method.methodologies.rule":
@@ -324,6 +340,21 @@ export const zh = {
   "model.tunePriorFraming":
     "拖动这个滑块来回答:如果模型更信任(或更不信任)上赛季的数据,交叉点会移动吗?原始研究把这个权重固定为 5——这里由你来设定。",
   "model.currentRmseFraming": "xG、xGD、净胜球和积分中,哪一个最早变得可靠——这是本研究真正要回答的问题,按回放当前场次逐项对比。",
+
+  "askPanel.heading": "问问模型",
+  "askPanel.framing": "关于上方贝叶斯混合模型的预设问题。工具调用这条链路是真实的——每个回答都会列出得出其数字的调用——而回答本身是预先生成并固化下来的，因此这个演示的运行成本为零。",
+  "askPanel.presetsLabel": "预设问题",
+  "askPanel.question.crossoverRound12": "为什么第 12 轮之后预测会变得更准确？",
+  "askPanel.question.sigmaPrior10": "如果把 σ_prior 设为 10 会发生什么？",
+  "askPanel.question.fastestMetric": "哪个指标最早变得可靠？",
+  "askPanel.question.pooledVsPerSeason": "逐赛季方法和合并回归的结果一致吗？",
+  "askPanel.question.priorShare": "先验在赛季初和赛季后期的重要性有何不同？",
+  "askPanel.askAnother": "换一个问题",
+  "askPanel.stop": "停止",
+  "askPanel.loading": "正在取回回答…",
+  "askPanel.failedToLoad": "回答加载失败",
+  "askPanel.toolCallsHeading": "工具调用",
+  "askPanel.streamingStatus": "正在逐字显示已固化的回答",
 
   "chart.currentSeason": "本赛季",
   "chart.priorSeason": "上赛季（先验）",
@@ -490,7 +521,7 @@ export const zh = {
   "method.methodologies.pooled":
     "合并回归（原始幻灯片第 7 页）把所有观测值——两个赛季共同拥有的 17 支球队，跨全部 8 组赛季组合，共 136 行——合并为一次拟合。本应用默认使用这一方法，它精确复现了原始幻灯片的数据。",
   "method.methodologies.perSeason":
-    "逐赛季回归（幻灯片第 9、11 页）则对 8 组赛季组合分别拟合，再取平均——本应用将其作为一个可切换的选项，而非默认值。它同样精确复现了原始幻灯片中 xG 的逐赛季数据：在第 5、10、15、20 和 38 场时的 RMSE 分别为 3.85、4.42、4.02、3.69 和 3.41。",
+    "逐赛季回归（幻灯片第 9、11 页）则对 8 组赛季组合分别拟合，再取平均——本应用将其作为一个可切换的选项，而非默认值。它同样精确复现了原始幻灯片中 xG 的逐赛季数据：在第 5、10、15、20 场时的 RMSE 分别为 4.42、4.02、3.69、3.41。原始幻灯片止步于第 20 场；本应用把这一方法延伸到整个赛季，第 38 场为 3.16。",
   "method.methodologies.rankBased":
     "幻灯片第 11 页还画出了第三条线：一种完全不做回归、直接基于名次的方法，照搬自最初的净胜球工作表。它无法从逐场比赛数据中精确复现，其种种细节也不值得延续，因此本应用从未实现它。",
   "method.methodologies.rule":

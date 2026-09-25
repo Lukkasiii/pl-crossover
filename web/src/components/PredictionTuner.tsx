@@ -16,6 +16,8 @@ interface PredictionTunerProps {
   priorWeight: number;
   onPriorWeightChange: (priorWeight: number) => void;
   obsVariance?: number;
+  /** Set briefly when an Ask-the-Model tool-call chip that relates to this panel is clicked (see AskPanel.tsx). */
+  highlighted?: boolean;
 }
 
 /**
@@ -35,6 +37,7 @@ export function PredictionTuner({
   priorWeight,
   onPriorWeightChange,
   obsVariance = DEFAULT_OBS_VARIANCE,
+  highlighted = false,
 }: PredictionTunerProps) {
   const { t } = useLocale();
   const debouncedPriorWeight = useDebouncedValue(priorWeight, 300);
@@ -43,7 +46,7 @@ export function PredictionTuner({
   const sigmaPrior = Math.sqrt(1 / priorWeight);
 
   return (
-    <section className="panel">
+    <section className={highlighted ? "panel panel-highlighted" : "panel"}>
       <div className="panel-header">
         <div className="panel-title">
           <h2>{t("replay.tunePrior")}</h2>
