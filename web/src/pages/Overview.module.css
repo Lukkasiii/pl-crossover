@@ -5,6 +5,14 @@
   padding: var(--space-4) 0 var(--space-2);
 }
 
+.hook {
+  max-width: 640px;
+  margin: 0 0 var(--space-4);
+  font-size: var(--text-lg);
+  line-height: var(--leading-normal);
+  color: var(--text);
+}
+
 .headline {
   display: flex;
   align-items: baseline;

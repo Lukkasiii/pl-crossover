@@ -65,6 +65,7 @@ export default function Overview() {
   return (
     <div data-testid="page-overview">
       <section className={styles.hero}>
+        <p className={styles.hook}>{t("overview.hook")}</p>
         <h1 className={styles.headline}>
           <span className={styles.headlineNumber}>{CROSSOVER_XG_GAMES}</span>
           <span className={styles.headlineUnit}>{t("overview.headlineUnit")}</span>

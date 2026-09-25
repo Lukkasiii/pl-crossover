@@ -44,6 +44,10 @@ export function EChart({ option, className }: EChartProps) {
     registerEchartsTheme();
     const chart = echarts.init(containerRef.current, ECHARTS_THEME);
     chartRef.current = chart;
+    // Dev-only handle for e2e/chart-overlap.spec.ts, which reads the rendered
+    // text boxes out of zrender -- a canvas has no DOM to measure. Stripped
+    // from every build by Vite's static import.meta.env.DEV replacement.
+    if (import.meta.env.DEV) (containerRef.current as HTMLDivElement & { __echart?: echarts.ECharts }).__echart = chart;
 
     const observer = new ResizeObserver(() => chart.resize());
     observer.observe(containerRef.current);
@@ -59,5 +63,5 @@ export function EChart({ option, className }: EChartProps) {
     chartRef.current?.setOption(option);
   }, [option]);
 
-  return <div ref={containerRef} className={className} style={{ width: "100%", height: "100%" }} />;
+  return <div ref={containerRef} className={className} data-echart="" style={{ width: "100%", height: "100%" }} />;
 }

@@ -91,7 +91,7 @@ export const en = {
   "chart.gamesPlayed": "games played",
   "chart.rmsePositions": "RMSE (positions)",
   "chart.currentRmse": "current RMSE",
-  "chart.crossoverMarker": "⚡ crossover",
+  "chart.crossoverMarker": "⚡ Crossover",
   "chart.lastSeason": "Last season",
   "chart.thisSeason": "This season",
   "chart.blended": "Blended",
@@ -152,14 +152,17 @@ export const en = {
   "scenarios.method.pooled": "pooled",
   "scenarios.method.per_season": "per-season",
 
+  "overview.hook":
+    "Every August, predictions for the Premier League lean on last season's final table — it's the only complete evidence anyone has. As matches are played, this season's own results pile up, and at some point they become the better guide. This project measures exactly when that handover happens, across eight pairs of consecutive seasons from 2016/17 to 2024/25.",
   "overview.headlineUnit": "games",
-  "overview.headlineSub": "the point where this season's xG starts predicting the final table better than last season's did.",
+  "overview.headlineSub":
+    "That's when this season's xG — expected goals, a measure of how good a team's chances were — starts predicting the final table better than last season's table did. Less than a third of the way through a 38-game season.",
   "overview.headlineNote":
-    "A four-checkpoint graduate workbook interpolated \"about 12\"; match-level data puts it at 11.8 -- exactly, not bracketed.",
-  "overview.stat.crossover": "crossover (xG)",
-  "overview.stat.observations": "observations",
-  "overview.stat.pairs": "season pairs",
-  "overview.stat.frames": "replay frames",
+    "A four-checkpoint graduate workbook interpolated \"about 12\"; match-level data puts it at 11.8 — exactly, not bracketed.",
+  "overview.stat.crossover": "Crossover (xG)",
+  "overview.stat.observations": "Observations",
+  "overview.stat.pairs": "Season pairs",
+  "overview.stat.frames": "Replay frames",
   "overview.nav.season.body": "Play the season back match by match and watch the model's prediction sharpen in real time.",
   "overview.nav.model.body":
     "The Bayesian blend behind the replay: how much of the prediction comes from last season versus this one.",
@@ -430,8 +433,11 @@ export const zh = {
   "scenarios.method.pooled": "合并回归",
   "scenarios.method.per_season": "逐赛季回归",
 
+  "overview.hook":
+    "每年八月，人们预测英超排名时依靠的都是上赛季的最终积分榜——那是当时唯一完整的证据。随着比赛一场场进行，本赛季自己的数据不断累积，总有一刻会成为更好的依据。这个项目用 2016/17 到 2024/25 的八组相邻赛季，精确测量这一交接发生在第几场。",
   "overview.headlineUnit": "场",
-  "overview.headlineSub": "本赛季的 xG 从这一场开始，比上赛季的最终积分榜更能预测本赛季的最终排名。",
+  "overview.headlineSub":
+    "从这一场起，本赛季的 xG（预期进球，衡量一支球队创造的机会有多好）比上赛季的积分榜更能预测最终排名——还不到 38 场赛季的三分之一。",
   "overview.headlineNote": "一份仅有四个检查点的毕业作业插值得到「约 12 场」；逐场比赛的数据把它精确到了 11.8 场，而不只是一个区间。",
   "overview.stat.crossover": "交叉点（xG）",
   "overview.stat.observations": "观测样本",
