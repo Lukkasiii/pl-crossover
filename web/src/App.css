@@ -226,10 +226,13 @@
   margin: var(--space-2) 0;
 }
 
+/* Plex Sans, not Mono: Plex Sans ships tabular figures, so the columns
+   still align digit for digit while the table reads in the page's own
+   typeface rather than as a code block dropped into it. */
 .method-results-table {
   width: 100%;
   border-collapse: collapse;
-  font-family: var(--font-mono);
+  font-family: var(--font-body);
   font-variant-numeric: tabular-nums;
   margin: var(--space-3) 0;
 }
@@ -239,6 +242,11 @@
   padding: 6px var(--space-3);
   text-align: right;
   border-bottom: 1px solid var(--border);
+}
+
+.position-sub {
+  color: var(--text-secondary);
+  white-space: nowrap;
 }
 
 .method-results-table th[scope="row"] {

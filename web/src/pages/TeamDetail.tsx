@@ -9,6 +9,14 @@ import { RankLineChart } from "../charts/RankLineChart";
 import { broadcastName } from "../teamNames";
 import { summarize } from "./Teams";
 import type { TranslationKey } from "../i18n/dictionaries";
+import { parsePosition, type PositionRole } from "../components/positionCodes";
+
+const ROLE_KEY: Record<PositionRole, TranslationKey> = {
+  gk: "position.gk",
+  d: "position.d",
+  m: "position.m",
+  f: "position.f",
+};
 
 type PlayerSortKey = "minutes" | "goals" | "xg" | "assists" | "xa" | "xgChain" | "xgBuildup";
 
@@ -62,6 +70,19 @@ export default function TeamDetail() {
       </div>
     );
   }
+
+  const formatRoles = (code: string) => {
+    const { roles, substitute } = parsePosition(code);
+    if (roles.length === 0) return substitute ? t("position.subOnly") : code;
+    const words = roles.map((r) => t(ROLE_KEY[r])).join(" · ");
+    return substitute ? (
+      <>
+        {words} <span className="position-sub">+ {t("position.sub")}</span>
+      </>
+    ) : (
+      words
+    );
+  };
 
   const stats = summarize(team);
   const selectedSeason = team.seasons.find((s) => s.pairId === effectivePairId) ?? team.seasons[team.seasons.length - 1];
@@ -189,7 +210,15 @@ export default function TeamDetail() {
                       {t("teamDetail.players.col.player")}
                     </th>
                     <th scope="col" style={{ textAlign: "left" }}>
-                      {t("teamDetail.players.col.position")}
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 2 }}>
+                        {t("teamDetail.players.col.position")}
+                        <InfoTooltip
+                          aria-label={t("panelInfo.about", { panel: t("teamDetail.players.col.position") })}
+                          data-testid="position-info"
+                        >
+                          {t("panelInfo.position")}
+                        </InfoTooltip>
+                      </span>
                     </th>
                     <th scope="col">{t("teamDetail.players.col.minutes")}</th>
                     <th scope="col">{t("teamDetail.players.col.goals")}</th>
@@ -226,7 +255,9 @@ export default function TeamDetail() {
                       <th scope="row" style={{ textAlign: "left" }}>
                         {p.name}
                       </th>
-                      <td style={{ textAlign: "left" }}>{p.position}</td>
+                      <td style={{ textAlign: "left" }} data-position-code={p.position}>
+                        {formatRoles(p.position)}
+                      </td>
                       <td>{p.minutes}</td>
                       <td>{p.goals}</td>
                       <td>{p.xg.toFixed(2)}</td>
