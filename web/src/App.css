@@ -311,3 +311,140 @@
 .scenarios-sign-in {
   max-width: 440px;
 }
+
+/* /method's diagrams (MethodDiagrams.tsx). Each viewBox is 360 units wide,
+   so capping the figure at 480px keeps SVG text between ~10px on a phone
+   and ~14px on a desktop. */
+.method-figure {
+  max-width: 480px;
+  margin: var(--space-4) auto;
+}
+
+.method-figure-loading {
+  aspect-ratio: 360 / 220;
+}
+
+.method-diagram {
+  display: block;
+  width: 100%;
+  height: auto;
+  font-family: var(--font-body);
+  font-size: 11px;
+  fill: var(--text);
+}
+
+.method-figure figcaption {
+  margin-top: var(--space-2);
+  font-size: var(--text-xs);
+  line-height: var(--leading-normal);
+  color: var(--text-secondary);
+}
+
+.method-figure .chart-legend {
+  margin-top: var(--space-2);
+}
+
+.md-heading {
+  font-weight: 600;
+  fill: var(--text-secondary);
+}
+
+.md-slope line {
+  stroke: var(--text-secondary);
+  stroke-opacity: 0.45;
+  stroke-width: 1.25;
+}
+
+.md-slope circle {
+  fill: var(--text-secondary);
+}
+
+.md-slope text {
+  font-size: 10.5px;
+  fill: var(--text-secondary);
+}
+
+.md-slope-big line {
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+
+.md-slope-big circle {
+  fill: var(--accent);
+}
+
+.md-slope-big text {
+  fill: var(--text);
+  font-weight: 600;
+}
+
+.md-grid {
+  stroke: var(--border);
+}
+
+.md-tick {
+  font-size: 10px;
+  fill: var(--text-secondary);
+}
+
+.md-prior {
+  stroke: var(--red);
+  stroke-width: 1.5;
+  stroke-dasharray: 5 4;
+}
+
+.md-current {
+  fill: none;
+  stroke: var(--green);
+  stroke-width: 2.25;
+  stroke-linejoin: round;
+}
+
+.md-crossover {
+  stroke: var(--gold);
+  stroke-width: 1.5;
+}
+
+/* 14px bold: --gold clears 3:1 (large text) on white, not 4.5:1 -- same
+   constraint as the ECharts crossover marker in RmseChart.tsx. */
+.md-crossover-label {
+  font-size: 14px;
+  font-weight: 700;
+  fill: var(--gold);
+}
+
+.md-area-prior {
+  fill: var(--red);
+  opacity: 0.85;
+}
+
+.md-area-data {
+  fill: var(--blue);
+  opacity: 0.85;
+}
+
+.md-checkpoint {
+  stroke: var(--panel);
+  stroke-width: 1;
+  stroke-dasharray: 2 3;
+}
+
+.md-share {
+  font-size: 11px;
+  font-weight: 600;
+  fill: var(--red);
+}
+
+.chart-legend-block {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+}
+
+.method-table-caption {
+  caption-side: bottom;
+  padding-top: var(--space-2);
+  text-align: left;
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
