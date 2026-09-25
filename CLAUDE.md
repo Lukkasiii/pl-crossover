@@ -58,7 +58,7 @@ everything built from here on. The "depth beats breadth" rule still applies
 | /season, /model content | done — the Stage 1–4 dashboard's panels split across the two |
 | Overview, Teams, Compare, Method page content | done (Stage 6) |
 | Player layer: `players` table, `/teams/:slug` Key players section | done (Stage 7) |
-| Ask the Model panel | not started |
+| Ask the Model panel | done (Stage 9) — real tool-calling loop, cached fixtures, `/model` panel |
 
 Pushed to `github.com/Lukkasiii/pl-crossover`.
 
