@@ -2,7 +2,8 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "
 import { WS_BASE_URL } from "../api/client";
 import { FrameCache } from "./frameCache";
 import { ReconnectingSocket, type SocketStatus } from "./reconnectingSocket";
-import type { BatchFrame, MatchFrame, ReplayCommand, ReplayFrame, RoundFrame } from "./types";
+import type { BatchFrame, MatchFrame, ReplayCommand, ReplayFrame, RoundFrame, TableRow } from "./types";
+import { preKickoffTable } from "./preKickoff";
 
 export type ConnectionStatus = SocketStatus;
 
@@ -28,7 +29,7 @@ const SEEK_WALK = import.meta.env.DEV && new URLSearchParams(window.location.sea
 interface ReplayState {
   status: ConnectionStatus;
   totalFrames: number;
-  /** -1 before the first frame has been shown */
+  /** -1 is "before kickoff": nothing streamed into view yet, and a real position the timeline can return to */
   viewSeq: number;
   playing: boolean;
   speed: number;
@@ -36,6 +37,8 @@ interface ReplayState {
   error: string | null;
   /** true while a seek -- including the post-reconnect catch-up -- is scanning frames the client hasn't cached yet */
   seeking: boolean;
+  /** Every club at zero, shown at viewSeq -1; built from frame 0's roster once it's cached (see preKickoff.ts). */
+  kickoffTable: TableRow[] | null;
 }
 
 const initialState: ReplayState = {
@@ -47,6 +50,7 @@ const initialState: ReplayState = {
   finished: false,
   error: null,
   seeking: false,
+  kickoffTable: null,
 };
 
 /**
@@ -128,6 +132,11 @@ export function useReplaySocket(pairId: number) {
   const play = useCallback(
     (speed?: number) => {
       const nextSpeed = speed ?? liveStateRef.current.speed;
+      // From before kickoff, the server's cursor may be anywhere (loading
+      // the roster left it at 1; a scrub back to the start leaves it where
+      // the scrub began). Rewind it to frame 0 first: its reply arrives on
+      // the normal streaming path, so match 1 is the first thing shown.
+      if (liveStateRef.current.viewSeq < 0) send({ cmd: "seek", seq: 0 });
       send({ cmd: "play", speed: nextSpeed });
       setState((s) => ({ ...s, playing: true, speed: nextSpeed, finished: false }));
     },
@@ -237,11 +246,40 @@ export function useReplaySocket(pairId: number) {
     setState((s) => ({ ...s, speed }));
   }, []);
 
+  /** Rebuilds the pre-kickoff table from frame 0, if that's cached and it isn't built yet. */
+  const ensureKickoffTable = useCallback(() => {
+    const first = cache.matchAt(0);
+    if (first) setState((s) => (s.kickoffTable ? s : { ...s, kickoffTable: preKickoffTable(first.table) }));
+  }, [cache]);
+
+  /**
+   * The default landing state with no `?week=`: fetch frame 0 for its
+   * roster -- all 20 clubs, which the pre-kickoff table needs -- without
+   * moving the playhead off "before kickoff".
+   */
+  const loadKickoff = useCallback(async () => {
+    if (isSeekingRef.current || cache.cachedThrough >= 0) {
+      ensureKickoffTable();
+      return;
+    }
+    isSeekingRef.current = true;
+    await requestFrame({ cmd: "seek", seq: 0 });
+    isSeekingRef.current = false;
+    ensureKickoffTable();
+  }, [cache, requestFrame, ensureKickoffTable]);
+
   const seek = useCallback(
     async (targetSeq: number) => {
       if (isSeekingRef.current) return;
-      const target = Math.max(0, Math.min(targetSeq, state.totalFrames - 1));
+      const target = Math.max(-1, Math.min(targetSeq, state.totalFrames - 1));
       if (state.playing) pause();
+      if (target < 0) {
+        // Back to before kickoff: a view position, not a server one -- play()
+        // rewinds the server's cursor when it's pressed from here.
+        ensureKickoffTable();
+        setState((s) => ({ ...s, viewSeq: -1, finished: false }));
+        return;
+      }
 
       isSeekingRef.current = true;
       if (target > cache.cachedThrough) {
@@ -262,7 +300,7 @@ export function useReplaySocket(pairId: number) {
       isSeekingRef.current = false;
       setState((s) => ({ ...s, viewSeq: target, finished: target >= s.totalFrames - 1 }));
     },
-    [state.playing, state.totalFrames, cache, pause, requestFrame, send],
+    [state.playing, state.totalFrames, cache, pause, requestFrame, send, ensureKickoffTable],
   );
 
   /** For the `?week=` deep link: fetch everything up to that round in one go, without rendering every step. */
@@ -305,7 +343,7 @@ export function useReplaySocket(pairId: number) {
   return {
     ...state,
     seq: state.viewSeq,
-    table: match?.table ?? null,
+    table: match?.table ?? (state.viewSeq < 0 ? state.kickoffTable : null),
     match,
     roundsSoFar,
     latestRound,
@@ -315,5 +353,6 @@ export function useReplaySocket(pairId: number) {
     setSpeed,
     seek,
     seekToWeek,
+    loadKickoff,
   };
 }

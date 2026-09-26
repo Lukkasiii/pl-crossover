@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { MatchFrame, ReplayFrame, RoundFrame } from "../ws/types";
+import { preKickoffTable } from "../ws/preKickoff";
 import type { ConnectionStatus } from "../ws/useReplaySocket";
 
 const BASE_FRAME_INTERVAL_MS = 200; // matches the live server's 1x pacing
@@ -81,7 +82,8 @@ export function useDemoReplay(pairId: number) {
   const seek = useCallback(
     (targetSeq: number) => {
       const max = (frames?.length ?? 1) - 1;
-      const target = Math.max(0, Math.min(targetSeq, max));
+      // -1 is before kickoff -- see useReplaySocket's viewSeq.
+      const target = Math.max(-1, Math.min(targetSeq, max));
       setState((s) => ({ ...s, playing: false, viewSeq: target }));
     },
     [frames],
@@ -108,6 +110,15 @@ export function useDemoReplay(pairId: number) {
     return { match, roundsSoFar };
   }, [frames, state.viewSeq]);
 
+  const kickoffTable = useMemo(() => {
+    const first = frames?.[0];
+    return first?.type === "match" ? preKickoffTable(first.table) : null;
+  }, [frames]);
+
+  // Nothing to fetch -- the whole season, frame 0 included, is already in
+  // memory. Present so both hooks share one shape.
+  const loadKickoff = useCallback(() => {}, []);
+
   const latestRound = roundsSoFar.length > 0 ? roundsSoFar[roundsSoFar.length - 1] : null;
   const finished = frames !== null && state.viewSeq >= frames.length - 1;
 
@@ -130,7 +141,7 @@ export function useDemoReplay(pairId: number) {
     finished,
     error: null as string | null,
     seeking: false,
-    table: match?.table ?? null,
+    table: match?.table ?? (state.viewSeq < 0 ? kickoffTable : null),
     match,
     roundsSoFar,
     latestRound,
@@ -140,5 +151,6 @@ export function useDemoReplay(pairId: number) {
     setSpeed,
     seek,
     seekToWeek,
+    loadKickoff,
   };
 }

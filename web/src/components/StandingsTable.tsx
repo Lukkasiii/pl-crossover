@@ -110,7 +110,7 @@ export function StandingsTable({ rows, currentSeasonLabel }: StandingsTableProps
   );
 
   if (rows === null) {
-    return <p className={styles.placeholder}>{t("standings.pressPlay")}</p>;
+    return <p className={styles.placeholder}>{t("app.loadingPage")}</p>;
   }
 
   const zoneOptions = [

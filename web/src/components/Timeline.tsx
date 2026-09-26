@@ -19,6 +19,11 @@ interface TimelineProps {
 }
 
 /**
+ * Slider positions run 0..totalFrames, one more than there are frames:
+ * position 0 is "before kickoff" (seq -1, nothing streamed into view) and
+ * position p is frame p - 1. That keeps the season's start a place you can
+ * drag back to without inventing a frame for it.
+ *
  * value updates as the user drags (for visual feedback) but onSeek only
  * fires on release (onValueCommit, which Radix also fires for keyboard
  * moves) -- dragging across the whole season doesn't fire a network
@@ -38,14 +43,14 @@ export function Timeline({
   const [dragValue, setDragValue] = useState<number | null>(null);
   const [hoverSeq, setHoverSeq] = useState<number | null>(null);
   const trackRef = useRef<HTMLDivElement | null>(null);
-  const max = Math.max(totalFrames - 1, 0);
-  const value = dragValue ?? Math.max(seq, 0);
+  const max = totalFrames;
+  const value = dragValue ?? seq + 1;
 
   // Cleared synchronously in the same handler that commits the seek,
   // rather than in an effect watching `seq` -- no need to wait a render
   // for the prop to catch up.
-  const commit = (next: number) => {
-    onSeek(next);
+  const commit = (position: number) => {
+    onSeek(position - 1);
     setDragValue(null);
   };
 
@@ -54,15 +59,15 @@ export function Timeline({
     if (!el || max === 0) return;
     const rect = el.getBoundingClientRect();
     const pct = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
-    setHoverSeq(Math.round(pct * max));
+    setHoverSeq(Math.round(pct * max)); // a slider position, not a seq
   };
 
   // dragValue wins over hoverSeq: mid-drag (mouse or keyboard), the preview
   // follows the thumb, not wherever the cursor happens to be.
-  const previewSeq = dragValue ?? hoverSeq;
-  const previewMatch = previewSeq !== null ? frameAt(previewSeq) : undefined;
-  const previewPct = previewSeq !== null && max > 0 ? (previewSeq / max) * 100 : null;
-  const crossoverPct = crossoverSeq !== null && max > 0 ? (crossoverSeq / max) * 100 : null;
+  const previewPosition = dragValue ?? hoverSeq;
+  const previewMatch = previewPosition !== null && previewPosition > 0 ? frameAt(previewPosition - 1) : undefined;
+  const previewPct = previewPosition !== null && max > 0 ? (previewPosition / max) * 100 : null;
+  const crossoverPct = crossoverSeq !== null && max > 0 ? ((crossoverSeq + 1) / max) * 100 : null;
 
   return (
     <div className={styles.wrap}>
@@ -91,13 +96,15 @@ export function Timeline({
             aria-hidden="true"
           />
         )}
-        {previewMatch && previewPct !== null && (
+        {previewPct !== null && (previewMatch || previewPosition === 0) && (
           <div className={styles.hoverPreview} style={{ left: `${previewPct}%` }} aria-hidden="true">
-            {t("player.hoverPreview", {
-              number: formatNumber(previewMatch.match_number),
-              total: formatNumber(TOTAL_MATCHES),
-              date: formatDate(previewMatch.played_at),
-            })}
+            {previewMatch
+              ? t("player.hoverPreview", {
+                  number: formatNumber(previewMatch.match_number),
+                  total: formatNumber(TOTAL_MATCHES),
+                  date: formatDate(previewMatch.played_at),
+                })
+              : t("player.preKickoffShort")}
           </div>
         )}
       </div>

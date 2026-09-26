@@ -12,10 +12,21 @@ import { useUrlParamWriter } from "../routing/useUrlParamWriter";
  * `sigma` isn't in the URL yet -- there's no control that sets it until
  * Feature 2 lands, and an inert query param is worse than none.
  */
-export function useUrlWeekSync(ready: boolean, currentWeek: number | undefined, seekToWeek: (week: number) => void) {
+/**
+ * `currentWeek` is undefined while nothing is known yet (still connecting,
+ * or mid-seek) and null once the replay is deliberately before kickoff --
+ * only the latter clears `?week=`, and only after a week has been written,
+ * so a deep link's own week is never wiped before its seek lands.
+ */
+export function useUrlWeekSync(
+  ready: boolean,
+  currentWeek: number | null | undefined,
+  seekToWeek: (week: number) => void,
+) {
   const [searchParams] = useSearchParams();
   const writeUrlParam = useUrlParamWriter();
   const appliedInitial = useRef(false);
+  const wroteWeek = useRef(false);
 
   useEffect(() => {
     if (!ready || appliedInitial.current) return;
@@ -29,7 +40,13 @@ export function useUrlWeekSync(ready: boolean, currentWeek: number | undefined, 
   }, [ready, seekToWeek]);
 
   useEffect(() => {
+    if (currentWeek === null) {
+      if (wroteWeek.current) writeUrlParam((params) => params.delete("week"));
+      wroteWeek.current = false;
+      return;
+    }
     if (!currentWeek) return;
+    wroteWeek.current = true;
     writeUrlParam((params) => params.set("week", String(currentWeek)));
   }, [currentWeek, writeUrlParam]);
 }

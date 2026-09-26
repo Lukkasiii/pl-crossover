@@ -149,4 +149,15 @@ test.describe("production base path", () => {
       "这不是真正的账户系统",
     );
   });
+
+  // The static demo runs its own replay hook (useDemoReplay), so the
+  // pre-kickoff state is checked on the real demo build too.
+  test("the demo replay opens before kickoff and Play starts at match 1", async ({ page }) => {
+    await page.goto(`${BASE}/season`);
+    await expect(page.getByTestId("frame-counter")).toHaveAttribute("data-seq", "-1");
+    await expect(page.locator("table tbody tr")).toHaveCount(20);
+    await expect(page.locator("table tbody tr td").first()).toHaveText("-");
+    await page.getByTestId("player-toggle").click();
+    await expect(page.getByTestId("frame-counter")).toHaveAttribute("data-seq", "0");
+  });
 });

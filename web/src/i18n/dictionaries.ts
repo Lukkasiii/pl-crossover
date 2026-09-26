@@ -32,6 +32,8 @@ export const en = {
   "player.positionLabel": "replay position",
   "player.matchStatus": "Match {number} of {total} · {date} · {games} games played",
   "player.seeking": "(seeking…)",
+  "player.preKickoff": "Season not started · 0 of {total} matches played",
+  "player.preKickoffShort": "Before kickoff",
   "player.statusLive": "live",
   "player.statusConnecting": "connecting…",
   "player.statusReconnecting": "reconnecting…",
@@ -100,7 +102,6 @@ export const en = {
 
   "standings.heading": "Standings",
   "standings.roundLabel": "Round {games} / 38",
-  "standings.pressPlay": "Press play to start the replay.",
   "standings.scrollableRegion": "Standings table, scrollable",
   "standings.searchLabel": "search teams",
   "standings.searchPlaceholder": "Search teams…",
@@ -368,6 +369,8 @@ export const zh = {
   "player.positionLabel": "回放进度",
   "player.matchStatus": "第 {number} / {total} 场 · {date} · 已赛 {games} 场",
   "player.seeking": "（跳转中…）",
+  "player.preKickoff": "赛季未开始 · 已赛 0/{total} 场",
+  "player.preKickoffShort": "开赛前",
   "player.statusLive": "实时",
   "player.statusConnecting": "连接中…",
   "player.statusReconnecting": "重新连接中…",
@@ -433,7 +436,6 @@ export const zh = {
 
   "standings.heading": "积分榜",
   "standings.roundLabel": "第 {games} / 38 轮",
-  "standings.pressPlay": "点击播放以开始回放。",
   "standings.scrollableRegion": "积分榜表格，可滚动",
   "standings.searchLabel": "搜索球队",
   "standings.searchPlaceholder": "搜索球队…",
