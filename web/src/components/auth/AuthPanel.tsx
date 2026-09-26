@@ -26,11 +26,16 @@ export function AuthPanel() {
 
   if (user) {
     return (
-      <div className={`${styles.panel} sidebar-auth`}>
-        <span className={styles.account} data-testid="account-email">
+      // Stacked, not side by side: at the sidebar's 220px a real address
+      // beside the button squeezed "Sign out" onto three lines and pushed
+      // both past the sidebar's edge. The address gets its own line and
+      // truncates (full text in `title`); the button gets its own, full width.
+      <div className={`${styles.panel} ${styles.signedIn} sidebar-auth`} data-testid="account-panel">
+        <span className={styles.signedInAs}>{t("auth.signedInAs")}</span>
+        <span className={styles.account} title={user.email} data-testid="account-email">
           {user.email}
         </span>
-        <button type="button" onClick={() => logout()} data-testid="sign-out-button">
+        <button type="button" className={styles.signOut} onClick={() => logout()} data-testid="sign-out-button">
           {t("auth.signOut")}
         </button>
       </div>

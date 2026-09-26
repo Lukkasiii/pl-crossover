@@ -131,6 +131,7 @@ export const en = {
 
   "auth.signIn": "Sign in",
   "auth.signOut": "Sign out",
+  "auth.signedInAs": "Signed in as",
   "auth.register": "Register",
   "auth.email": "Email",
   "auth.password": "Password",
@@ -463,6 +464,7 @@ export const zh = {
 
   "auth.signIn": "登录",
   "auth.signOut": "退出登录",
+  "auth.signedInAs": "当前登录账户",
   "auth.register": "注册",
   "auth.email": "邮箱",
   "auth.password": "密码",

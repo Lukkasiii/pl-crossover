@@ -76,11 +76,7 @@ test.describe("chart text never overlaps", () => {
         // exists once they are.
         await page.goto(route === "/season" ? "/season?week=38" : route);
         if (route === "/season") {
-          // A cold ?week= deep link walks the socket frame by frame up to
-          // that round (useReplaySocket.seekToWeek) -- ~380 round trips,
-          // which under a full parallel run can take tens of seconds.
-          test.slow();
-          await expect(page.locator("table tbody tr").first()).toBeVisible({ timeout: 60_000 });
+          await expect(page.locator("table tbody tr").first()).toBeVisible();
         } else {
           await page.waitForLoadState("networkidle");
         }

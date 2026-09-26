@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "
 import { WS_BASE_URL } from "../api/client";
 import { FrameCache } from "./frameCache";
 import { ReconnectingSocket, type SocketStatus } from "./reconnectingSocket";
-import type { ReplayCommand, ReplayFrame } from "./types";
+import type { BatchFrame, MatchFrame, ReplayCommand, ReplayFrame, RoundFrame } from "./types";
 
 export type ConnectionStatus = SocketStatus;
 
@@ -16,6 +16,14 @@ export type ConnectionStatus = SocketStatus;
  * data anyway (see useDemoReplay.ts, which never went through this hook).
  */
 const RAF_BYPASS = import.meta.env.DEV && new URLSearchParams(window.location.search).get("coalesce") === "off";
+
+/**
+ * Dev-only, same pattern as RAF_BYPASS above: `?seek=walk` restores the old
+ * way a deep link or forward seek filled its gap -- one `seek` per frame,
+ * each awaited -- so e2e-perf/deep-link.spec.ts can measure it interleaved
+ * against `seek_through` in one run. Dead code in a production build.
+ */
+const SEEK_WALK = import.meta.env.DEV && new URLSearchParams(window.location.search).get("seek") === "walk";
 
 interface ReplayState {
   status: ConnectionStatus;
@@ -56,9 +64,11 @@ const initialState: ReplayState = {
  * - seeking backward to an already-seen seq is a pure cache read, no
  *   network round trip
  *
- * Seeking forward past what has streamed in has to fetch the gap first
- * (`seek` fetches frame-by-frame in order) because the round panels need
- * every round frame up to that point, not just the one at the target.
+ * Seeking forward past what has streamed in has to fetch the gap first,
+ * because the round panels need every round frame up to that point, not
+ * just the one at the target. One `seek_through` fetches the whole gap in a
+ * single message; it used to be one awaited `seek` per frame, which made a
+ * cold `?week=30` link wait on 330 sequential round trips.
  *
  * The socket itself auto-reconnects with backoff (see reconnectingSocket.ts)
  * rather than surfacing a dead connection to the user. Because every frame
@@ -73,7 +83,7 @@ export function useReplaySocket(pairId: number) {
 
   const [cache] = useState(() => new FrameCache());
 
-  const resolverQueueRef = useRef<((frame: ReplayFrame | null) => void)[]>([]);
+  const resolverQueueRef = useRef<((frame: MatchFrame | RoundFrame | BatchFrame | null) => void)[]>([]);
   const isSeekingRef = useRef(false);
 
   const pendingSeqRef = useRef<number | null>(null);
@@ -104,9 +114,9 @@ export function useReplaySocket(pairId: number) {
     socketRef.current?.send(JSON.stringify(cmd));
   }, []);
 
-  /** Sends a command and resolves with the one frame that answers it; null if the socket wasn't open to send on. */
+  /** Sends a command and resolves with the one message that answers it (a frame, or a batch); null if the socket wasn't open to send on, or dropped before answering. */
   const requestFrame = useCallback((cmd: ReplayCommand) => {
-    return new Promise<ReplayFrame | null>((resolve) => {
+    return new Promise<MatchFrame | RoundFrame | BatchFrame | null>((resolve) => {
       if (!socketRef.current?.send(JSON.stringify(cmd))) {
         resolve(null);
         return;
@@ -175,6 +185,11 @@ export function useReplaySocket(pairId: number) {
           resolverQueueRef.current.shift()!(frame);
           return;
         }
+        if (frame.type === "batch") {
+          frame.frames.forEach((f) => cache.add(f));
+          resolverQueueRef.current.shift()?.(frame);
+          return;
+        }
 
         switch (frame.type) {
           case "init":
@@ -231,9 +246,13 @@ export function useReplaySocket(pairId: number) {
       isSeekingRef.current = true;
       if (target > cache.cachedThrough) {
         setState((s) => ({ ...s, seeking: true }));
-        for (let i = cache.cachedThrough + 1; i <= target; i++) {
-          const frame = await requestFrame({ cmd: "seek", seq: i });
-          if (frame === null) break;
+        if (SEEK_WALK) {
+          for (let i = cache.cachedThrough + 1; i <= target; i++) {
+            const frame = await requestFrame({ cmd: "seek", seq: i });
+            if (frame === null) break;
+          }
+        } else {
+          await requestFrame({ cmd: "seek_through", seq: target, from: cache.cachedThrough + 1 });
         }
         setState((s) => ({ ...s, seeking: false }));
       } else {
@@ -246,7 +265,7 @@ export function useReplaySocket(pairId: number) {
     [state.playing, state.totalFrames, cache, pause, requestFrame, send],
   );
 
-  /** For the `?week=` deep link: scan forward until that round has streamed in, without rendering every step. */
+  /** For the `?week=` deep link: fetch everything up to that round in one go, without rendering every step. */
   const seekToWeek = useCallback(
     async (week: number) => {
       if (isSeekingRef.current || week <= 0) return;
@@ -259,10 +278,18 @@ export function useReplaySocket(pairId: number) {
       isSeekingRef.current = true;
       setState((s) => ({ ...s, seeking: true }));
       let found: number | null = null;
-      for (let i = cache.cachedThrough + 1; found === null && i < state.totalFrames; i++) {
-        const frame = await requestFrame({ cmd: "seek", seq: i });
-        if (frame === null) break;
-        if (frame.type === "round" && frame.games === week) found = frame.seq;
+      if (SEEK_WALK) {
+        for (let i = cache.cachedThrough + 1; found === null && i < state.totalFrames; i++) {
+          const frame = await requestFrame({ cmd: "seek", seq: i });
+          if (frame === null) break;
+          if (frame.type === "round" && frame.games === week) found = frame.seq;
+        }
+      } else {
+        // One round trip: the server returns everything from the cache's edge
+        // through that round, so the table *and* every round the model
+        // panels plot land together.
+        await requestFrame({ cmd: "seek_through", week, from: cache.cachedThrough + 1 });
+        found = cache.roundAtWeek(week)?.seq ?? null;
       }
       isSeekingRef.current = false;
       setState((s) => ({ ...s, seeking: false, viewSeq: found ?? s.viewSeq }));

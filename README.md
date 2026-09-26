@@ -565,6 +565,43 @@ this table: its `MutationObserver` watches attributes too, so it counts the
 FLIP `transform` writes (whose duration also changed, see below) as much as
 React commits, and stopped isolating the thing it was meant to.
 
+**Shareable links: one `seek_through` instead of a per-frame walk.** A cold
+`/season?week=30` link used to fill the gap to round 30 with one awaited
+`{"cmd":"seek","seq":i}` per frame — 330 sequential round trips (round 30 is frame 329 in the default pair) before the
+page committed anything, because the model panels need every round frame up
+to the target, not just the target. The protocol now has
+`{"cmd":"seek_through","week":N,"from":M}` (or `"seq"`), which the server
+answers with one `{"type":"batch"}` message holding every frame from `M`
+through that round — a slice of the frame list it already built once at
+startup, not a recompute (`api/app/routers/replay.py`). A ranged seek over
+the old protocol was the honest fix; showing the target frame first and
+backfilling history would still have paid every round trip, just less
+visibly.
+
+Measured with `e2e-perf/deep-link.spec.ts`: a fresh browser context per
+load, timed from navigation start to the first animation frame showing round
+30 with the table rendered. Old and new paths run on the same build (the old
+walk is kept behind a dev-only `?seek=walk`, dead code in production),
+interleaved walk/through ×8 each, after one unmeasured warm-up load of each.
+Localhost round trips cost well under a millisecond, which hides exactly
+what this protocol cost, so the same A/B also runs through
+`e2e-perf/latencyProxy.mjs`, which holds every HTTP response and WebSocket
+message for 25ms each way (a 50ms round trip):
+
+| cold `/season?week=30`, median (spread), n=8 | per-frame walk | `seek_through` |
+|---|---|---|
+| localhost | 1117 ms (49) | 1016 ms (21) |
+| 50ms round trip | 18,937 ms (724) | 1,173 ms (277) |
+
+On localhost the difference is ~100ms — most of the ~1s is booting the page
+and opening the socket, which both arms pay equally. At a 50ms round trip
+the walk takes ~19s of blank panel and `seek_through` ~1.2s. 330 round trips
+at 50ms is 16.5s, which accounts for most of the walk's total; one
+`seek_through` round trip replaces them all. The test that once had to step frame by frame around the slow
+deep link (`e2e/standings-bands.spec.ts`) now uses `?week=5` directly, and
+`chart-overlap.spec.ts` and `routing.spec.ts` no longer need their long
+timeouts for it.
+
 **FLIP duration vs 1x pacing.** 1x emits a match frame every 200ms; the
 standings FLIP ran for 400ms, so at 1x every reorder was still mid-slide when
 the next one landed, and each interruption restarted the slide from the

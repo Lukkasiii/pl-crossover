@@ -63,7 +63,7 @@ test.describe("sidebar navigation", () => {
 
 test("a ?week= link lands on that round", async ({ page }) => {
   await page.goto("/season?week=20");
-  await expect(page.getByTestId("current-round")).toHaveAttribute("data-games", "20", { timeout: 15_000 });
+  await expect(page.getByTestId("current-round")).toHaveAttribute("data-games", "20");
   // The URL keeps carrying the week it landed on, not just the one it
   // started from -- useUrlWeekSync writes back through useSearchParams.
   await expect(page).toHaveURL(/week=20/);

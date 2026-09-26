@@ -70,3 +70,37 @@ def test_unknown_pair_closes_with_an_error(client):
     with client.websocket_connect("/ws/replay?pair=999") as ws:
         msg = ws.receive_json()
         assert msg["type"] == "error"
+
+
+def test_seek_through_a_week_returns_every_frame_up_to_that_round_in_one_message(client):
+    with client.websocket_connect("/ws/replay?pair=1") as ws:
+        ws.receive_json()  # init
+        ws.send_json({"cmd": "seek_through", "week": 30})
+        batch = ws.receive_json()
+        assert batch["type"] == "batch"
+        frames = batch["frames"]
+        assert [f["seq"] for f in frames] == list(range(len(frames)))
+        last = frames[-1]
+        assert last["type"] == "round" and last["games"] == 30
+        assert [f["games"] for f in frames if f["type"] == "round"] == list(range(1, 31))
+
+        # The cursor sits just past the target: the next seek-free play
+        # continues from there, not from the start.
+        ws.send_json({"cmd": "play", "speed": 50})
+        assert ws.receive_json()["seq"] == last["seq"] + 1
+
+
+def test_seek_through_a_seq_from_a_cached_point_skips_what_the_client_has(client):
+    with client.websocket_connect("/ws/replay?pair=1") as ws:
+        ws.receive_json()
+        ws.send_json({"cmd": "seek_through", "seq": 50, "from": 40})
+        frames = ws.receive_json()["frames"]
+        assert [f["seq"] for f in frames] == list(range(40, 51))
+
+
+def test_seek_through_clamps_out_of_range_targets(client):
+    with client.websocket_connect("/ws/replay?pair=1") as ws:
+        total = ws.receive_json()["total_frames"]
+        ws.send_json({"cmd": "seek_through", "seq": 10_000, "from": total - 2})
+        frames = ws.receive_json()["frames"]
+        assert [f["seq"] for f in frames] == [total - 2, total - 1]

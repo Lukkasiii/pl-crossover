@@ -414,6 +414,13 @@ per pair at application startup and cache it; do not recompute per connection.
 - Client → server: `{"cmd":"play","speed":1..50}`, `{"cmd":"pause"}`,
   `{"cmd":"seek","seq":N}`. `seek` replies immediately with the snapshot at N;
   `pause` stops the stream without closing the socket.
+- `{"cmd":"seek_through","week":N,"from":M}` (or `"seq":N`) replies with one
+  `{"type":"batch","frames":[...]}` holding every frame from M through the
+  target. Deep links and forward scrubs use it: they need every round frame
+  up to the target, and fetching them one `seek` at a time was one round
+  trip per frame (~19s for `?week=30` at a 50ms RTT, see README). Don't
+  reintroduce a per-frame loop; `?seek=walk` keeps the old path dev-only,
+  for `e2e-perf/deep-link.spec.ts`.
 - **No auth on this endpoint** — the replay is public data. The README documents
   the ticket pattern and the "browser WebSockets cannot send an Authorization
   header" constraint as how it *would* be gated; unused plumbing is not built.
