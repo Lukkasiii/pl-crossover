@@ -9,7 +9,7 @@ import { RankLineChart } from "../charts/RankLineChart";
 import { broadcastName } from "../teamNames";
 import { summarize } from "./Teams";
 import type { TranslationKey } from "../i18n/dictionaries";
-import { parsePosition, type PositionRole } from "../components/positionCodes";
+import { primaryRole, type PositionRole } from "../components/positionCodes";
 
 const ROLE_KEY: Record<PositionRole, TranslationKey> = {
   gk: "position.gk",
@@ -71,16 +71,17 @@ export default function TeamDetail() {
     );
   }
 
-  const formatRoles = (code: string) => {
-    const { roles, substitute } = parsePosition(code);
-    if (roles.length === 0) return substitute ? t("position.subOnly") : code;
-    const words = roles.map((r) => t(ROLE_KEY[r])).join(" · ");
-    return substitute ? (
+  // One position per player-season (see primaryRole). An em-dash where
+  // Understat records none, with the words for a screen reader, which would
+  // otherwise announce just "dash".
+  const formatRole = (code: string) => {
+    const role = primaryRole(code);
+    if (role) return t(ROLE_KEY[role]);
+    return (
       <>
-        {words} <span className="position-sub">+ {t("position.sub")}</span>
+        <span aria-hidden="true">—</span>
+        <span className="visually-hidden">{t("position.none")}</span>
       </>
-    ) : (
-      words
     );
   };
 
@@ -256,7 +257,7 @@ export default function TeamDetail() {
                         {p.name}
                       </th>
                       <td style={{ textAlign: "left" }} data-position-code={p.position}>
-                        {formatRoles(p.position)}
+                        {formatRole(p.position)}
                       </td>
                       <td>{p.minutes}</td>
                       <td>{p.goals}</td>

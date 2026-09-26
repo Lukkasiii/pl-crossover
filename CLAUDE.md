@@ -132,9 +132,13 @@ caller could forget.
 letter (GK / D / M / F) is a role the player appeared in that season, and `S`
 means at least one substitute appearance. Understat publishes no glossary, so
 this is *derived from the data*: S-only players average 9.6 minutes per
-appearance, strings without S 88.4 (4,806 player-seasons). The UI spells the
-letters out and its ⓘ says it is derived — never present it as Understat's
-documented meaning.
+appearance, strings without S 88.4 (4,806 player-seasons). The Key players
+table shows **one** position per player-season — the most advanced listed
+(Forward > Midfielder > Defender > Goalkeeper), with `S` never displayed —
+and an em-dash for the 494 player-seasons coded only `S`, which have no
+position in the data. Never fill that in from another season. The ⓘ states
+the precedence and says the reading is derived — never present it as
+Understat's documented meaning.
 
 **The static demo's sign-in is not an account system.** `src/auth/backend.ts`
 chooses once between `apiBackend` (the real one) and `browserBackend` (GitHub

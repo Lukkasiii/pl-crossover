@@ -66,3 +66,26 @@ test.describe("accessibility", () => {
     expect(results.violations).toEqual([]);
   });
 });
+
+// The standings header abbreviations (P W D L GD Pts xGD) lost their dotted
+// underline; what they still owe a keyboard user is reachability, a visible
+// focus ring, and the tooltip that says what each one means.
+test("standings header abbreviations: no underline, focusable, tooltip on focus", async ({ page }) => {
+  await page.goto("/season");
+  await expect(page.locator("table tbody tr").first()).toBeVisible();
+  const abbrs = page.locator("table thead abbr");
+  await expect(abbrs).toHaveCount(7);
+  for (const decoration of await abbrs.evaluateAll((els) => els.map((el) => getComputedStyle(el).textDecorationLine))) {
+    expect(decoration).toBe("none");
+  }
+
+  const trigger = page.locator("table thead button").filter({ hasText: /^Pts$/ });
+  await trigger.focus();
+  await expect(trigger).toBeFocused();
+  const outline = await trigger.evaluate((el) => getComputedStyle(el).outlineStyle);
+  expect(outline).not.toBe("none");
+  await expect(page.getByRole("tooltip")).toContainText("Points");
+
+  const results = await new AxeBuilder({ page }).include("table thead").analyze();
+  expect(results.violations).toEqual([]);
+});

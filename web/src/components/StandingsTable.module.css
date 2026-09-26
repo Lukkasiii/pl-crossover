@@ -87,6 +87,14 @@
   cursor: default;
 }
 
+/* The dotted underline is the browser's default for abbr[title], used to
+   advertise "hover me". Dropped: the tooltip on hover and focus still says
+   what each abbreviation means, the panel's ⓘ explains the table, and the
+   focus ring below is the signal that these are interactive. */
+.headerAbbrTrigger abbr {
+  text-decoration: none;
+}
+
 .headerAbbrTrigger:focus-visible {
   outline: 2px solid var(--blue);
   outline-offset: 2px;
