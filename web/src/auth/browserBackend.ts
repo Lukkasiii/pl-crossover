@@ -105,6 +105,8 @@ export const browserBackend: AuthBackend = {
   async createScenario(name, params) {
     requireSession();
     const list = loadScenarios();
+    // Same rule as the real database's UNIQUE (user_id, name).
+    if (list.some((s) => s.name === name)) throw new DemoAuthError("auth.demo.nameTaken");
     const now = new Date().toISOString();
     const scenario: ScenarioOut = {
       id: list.reduce((max, s) => Math.max(max, s.id), 0) + 1,
@@ -122,6 +124,7 @@ export const browserBackend: AuthBackend = {
     const list = loadScenarios();
     const existing = list.find((s) => s.id === id);
     if (!existing) throw new DemoAuthError("auth.demo.scenarioGone");
+    if (list.some((s) => s.id !== id && s.name === name)) throw new DemoAuthError("auth.demo.nameTaken");
     const renamed = { ...existing, name, updated_at: new Date().toISOString() };
     saveScenarios(list.map((s) => (s.id === id ? renamed : s)));
     return renamed;

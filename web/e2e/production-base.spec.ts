@@ -160,4 +160,18 @@ test.describe("production base path", () => {
     await page.getByTestId("player-toggle").click();
     await expect(page.getByTestId("frame-counter")).toHaveAttribute("data-seq", "0");
   });
+
+  test("the demo warns before saving the same settings twice, in Chinese too", async ({ page }) => {
+    await page.goto(`${BASE}/scenarios?lang=zh`);
+    await page.getByTestId("scenarios-sign-in-prompt").getByTestId("auth-submit-button").click();
+    await page.getByTestId("scenario-name-input").fill("基准");
+    await page.getByTestId("scenario-save-button").click();
+    await expect(page.locator('[data-testid^="scenario-row-"]')).toHaveCount(1);
+    await page.getByTestId("scenario-name-input").fill("另一个");
+    await page.getByTestId("scenario-save-button").click();
+    await expect(page.getByTestId("scenario-duplicate-warning")).toContainText("“基准”已使用这组设置");
+    await page.getByTestId("scenario-name-input").fill("基准");
+    await page.getByTestId("scenario-save-button").click();
+    await expect(page.getByTestId("scenario-name-taken")).toContainText("已有名为“基准”的方案");
+  });
 });
