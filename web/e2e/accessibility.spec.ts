@@ -18,6 +18,10 @@ test.describe("accessibility", () => {
     test(`${route || "/"} has no axe violations`, async ({ page }) => {
       await page.goto(route);
       await expect(page.getByTestId("sidebar-nav")).toBeVisible();
+      // Scan the loaded page, not its loading placeholder: /teams/arsenal
+      // renders a bare "Loading…" (no <h1>) until its fetch resolves, and
+      // axe's page-has-heading-one failed whenever the scan won that race.
+      await page.waitForLoadState("networkidle");
 
       const results = await new AxeBuilder({ page }).analyze();
       expect(results.violations).toEqual([]);

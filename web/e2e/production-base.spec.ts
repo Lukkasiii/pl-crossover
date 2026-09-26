@@ -149,4 +149,44 @@ test.describe("production base path", () => {
       "这不是真正的账户系统",
     );
   });
+
+  // The static demo runs its own replay hook (useDemoReplay), so the
+  // pre-kickoff state is checked on the real demo build too.
+  test("the demo replay opens before kickoff and Play starts at match 1", async ({ page }) => {
+    await page.goto(`${BASE}/season`);
+    await expect(page.getByTestId("frame-counter")).toHaveAttribute("data-seq", "-1");
+    await expect(page.locator("table tbody tr")).toHaveCount(20);
+    await expect(page.locator("table tbody tr td").first()).toHaveText("-");
+    // Observed from before the click -- see season-kickoff.spec.ts for why
+    // a retrying assertion can miss frame 0's ~200ms on screen.
+    await page.evaluate(() => {
+      const el = document.querySelector('[data-testid="frame-counter"]')!;
+      const w = window as unknown as { __firstSeq?: string };
+      new MutationObserver((_, obs) => {
+        const seq = el.getAttribute("data-seq");
+        if (seq !== "-1") {
+          w.__firstSeq = seq ?? undefined;
+          obs.disconnect();
+        }
+      }).observe(el, { attributes: true, attributeFilter: ["data-seq"] });
+    });
+    await page.getByTestId("player-toggle").click();
+    await expect
+      .poll(() => page.evaluate(() => (window as unknown as { __firstSeq?: string }).__firstSeq))
+      .toBe("0");
+  });
+
+  test("the demo warns before saving the same settings twice, in Chinese too", async ({ page }) => {
+    await page.goto(`${BASE}/scenarios?lang=zh`);
+    await page.getByTestId("scenarios-sign-in-prompt").getByTestId("auth-submit-button").click();
+    await page.getByTestId("scenario-name-input").fill("基准");
+    await page.getByTestId("scenario-save-button").click();
+    await expect(page.locator('[data-testid^="scenario-row-"]')).toHaveCount(1);
+    await page.getByTestId("scenario-name-input").fill("另一个");
+    await page.getByTestId("scenario-save-button").click();
+    await expect(page.getByTestId("scenario-duplicate-warning")).toContainText("“基准”已使用这组设置");
+    await page.getByTestId("scenario-name-input").fill("基准");
+    await page.getByTestId("scenario-save-button").click();
+    await expect(page.getByTestId("scenario-name-taken")).toContainText("已有名为“基准”的方案");
+  });
 });

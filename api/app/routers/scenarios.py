@@ -70,6 +70,14 @@ def update_scenario(
 ) -> ScenarioOut:
     row = _get_owned(db, user["id"], scenario_id)
     name = body.name if body.name is not None else row["name"]
+    # Names are unique per user (UNIQUE (user_id, name) in build_db.py) --
+    # checked here so a rename onto a taken name is the same clean 409 a
+    # create gets, not the IntegrityError (500) the constraint would raise.
+    clash = db.execute(
+        "SELECT id FROM saved_scenarios WHERE user_id = ? AND name = ? AND id != ?", (user["id"], name, scenario_id)
+    ).fetchone()
+    if clash is not None:
+        raise HTTPException(status.HTTP_409_CONFLICT, f"you already have a scenario named '{name}'")
     params_json = body.params.model_dump_json() if body.params is not None else row["params"]
 
     db.execute(

@@ -75,7 +75,9 @@ export function PlayerControls({
         date: formatDate(match.played_at),
         games: gamesLabel,
       })
-    : "";
+    : seq < 0 && table
+      ? t("player.preKickoff", { total: formatNumber(TOTAL_MATCHES) })
+      : "";
 
   return (
     <div className="player-controls">
@@ -101,7 +103,7 @@ export function PlayerControls({
           }}
           options={SPEEDS.map((s) => ({ value: String(s), label: `${s}x` }))}
         />
-        <span className="frame-count" data-testid="frame-counter" data-seq={Math.max(seq, 0)} data-total={totalFrames}>
+        <span className="frame-count" data-testid="frame-counter" data-seq={seq} data-total={totalFrames}>
           {matchStatus}
           {seeking && ` ${t("player.seeking")}`}
         </span>

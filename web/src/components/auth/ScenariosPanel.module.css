@@ -30,6 +30,7 @@
 
 .row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
   padding: 8px;
@@ -47,12 +48,14 @@
   padding: 4px 8px;
 }
 
+/* Wraps rather than truncating: at phone width the three buttons left the
+   name a few characters and cut the settings summary mid-line. With a
+   12rem basis the name takes its own line when the row is narrow, and
+   both it and the summary wrap instead of being clipped. */
 .name {
-  flex: 1;
+  flex: 1 1 12rem;
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 
 .summary {
@@ -69,4 +72,49 @@
 .error {
   color: var(--relegation);
   font-size: 13px;
+  margin: 0 0 var(--space-2);
+}
+
+.renameField {
+  flex: 1 1 12rem;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.renameField .error {
+  margin: 0;
+}
+
+/* Inline, in the panel's own style: not a browser confirm(), which blocks
+   the page and reads as someone else's UI. Amber border, ink text -- the
+   message carries the meaning, the colour only marks it as a caution. */
+.warning {
+  margin: 0 0 var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--gold);
+  border-radius: 6px;
+  background: var(--zone-el-bg);
+  font-size: var(--text-sm);
+  color: var(--text);
+}
+
+.warning p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.summaryInline {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+.warningActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
 }

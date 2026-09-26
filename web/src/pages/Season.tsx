@@ -28,7 +28,11 @@ export default function Season() {
   }, [t]);
 
   const ready = replay !== null && replay.status === "open" && replay.totalFrames > 0;
-  useUrlWeekSync(ready, replay?.latestRound?.games, replay?.seekToWeek ?? (() => {}));
+  // Before round 1 completes there's no week to put in the URL: null when
+  // the replay is settled there (before kickoff, or the first few
+  // matches), undefined while a seek is still on its way somewhere.
+  const urlWeek = replay && !replay.seeking && !replay.latestRound ? null : replay?.latestRound?.games;
+  useUrlWeekSync(ready, urlWeek, replay?.seekToWeek ?? (() => {}));
 
   // Only known once the replay has actually streamed the round where it
   // first turns true for the active metric -- same source as RmseChart's
@@ -38,12 +42,12 @@ export default function Season() {
     return round?.seq ?? null;
   }, [replay?.roundsSoFar, metric]);
 
-  // The demo must not open on an empty page, but it must not move on its
-  // own either -- the replay starts on a click. Land on the very first
-  // frame (the full 20-row table, real chart axes) the moment the stream is
-  // ready, unless the URL already names a week (a shared link): seeking
-  // here too would race useUrlWeekSync's own seek under useReplaySocket's
-  // single-seek-at-a-time guard, so that case is left entirely to it.
+  // The replay opens before kickoff: all 20 clubs at zero, the timeline at
+  // the far left, and Play brings on match 1. That table needs frame 0's
+  // roster, fetched without moving the playhead -- unless the URL already
+  // names a week (a shared link): loading here too would race
+  // useUrlWeekSync's own seek under useReplaySocket's single-seek-at-a-time
+  // guard, so that case is left entirely to it.
   const initializedRef = useRef(false);
   useEffect(() => {
     if (initializedRef.current || !ready || !replay) return;
@@ -51,7 +55,7 @@ export default function Season() {
 
     const weekParam = Number(searchParams.get("week"));
     const hasUrlWeek = Number.isInteger(weekParam) && weekParam >= 1 && weekParam <= 38;
-    if (!hasUrlWeek) replay.seek(0);
+    if (!hasUrlWeek) void replay.loadKickoff();
   }, [ready, replay, searchParams]);
 
   useEffect(() => {
