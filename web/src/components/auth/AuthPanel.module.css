@@ -5,18 +5,40 @@
   position: relative;
 }
 
+.signedIn {
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.signedInAs {
+  font-size: var(--text-xs);
+}
+
 .account {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 14px;
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--text-sm);
   color: var(--text-secondary);
+}
+
+.signOut {
+  width: 100%;
+  margin-top: var(--space-1);
+  white-space: nowrap;
 }
 
 /* Positioned by Radix (see AuthPanel.tsx); these only bound its size so a
    tall demo notice scrolls inside the card instead of off the screen. */
+/* Above the phone drawer (30) and its toggle (40): the popover is
+   portalled to <body>, so at 20 it rendered underneath the open drawer and
+   the form couldn't be clicked at phone width. */
 .popover {
-  z-index: 20;
+  z-index: 50;
   width: 300px;
   max-width: calc(100vw - 32px);
   max-height: var(--radix-popover-content-available-height);
