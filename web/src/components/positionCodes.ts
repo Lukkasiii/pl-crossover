@@ -18,6 +18,21 @@ export interface ParsedPosition {
   substitute: boolean;
 }
 
+// Most advanced first: when a player-season lists several positions, the
+// one shown is the furthest forward. A stated convention (the column's ⓘ
+// says so), not something the data decides.
+const DISPLAY_PRECEDENCE: PositionRole[] = ["f", "m", "d", "gk"];
+
+/**
+ * The one position the Key players table shows, or null when Understat
+ * records none -- a string of just `S`. Null is shown as an em-dash, never
+ * filled from another season: that would be inference presented as fact.
+ */
+export function primaryRole(code: string): PositionRole | null {
+  const { roles } = parsePosition(code);
+  return DISPLAY_PRECEDENCE.find((r) => roles.includes(r)) ?? null;
+}
+
 export function parsePosition(code: string): ParsedPosition {
   const letters = code.trim().split(/\s+/).filter(Boolean);
   const roles = new Set<PositionRole>();
