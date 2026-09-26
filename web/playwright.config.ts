@@ -12,7 +12,10 @@ const REPO_ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 // webServer below points at a throwaway copy instead: same real, validated
 // season data, disposable state.
 const SCRATCH_DB = path.join(REPO_ROOT, "data", ".e2e-pl.db");
-copyFileSync(path.join(REPO_ROOT, "data", "pl.db"), SCRATCH_DB);
+// Main process only: every worker process re-evaluates this config file,
+// and a copy made from a worker overwrote the db under the already-running
+// API -- wiping any account another test had just registered mid-run.
+if (!process.env.TEST_WORKER_INDEX) copyFileSync(path.join(REPO_ROOT, "data", "pl.db"), SCRATCH_DB);
 
 // Runs against the real API + WebSocket, not demo mode -- the whole point
 // of the resilience test is a live socket that can actually be dropped.

@@ -7,17 +7,16 @@ import { expect, test, type Page } from "@playwright/test";
  * three lines and both pushed past the sidebar edge. Same widths as
  * layout.spec.ts; at 390 the sidebar is the full-screen drawer.
  */
-const LONG_EMAIL = `a-rather-long-address-for-layout-checks-${Date.now()}@plcrossover-example.dev`;
 const PASSWORD = "layout-check-password";
 const API = "http://localhost:8000";
 const WIDTHS = [1440, 1024, 900, 390] as const;
 
-test.beforeAll(async ({ request }) => {
-  const res = await request.post(`${API}/auth/register`, { data: { email: LONG_EMAIL, password: PASSWORD } });
-  expect(res.ok()).toBeTruthy();
-});
-
+// One fresh account per test: parallel workers each registering "the"
+// long address raced on the unique email and failed each other's setup.
 async function signIn(page: Page) {
+  const LONG_EMAIL = `a-rather-long-address-for-layout-checks-${crypto.randomUUID().slice(0, 8)}@plcrossover-example.dev`;
+  const res = await page.request.post(`${API}/auth/register`, { data: { email: LONG_EMAIL, password: PASSWORD } });
+  expect(res.ok()).toBeTruthy();
   await page.getByTestId("sign-in-open-button").click();
   const dialog = page.getByTestId("auth-dialog");
   await dialog.getByTestId("auth-email-input").fill(LONG_EMAIL);
