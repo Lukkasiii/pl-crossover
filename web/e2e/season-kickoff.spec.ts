@@ -35,9 +35,25 @@ test("/season opens before kickoff, and Play starts from match 1", async ({ page
   await expectPreKickoff(page);
   await expect(page.getByTestId("frame-counter")).toHaveAttribute("data-total", "418");
 
+  // The first position shown after Play must be frame 0 -- match 1 -- not a
+  // skip past it. Recorded by an observer set up before the click, not
+  // polled afterwards: at 1x frame 0 is on screen for ~200ms, which a
+  // retrying assertion under a loaded parallel run can simply miss.
+  await page.evaluate(() => {
+    const el = document.querySelector('[data-testid="frame-counter"]')!;
+    const w = window as unknown as { __firstSeq?: string };
+    new MutationObserver((_, obs) => {
+      const seq = el.getAttribute("data-seq");
+      if (seq !== "-1") {
+        w.__firstSeq = seq ?? undefined;
+        obs.disconnect();
+      }
+    }).observe(el, { attributes: true, attributeFilter: ["data-seq"] });
+  });
   await page.getByTestId("player-toggle").click();
-  // The first thing shown after Play is frame 0 -- match 1 -- not a skip past it.
-  await expect(page.getByTestId("frame-counter")).toHaveAttribute("data-seq", "0");
+  await expect
+    .poll(() => page.evaluate(() => (window as unknown as { __firstSeq?: string }).__firstSeq))
+    .toBe("0");
   await page.getByTestId("player-toggle").click();
   await expect(page.getByTestId("player-toggle")).toHaveAttribute("data-state", "paused");
 });

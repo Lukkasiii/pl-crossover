@@ -157,8 +157,23 @@ test.describe("production base path", () => {
     await expect(page.getByTestId("frame-counter")).toHaveAttribute("data-seq", "-1");
     await expect(page.locator("table tbody tr")).toHaveCount(20);
     await expect(page.locator("table tbody tr td").first()).toHaveText("-");
+    // Observed from before the click -- see season-kickoff.spec.ts for why
+    // a retrying assertion can miss frame 0's ~200ms on screen.
+    await page.evaluate(() => {
+      const el = document.querySelector('[data-testid="frame-counter"]')!;
+      const w = window as unknown as { __firstSeq?: string };
+      new MutationObserver((_, obs) => {
+        const seq = el.getAttribute("data-seq");
+        if (seq !== "-1") {
+          w.__firstSeq = seq ?? undefined;
+          obs.disconnect();
+        }
+      }).observe(el, { attributes: true, attributeFilter: ["data-seq"] });
+    });
     await page.getByTestId("player-toggle").click();
-    await expect(page.getByTestId("frame-counter")).toHaveAttribute("data-seq", "0");
+    await expect
+      .poll(() => page.evaluate(() => (window as unknown as { __firstSeq?: string }).__firstSeq))
+      .toBe("0");
   });
 
   test("the demo warns before saving the same settings twice, in Chinese too", async ({ page }) => {
