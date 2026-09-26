@@ -9,7 +9,10 @@ const REPO_ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 // reads through the replay/curves endpoints, but pointing at a scratch copy
 // keeps it from ever being a reason `git status` goes dirty.
 const SCRATCH_DB = path.join(REPO_ROOT, "data", ".e2e-perf-pl.db");
-copyFileSync(path.join(REPO_ROOT, "data", "pl.db"), SCRATCH_DB);
+// Main process only: every worker process re-evaluates this config file,
+// and a copy made from a worker overwrote the db under the already-running
+// API -- wiping any account another test had just registered mid-run.
+if (!process.env.TEST_WORKER_INDEX) copyFileSync(path.join(REPO_ROOT, "data", "pl.db"), SCRATCH_DB);
 
 // Not part of `npm run test:e2e` -- see e2e-perf/README.md. This measures
 // wall-clock timing and dropped frames, which a parallel worker sharing the
@@ -30,7 +33,7 @@ export default defineConfig({
       port: 8020,
       reuseExistingServer: false,
       timeout: 30_000,
-      env: { PL_CORS_ORIGINS: "http://localhost:5195", PL_DB_PATH: SCRATCH_DB },
+      env: { PL_CORS_ORIGINS: "http://localhost:5195,http://localhost:5196", PL_DB_PATH: SCRATCH_DB },
     },
     {
       command: "npm run dev -- --port 5195 --strictPort",
@@ -42,6 +45,22 @@ export default defineConfig({
       // doesn't overwrite), pointing the dev server at the 8020 API above
       // instead.
       env: { VITE_API_BASE_URL: "http://localhost:8020" },
+    },
+    // The same app again, talking to the API through a fixed 25ms-each-way
+    // delay (a 50ms round trip) -- see e2e-perf/latencyProxy.mjs for why
+    // localhost alone can't show what a per-round-trip protocol costs.
+    {
+      command: "node e2e-perf/latencyProxy.mjs 8021 8020 25",
+      port: 8021,
+      reuseExistingServer: false,
+      timeout: 30_000,
+    },
+    {
+      command: "npm run dev -- --port 5196 --strictPort",
+      port: 5196,
+      reuseExistingServer: false,
+      timeout: 30_000,
+      env: { VITE_API_BASE_URL: "http://localhost:8021" },
     },
   ],
   use: {

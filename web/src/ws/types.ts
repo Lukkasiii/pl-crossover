@@ -44,9 +44,17 @@ export interface ErrorFrame {
   message: string;
 }
 
-export type ReplayFrame = InitFrame | MatchFrame | RoundFrame | DoneFrame | ErrorFrame;
+/** The answer to one `seek_through`: every frame from `from` through the target, in seq order. */
+export interface BatchFrame {
+  type: "batch";
+  frames: (MatchFrame | RoundFrame)[];
+}
+
+export type ReplayFrame = InitFrame | MatchFrame | RoundFrame | DoneFrame | ErrorFrame | BatchFrame;
 
 export type ReplayCommand =
   | { cmd: "play"; speed: number }
   | { cmd: "pause" }
-  | { cmd: "seek"; seq: number };
+  | { cmd: "seek"; seq: number }
+  | { cmd: "seek_through"; seq: number; from: number }
+  | { cmd: "seek_through"; week: number; from: number };
